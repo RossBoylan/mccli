@@ -13,7 +13,7 @@ var shell = require("shelljs"),
 var ITERATIONS = 1000;
 
 var outFileName = function(inp_file) {
-	let file_data = fs.readFileSync(`${inp_file}.inp`,'ascii');
+	let file_data = fs.readFileSync(`${inp_file}_mc0.inp`,'ascii');
 	if (file_data.match(/\w+\.out/)){
 		return file_data.match(/\w+\.out/)[0];
 	}
@@ -40,7 +40,7 @@ var argv = yargs.usage("$0 command")
 		if(i == 0) {
 			if (shell.exec('py MC/scripts/montecarlo.py -z -s').code !== 0) {
 				console.log("Error in montecarlo.py".red);
-				shell.exit(1);
+				shell.exit(1);
 			}
 		}
 		else {
@@ -65,7 +65,7 @@ var argv = yargs.usage("$0 command")
 				shell.exit(1);
 			}
 
-			if (shell.exec(`py format.py ${outFileName}`).code !== 0) {
+			if (shell.exec(`py format.py ${outfile}`).code !== 0) {
 				console.log("Error in format.py".red);
 				shell.exit(1);
 			}

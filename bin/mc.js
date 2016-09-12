@@ -6,6 +6,8 @@ var shell = require("shelljs"),
 	fs = require('fs'),
 	inquirer = require('inquirer'),
 	path = require('path'),
+	ProgressBar = require('progress'),
+	files = require('./files'),
 	init = require('./init');
 
 var ITERATIONS = 1000;
@@ -20,57 +22,65 @@ var outFileName = function(inp_file) {
 var argv = yargs.usage("$0 command")
 .command("init", "initialize Montecarlo files", init)
 .command("run-sims", "run Montecarlo simulations", function (yargs) {
-	let dat_files = fs.readFileSync('MC/inputs/dat_files.txt','ascii').trim().split(/\r\n|\n/);
-	let inp_files = fs.readFileSync('MC/inputs/inp_files.txt','ascii').trim().split(/\r\n|\n/);
+
+
+	let dat_files = files.readLines('MC/inputs/dat_files.txt','ascii');
+
+	let inp_files = files.readLines('MC/inputs/inp_files.txt','ascii');
+	inp_files = inp_files.filter( (file) => file.length > 0);
 
 	for (let i = 0; i < ITERATIONS; i++){
+		var bar = new ProgressBar('  running simulations [:bar] :percent :etas', {
+		    complete: '=',
+		    incomplete: ' ',
+		    width: 20,
+		    total: 1000
+		  });
+
 		if(i == 0) {
 			if (shell.exec('py MC/scripts/montecarlo.py -z -s').code !== 0) {
-				console.log("Error in montecarlo.py");
+				console.log("Error in montecarlo.py".red);
 				shell.exit(1);
 			}
 		}
 		else {
 			if (shell.exec('py MC/scripts/montecarlo.py -s').code !== 0) {
-				console.log("Error in montecarlo.py");
+				console.log("Error in montecarlo.py".red);
 				shell.exit(1);
 			}
 		}
 
 		for (let i = 0; i < dat_files.length; i++){
 			let datfile = `${dat_files[i]}_mc.dat`;
-			if(fs.existsSync(datfile)){
-				fs.createReadStream(datfile).pipe(fs.createWriteStream(`MC/input_variation/dat_files/${dat_files[i]}`));
-			}
+			files.copy(datfile,`MC/input_variation/dat_files/${dat_files[i]}`);
 		}
 
 		for (let i = 0; i < inp_files.length; i++) {
 			let outfile = outFileName(inp_files[i]);
-			if(fs.existsSync(outfile)){
-				fs.unlinkSync(outfile);
-			}
+
+			files.delete(outfile);
 			
 			if (shell.exec(`CHDMOD90<${inp_files[i]}_mc.inp>junk.txt`).code !== 0) {
-				console.log(`Error in CHDMOD90 on file ${inp_files[i]}`);
+				console.log(`Error in CHDMOD90 on file ${inp_files[i]}`.red);
 				shell.exit(1);
 			}
 
 			if (shell.exec(`py format.py ${outFileName}`).code !== 0) {
-				console.log("Error in format.py");
+				console.log("Error in format.py".red);
 				shell.exit(1);
 			}
 
 			let formattedFile = outFileName.replace('.out','.frmt');
 			let formattedSaveFile = path.join('MC/results/breakdown',`${inp_files[i]}_${i}.frmt`);
 
-			fs.createReadStream(formattedFile).pipe(fs.createWriteStream(formattedSaveFile));
+			files.copy(formattedFile,formattedSaveFile);
 
 			let outputSaveFile = path.join('MC/results/cumulative',`${inp_files[i]}_${i}.dat`); 
-			fs.createReadStream('outfile.dat').pipe(fs.createWriteStream(outputSaveFile));
+			files.copy('outfile.dat',outputSaveFile);
 
 		}
 
-		
+		bar.tick(1);
 	}
 })
 .usage('Usage: mc <command> [options]')

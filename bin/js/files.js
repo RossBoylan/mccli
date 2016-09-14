@@ -1,14 +1,14 @@
-var fs = require('fs'),
-	shell = require('shelljs'),
-	https = require('https');
+const fs = require('fs'),
+			shell = require('shelljs'),
+			https = require('https'),
+			fsx = require('fs-extra');
 
-
-module.exports = {
-	fileError(fname) {
+fileError = (fname) => {
 		console.log(`Cannot find file ${fname}`.red);
 		console.log(`Run \'mc init\' to initialize files`);
 		shell.exit(1);
-	},
+}
+module.exports = {
 
 	delete(fname) {
 		if(fs.existsSync(fname)){
@@ -16,9 +16,9 @@ module.exports = {
 		}
 	},
 
-	copy(source, dest) {
+	copy(source, target) {
 		if(fs.existsSync(source)){
-			fs.createReadStream(source).pipe(fs.createWriteStream(dest));
+			fsx.copySync(source, target);
 		}
 	},
 

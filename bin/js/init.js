@@ -1,38 +1,30 @@
-var colors = require('colors'),
-	fs = require('fs'),
-	inquirer = require('inquirer'),
-	path = require('path'),
-	files = require('./files'),
-	https = require('https');
+const colors = require('colors'),
+			fs = require('fs'),
+			inquirer = require('inquirer'),
+			path = require('path'),
+			files = require('./files'),
+			https = require('https');
 
 module.exports = (yargs) => {
 	var dirs = [
 		'./MC',
+		'./MC/summary',
 		'./MC/inputs',
 		'./MC/results',
 		'./MC/results/breakdown',
 		'./MC/results/cumulative',
 		'./MC/input_variation',
-		'./MC/scripts'
 	];
 
 	for(var i = 0; i < dirs.length; i++){
 		files.makeDir(dirs[i]);
 	}
 
-	files.download("MC/scripts/montecarlo.py","https://raw.githubusercontent.com/ecfairle/CHD-Model/master/montecarlo.py");
-	files.download("MC/scripts/format.py","https://raw.githubusercontent.com/ecfairle/CHD-Model/master/format.py");
 	files.download("MC/inputs/inp_variation.txt","https://raw.githubusercontent.com/ecfairle/CHD-Model/master/MC/inputs/inp_variation.txt");
 
-	var all_dat_files = [
-		'b',
-		'bdia',
-		'bstk',
-		'inc',
-		'incdia',
-		'incstk',
-		'cst',
-	];
+
+	var datFileData = JSON.parse(fs.readFileSync(path.join(__dirname,'../input_data.json'), 'utf8'));
+	var all_dat_files = datFileData['all_dat_files'];
 
 	inquirer.prompt([
 	{
@@ -58,13 +50,9 @@ module.exports = (yargs) => {
 		type: 'checkbox',
 		message: 'select dat files to vary',
 		name: 'chosen_files',
-		choices: all_dat_files,
+		choices: all_dat_files.map((file_data) => file_data.filename),
 	},
 	]).then((answers) => {
-		var inputsData = {
-			"iterations": answers.iterations
-		};
-
 		if (answers.chosen_files.length < 1) {
 			console.log('  Warning: no dat files selected'.yellow);
 		}
@@ -72,11 +60,23 @@ module.exports = (yargs) => {
 		var dat_prefix_file = "./MC/inputs/dat_files.txt";
 
 		files.makeFile(dat_prefix_file);
-		inputsData['dat_files'] = [];
+
+		var inputsData = {
+			default_iterations: answers.iterations
+		};
 		inputsData['inp_files'] = [];
+		inputsData['dat_files'] = [];
 		for (var i = 0; i < answers.chosen_files.length; i++){
 			files.appendFile(dat_prefix_file,answers.chosen_files[i]);
-			inputsData['dat_files'].push(answers.chosen_files[i]);
+
+			inputsData['dat_files'].push(all_dat_files.filter((file) => file.filename == answers.chosen_files[i])[0]);
+
+			var mc0File = path.join('modfile',`${answers.chosen_files[i]}_mc0.dat`);
+
+			if ( !fs.existsSync(mc0File) ){
+				console.log(`Creating ${mc0File}`);
+				files.copy(path.join('modfile',`${answers.chosen_files[i]}.dat`),mc0File);
+			}
 		}
 
 
@@ -84,9 +84,9 @@ module.exports = (yargs) => {
 		files.makeFile(inp_prefix_file);
 
 		var dir_files = fs.readdirSync('.');
-		var all_inp_files = dir_files.filter(file => path.extname(file) == '.inp' && file.search('_mc') == -1);
-		all_inp_files = all_inp_files.map(file => file.slice(0,-4));
-
+		var all_inp_files = dir_files.filter(file => path.extname(file) == '.inp');
+		all_inp_files = all_inp_files.map(file => file.slice(0,file.search(/[_\.]/)));
+		all_inp_files = all_inp_files.filter((file, i) => all_inp_files.indexOf(file) == i);
 		if (all_inp_files.length > 0){
 			inquirer.prompt([
 			{
@@ -101,15 +101,22 @@ module.exports = (yargs) => {
 					files.appendFile(inp_prefix_file, inp_files.chosen_files[i]);
 					var mc0File = `${inp_files.chosen_files[i]}_mc0.inp`;
 					if ( !fs.existsSync(mc0File) ){
-						console.log(`Creating ${inp_files.chosen_files[i]}_mc0.inp`);
+						console.log(`Creating ${mc0File}`);
 
 						fs.createReadStream(`${inp_files.chosen_files[i]}.inp`).pipe(fs.createWriteStream(mc0File));
 					}
 				}
+
+				fs.writeFile('MC/inputs/input_data.json', JSON.stringify(inputsData,null,4), (err) => {
+				  if (err) throw err;
+				});
 			});
 		}
 		else {
-			console.log('  Warning: no inp files found'.yellow)
+			console.log('  Warning: no inp files found'.yellow);
+			fs.writeFile('MC/inputs/input_data.json', JSON.stringify(inputsData,null,4), (err) => {
+			  if (err) throw err;
+			});
 		}
 	});
 }

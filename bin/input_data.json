@@ -1,0 +1,60 @@
+{
+	"all_dat_files" : [
+		{
+			"filename": "b",
+			"format": {
+				"leading_spaces": 14,
+				"mid_spaces": 3,
+				"num_format": "9.6f"
+			}
+		},
+		{
+			"filename": "bdia",
+			"format": {
+				"leading_spaces": 14,
+				"mid_spaces": 3,
+				"num_format": "9.6f"
+			}
+		},
+		{
+			"filename": "bstk",
+			"format": {
+				"leading_spaces": 14,
+				"mid_spaces": 3,
+				"num_format": "9.6f"
+			}
+		},
+		{
+			"filename": "inc",
+			"format": {
+				"leading_spaces": 5,
+				"mid_spaces": 3,
+				"num_format": "9.7f"
+			}
+		},
+		{
+			"filename": "incdia",
+			"format": {
+				"leading_spaces": 5,
+				"mid_spaces": 3,
+				"num_format": "9.7f"
+			}
+		},
+		{
+			"filename": "incstk",
+			"format": {
+				"leading_spaces": 5,
+				"mid_spaces": 3,
+				"num_format": "9.7f"
+			}
+		},
+		{
+			"filename": "incstk",
+			"format": {
+				"leading_spaces": 3,
+				"mid_spaces": 7,
+				"num_format": "8.2f"
+			}
+		}
+	]
+}

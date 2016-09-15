@@ -8,12 +8,7 @@ const colors = require('colors'),
 module.exports = (yargs) => {
 	var dirs = [
 		'./MC',
-		'./MC/summary',
 		'./MC/inputs',
-		'./MC/results',
-		'./MC/results/breakdown',
-		'./MC/results/cumulative',
-		'./MC/input_variation',
 	];
 
 	for(var i = 0; i < dirs.length; i++){
@@ -47,6 +42,22 @@ module.exports = (yargs) => {
 		}
 	},
 	{
+		type: 'input',
+		message: 'name of model executable',
+		name: 'model',
+		default() {
+			return 'CHDMOD90';
+		},
+		validate(modelName) {
+			if(fs.existsSync(`${modelName}.exe`)){
+				return true;
+			}
+			else {
+				return 'file not found in current directory';
+			}
+		}
+	},
+	{
 		type: 'checkbox',
 		message: 'select dat files to vary',
 		name: 'chosen_files',
@@ -57,18 +68,13 @@ module.exports = (yargs) => {
 			console.log('  Warning: no dat files selected'.yellow);
 		}
 
-		var dat_prefix_file = "./MC/inputs/dat_files.txt";
-
-		files.makeFile(dat_prefix_file);
-
 		var inputsData = {
-			default_iterations: answers.iterations
+			default_iterations: answers.iterations,
+			model: answers.model
 		};
 		inputsData['inp_files'] = [];
 		inputsData['dat_files'] = [];
 		for (var i = 0; i < answers.chosen_files.length; i++){
-			files.appendFile(dat_prefix_file,answers.chosen_files[i]);
-
 			inputsData['dat_files'].push(all_dat_files.filter((file) => file.filename == answers.chosen_files[i])[0]);
 
 			var mc0File = path.join('modfile',`${answers.chosen_files[i]}_mc0.dat`);
@@ -78,10 +84,6 @@ module.exports = (yargs) => {
 				files.copy(path.join('modfile',`${answers.chosen_files[i]}.dat`),mc0File);
 			}
 		}
-
-
-		var inp_prefix_file = "./MC/inputs/inp_files.txt";
-		files.makeFile(inp_prefix_file);
 
 		var dir_files = fs.readdirSync('.');
 		var all_inp_files = dir_files.filter(file => path.extname(file) == '.inp');
@@ -98,7 +100,6 @@ module.exports = (yargs) => {
 			]).then((inp_files) => {
 				for (var i = 0; i < inp_files.chosen_files.length; i++){
 					inputsData['inp_files'].push(inp_files.chosen_files[i]);
-					files.appendFile(inp_prefix_file, inp_files.chosen_files[i]);
 					var mc0File = `${inp_files.chosen_files[i]}_mc0.inp`;
 					if ( !fs.existsSync(mc0File) ){
 						console.log(`Creating ${mc0File}`);

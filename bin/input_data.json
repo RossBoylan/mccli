@@ -86,7 +86,8 @@
 				"num_format": "8.6f"
 			},
 			"sumToOne": true,
-			"correlation": "none"
+			"correlation": "none",
+			"distribution": "beta"
 		},
 		{
 			"filename": "cfr",

@@ -139,7 +139,7 @@ class DatFile(VFile):
 		self.file_data = file_data
 		self.fpath = os.path.join('modfile',file_data['filename'] + '.dat')	
 		VFile.__init__(self,self.fpath)
-		self.sdfile = SDFile(file_data['filename'])
+		self.sdfile = SDFile(file_data)
 		self.frmt_str = ''
 		self.lead_spaces = 0
 		self.set_format()
@@ -150,6 +150,8 @@ class DatFile(VFile):
 			variation = self.sdfile.get_variation(line_num)
 			means = [float(mean) for mean in means[1:]]
 			varied = [float(m + sd) for m,sd in zip(means,variation)]
+			if 'sumToOne' in self.file_data and self.file_data['sumToOne']:
+				varied[:] = [v/sum(varied) for v in varied]
 			formatted = self.format_line(varied)
 			self.replace_line(formatted,line_num)
 
@@ -172,14 +174,15 @@ class SDFile(object):
 		rnd: List of normally distributed random variables for each sd
 	"""
 
-	def __init__(self,fname):
-		sdpath = os.path.join('modfile',fname + 'sd.dat')
+	def __init__(self,file_data):
+		self.file_data = file_data
+		sdpath = os.path.join('modfile',file_data['filename'] + 'sd.dat')
 		self.lines = read_lines(sdpath)
 		self.block_nums = [-1]*len(self.lines)
-		self.num_blocks = 0
-		self._set_block_nums()
 		self.cols = self._count_cols()
-		self.rnd = np.random.randn(self.num_blocks//2,self.cols)
+		if file_data['correlation'] == 'block':
+			self._set_block_nums()
+			self.rnd = np.random.randn(file_data['blocksPerGroup'],self.cols)
 
 	def _count_cols(self):
 		"""Get number of data columns"""
@@ -194,16 +197,35 @@ class SDFile(object):
 			if is_data_line(line.split()):
 				self.block_nums[i] = n_line//6
 				n_line += 1
-		self.num_blocks = n_line//6
 
 	def get_block_num(self,line_num):
 		return self.block_nums[line_num]
 
 	def get_variation(self,line_num):
 		"""Returns list of variations for line 'line_num'"""
+		if self.file_data['correlation'] == 'row':
+			return self.vary_by_row(line_num)
+		elif self.file_data['correlation'] == 'block':
+			return self.vary_by_block(line_num)
+		else:
+			return self.vary_individually(line_num)
+
+
+	def vary_individually(self,line_num):
+		rnd = np.random.randn(self.cols)
+		sds = self.lines[line_num].split()
+		return [float(sd)*rnd[i] for i,sd in enumerate(sds[1:])]
+
+	def vary_by_row(self,line_num):
+		rnd = np.random.randn()
+		sds = self.lines[line_num].split()
+		return [float(sd)*rnd for sd in sds[1:]]
+
+	def vary_by_block(self,line_num):
 		block_num = self.get_block_num(line_num)
 		sds = self.lines[line_num].split()
 		return [float(sd)*self.rnd[block_num%2,i] for i,sd in enumerate(sds[1:])]
+
 
 
 class InpFile(VFile):
@@ -212,7 +234,6 @@ class InpFile(VFile):
 	Attr:
 		effects: Effects object containing variation data
 	"""
-
 
 	def __init__(self,fname):
 		VFile.__init__(self,fname + '.inp')

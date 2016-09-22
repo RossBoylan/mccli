@@ -21,8 +21,8 @@ let error = (msg,stdout="") => {
 
 let outFileName = (inp_file) => {
 	let file_data = fs.readFileSync(`${inp_file}_mc0.inp`,'ascii');
-	if (file_data.match(/\w+\.out/)){
-		return file_data.match(/(\w+)(?=\.out)/)[0];
+	if (file_data.match(/(?:\r\n|\n)\S+\.out/)){
+		return file_data.match(/(?:\r|\n)(\S+)(?=\.out)/)[1];
 	}
 };
 

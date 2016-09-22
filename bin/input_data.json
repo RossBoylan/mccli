@@ -6,7 +6,9 @@
 				"leading_spaces": 14,
 				"mid_spaces": 3,
 				"num_format": "9.6f"
-			}
+			},
+			"correlation": "block",
+			"blocksPerGroup": 2
 		},
 		{
 			"filename": "bdia",
@@ -14,7 +16,9 @@
 				"leading_spaces": 14,
 				"mid_spaces": 3,
 				"num_format": "9.6f"
-			}
+			},
+			"correlation": "block",
+			"blocksPerGroup": 2
 		},
 		{
 			"filename": "bstk",
@@ -22,7 +26,9 @@
 				"leading_spaces": 14,
 				"mid_spaces": 3,
 				"num_format": "9.6f"
-			}
+			},
+			"correlation": "block",
+			"blocksPerGroup": 2
 		},
 		{
 			"filename": "inc",
@@ -30,7 +36,9 @@
 				"leading_spaces": 5,
 				"mid_spaces": 3,
 				"num_format": "9.7f"
-			}
+			},
+			"correlation": "block",
+			"blocksPerGroup": 1
 		},
 		{
 			"filename": "incdia",
@@ -38,7 +46,9 @@
 				"leading_spaces": 5,
 				"mid_spaces": 3,
 				"num_format": "9.7f"
-			}
+			},
+			"correlation": "block",
+			"blocksPerGroup": 2
 		},
 		{
 			"filename": "incstk",
@@ -46,15 +56,46 @@
 				"leading_spaces": 5,
 				"mid_spaces": 3,
 				"num_format": "9.7f"
-			}
+			},
+			"correlation": "block",
+			"blocksPerGroup": 2
 		},
 		{
-			"filename": "incstk",
+			"filename": "cst",
 			"format": {
 				"leading_spaces": 3,
 				"mid_spaces": 7,
 				"num_format": "8.2f"
-			}
+			},
+			"correlation": "row"
+		},
+		{
+			"filename": "rsk",
+			"format": {
+				"leading_spaces": 14,
+				"mid_spaces": 3,
+				"num_format": "8.4f"
+			},
+			"correlation": "none"
+		},
+		{
+			"filename": "prfp",
+			"format": {
+				"leading_spaces": 13,
+				"mid_spaces": 2,
+				"num_format": "8.6f"
+			},
+			"sumToOne": true,
+			"correlation": "none"
+		},
+		{
+			"filename": "cfr",
+			"format": {
+				"leading_spaces": 5,
+				"mid_spaces": 5,
+				"num_format": "8.6f"
+			},
+			"correlation": "row"
 		}
 	]
 }

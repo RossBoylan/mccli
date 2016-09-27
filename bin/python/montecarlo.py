@@ -179,6 +179,9 @@ class SDFile(object):
 		self.lines = read_lines(sdpath)
 		self.block_nums = [-1]*len(self.lines)
 		self.cols = self._count_cols()
+		self.row_offset = 1
+		if 'rowLabels' in file_data and file_data['rowLabels'] == False:
+			self.row_offset = 0
 		if file_data['correlation'] == 'block':
 			self._set_block_nums()
 			self.rnd = np.random.randn(file_data['blocksPerGroup'],self.cols)
@@ -212,8 +215,8 @@ class SDFile(object):
 
 	def vary_individually(self,line_num):
 		rnd = np.random.randn(self.cols)
-		sds = [float(sd) for sd in self.lines[line_num].split()[1:]]
-		means = [float(mean) for mean in self.mean_lines[line_num].split()[1:]]
+		sds = [float(sd) for sd in self.lines[line_num].split()[self.row_offset:]]
+		means = [float(mean) for mean in self.mean_lines[line_num].split()[self.row_offset:]]
 		if 'distribution' in self.file_data and self.file_data['distribution'] == 'beta':
 			res = []
 			for mean,sd in zip(means,sds):
@@ -229,15 +232,15 @@ class SDFile(object):
 
 	def vary_by_row(self,line_num):
 		rnd = np.random.randn()
-		sds = [float(sd) for sd in self.lines[line_num].split()[1:]]
-		means = [float(mean) for mean in self.mean_lines[line_num].split()[1:]]
+		sds = [float(sd) for sd in self.lines[line_num].split()[self.row_offset:]]
+		means = [float(mean) for mean in self.mean_lines[line_num].split()[self.row_offset:]]
 
 		return [float(sd)*rnd + mean for sd,mean in zip(sds,means)]
 
 	def vary_by_block(self,line_num):
 		block_num = self.get_block_num(line_num)
-		sds = [float(sd) for sd in self.lines[line_num].split()[1:]]
-		means = [float(mean) for mean in self.mean_lines[line_num].split()[1:]]
+		sds = [float(sd) for sd in self.lines[line_num].split()[self.row_offset:]]
+		means = [float(mean) for mean in self.mean_lines[line_num].split()[self.row_offset:]]
 
 		return [float(sd)*self.rnd[block_num%2,i] + mean for i,(sd,mean) in enumerate(zip(sds,means))]
 
@@ -308,7 +311,10 @@ class Effects(object):
 			f.write(string)
 
 	def _read_lines(self):
-		file_lines = read_lines('MC/inputs/inp_variation.txt')
+		fname = 'MC/inputs/inp_variation.txt'
+		file_lines = []
+		if os.path.isfile(fname):
+			file_lines = read_lines(fname)
 		for line in file_lines:
 			data = line.split('#')[0].strip()
 			if len(data) != 0:

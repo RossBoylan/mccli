@@ -67,7 +67,8 @@
 				"mid_spaces": 7,
 				"num_format": "8.2f"
 			},
-			"correlation": "row"
+			"correlation": "row",
+			"rowLabels" : false
 		},
 		{
 			"filename": "rsk",
@@ -96,7 +97,8 @@
 				"mid_spaces": 5,
 				"num_format": "8.6f"
 			},
-			"correlation": "row"
+			"correlation": "row",
+			"rowLabels" : false
 		}
 	]
 }

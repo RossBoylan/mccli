@@ -53,9 +53,6 @@ module.exports = (yargs) => {
 		files.makeDir(dirs[i]);
 	}
 
-	files.download("MC/inputs/inp_variation.txt","https://raw.githubusercontent.com/ecfairle/CHD-Model/master/MC/inputs/inp_variation.txt");
-
-
 	var datFileData = JSON.parse(fs.readFileSync(path.join(__dirname,'../input_data.json'), 'utf8'));
 	var all_dat_files = datFileData['all_dat_files'];
 
@@ -132,7 +129,7 @@ module.exports = (yargs) => {
 
 		var nextSteps = 'Next steps: \n \
 	1) make standard deviation files for the dat files you wish to vary using the same format as their corresponding mean file \n \
-	2) edit the example inp_variation file in MC/inputs to fit your inp file variation data \n \n \
+	2) add an inp_variation.txt file to MC/inputs if you want to vary .inp files (follow instructions from link) \n \n \
 More in depth instructions can be found at https://github.com/ecfairle/CHD-Model'.bold;
 
 		console.log(nextSteps)

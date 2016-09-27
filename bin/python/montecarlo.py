@@ -139,7 +139,7 @@ class DatFile(VFile):
 		self.file_data = file_data
 		self.fpath = os.path.join('modfile',file_data['filename'] + '.dat')	
 		VFile.__init__(self,self.fpath)
-		self.sdfile = SDFile(file_data)
+		self.sdfile = SDFile(file_data,self.lines)
 		self.frmt_str = ''
 		self.lead_spaces = 0
 		self.set_format()
@@ -147,9 +147,7 @@ class DatFile(VFile):
 	def vary_line(self,line_num):
 		means = self.lines[line_num].split()
 		if is_data_line(means):
-			variation = self.sdfile.get_variation(line_num)
-			means = [float(mean) for mean in means[1:]]
-			varied = [float(m + sd) for m,sd in zip(means,variation)]
+			varied = self.sdfile.get_variation(line_num)
 			if 'sumToOne' in self.file_data and self.file_data['sumToOne']:
 				varied[:] = [v/sum(varied) for v in varied]
 			formatted = self.format_line(varied)
@@ -174,9 +172,10 @@ class SDFile(object):
 		rnd: List of normally distributed random variables for each sd
 	"""
 
-	def __init__(self,file_data):
+	def __init__(self,file_data,mean_lines):
 		self.file_data = file_data
 		sdpath = os.path.join('modfile',file_data['filename'] + 'sd.dat')
+		self.mean_lines = mean_lines
 		self.lines = read_lines(sdpath)
 		self.block_nums = [-1]*len(self.lines)
 		self.cols = self._count_cols()
@@ -213,18 +212,34 @@ class SDFile(object):
 
 	def vary_individually(self,line_num):
 		rnd = np.random.randn(self.cols)
-		sds = self.lines[line_num].split()
-		return [float(sd)*rnd[i] for i,sd in enumerate(sds[1:])]
+		sds = [float(sd) for sd in self.lines[line_num].split()[1:]]
+		means = [float(mean) for mean in self.mean_lines[line_num].split()[1:]]
+		if 'distribution' in self.file_data and self.file_data['distribution'] == 'beta':
+			res = []
+			for mean,sd in zip(means,sds):
+				if mean == 0 or sd == 0:
+					res.append(mean)
+				else:
+					alpha = ((1 - mean)/sd**2 - 1/mean)*mean**2
+					beta = alpha*(1/mean - 1)
+					res.append(np.random.beta(alpha,beta))
+			return res
+
+		return [float(sd)*rnd[i] + mean for i,(sd,mean) in enumerate(zip(sds,means))]
 
 	def vary_by_row(self,line_num):
 		rnd = np.random.randn()
-		sds = self.lines[line_num].split()
-		return [float(sd)*rnd for sd in sds[1:]]
+		sds = [float(sd) for sd in self.lines[line_num].split()[1:]]
+		means = [float(mean) for mean in self.mean_lines[line_num].split()[1:]]
+
+		return [float(sd)*rnd + mean for sd,mean in zip(sds,means)]
 
 	def vary_by_block(self,line_num):
 		block_num = self.get_block_num(line_num)
-		sds = self.lines[line_num].split()
-		return [float(sd)*self.rnd[block_num%2,i] for i,sd in enumerate(sds[1:])]
+		sds = [float(sd) for sd in self.lines[line_num].split()[1:]]
+		means = [float(mean) for mean in self.mean_lines[line_num].split()[1:]]
+
+		return [float(sd)*self.rnd[block_num%2,i] + mean for i,(sd,mean) in enumerate(zip(sds,means))]
 
 
 

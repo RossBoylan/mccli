@@ -141,7 +141,7 @@ module.exports = (argv) => {
 		let end = new Date();
 		let totalS = (end.getTime() - start.getTime())/1000;
 		let hours = Math.floor(totalS / (60 * 60));
-	  let minutes = Math.floor(totalS / 60) % 60;
+	  	let minutes = Math.floor(totalS / 60) % 60;
 
 		console.log(`  simulations completed in ${hours>0 ? hours + ' hours and ' : ''}${minutes} mintues!`.green)
 	}

@@ -276,16 +276,16 @@ class InpFile(VFile):
 
 
 class Effects(object):
-	"""Contains data from inp_variation.txt
+	"""Contains data from inp_distribution.txt
 
 	Used to vary .inp file.
-	inp_variation.txt format can be found on github.com/ecfairle/CHDMOD
+	inp_distribution.txt format can be found on github.com/ecfairle/CHDMOD
 	Attr:
 		key_result_pairs: Dict of key->data pairs - where
 			key_result_pairs[key][0]' replaces the value on the current line
 			and 'key_result_pairs[key][1]' indicates whether to add the mean
 			on the current line
-		lines: Raw lines of inp_variation.txt
+		lines: Raw lines of inp_distribution.txt
 	"""
 
 	save_file_name = 'MC\input_variation\inp.txt'
@@ -311,7 +311,7 @@ class Effects(object):
 			f.write(string)
 
 	def _read_lines(self):
-		fname = 'MC/inputs/inp_variation.txt'
+		fname = 'MC/inputs/inp_distribution.txt'
 		file_lines = []
 		if os.path.isfile(fname):
 			file_lines = read_lines(fname)

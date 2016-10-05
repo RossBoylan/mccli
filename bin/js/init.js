@@ -104,23 +104,10 @@ module.exports = (yargs) => {
 		inputsData['dat_files'] = [];
 		for (var i = 0; i < answers.dat_files.length; i++){
 			inputsData['dat_files'].push(all_dat_files.filter((file) => file.filename == answers.dat_files[i])[0]);
-
-			var mc0File = path.join('modfile',`${answers.dat_files[i]}_mc0.dat`);
-
-			if ( !fs.existsSync(mc0File) ){
-				console.log(`Creating ${mc0File}`);
-				files.copy(path.join('modfile',`${answers.dat_files[i]}.dat`),mc0File);
-			}
 		}
 
 		for (var i = 0; i < answers.inp_files.length; i++){
 			inputsData['inp_files'].push(answers.inp_files[i]);
-			var mc0File = `${answers.inp_files[i]}_mc0.inp`;
-			if ( !fs.existsSync(mc0File) ){
-				console.log(`Creating ${mc0File}`);
-
-				fs.createReadStream(`${answers.inp_files[i]}.inp`).pipe(fs.createWriteStream(mc0File));
-			}
 		}
 
 		fs.writeFile('MC/inputs/input_data.json', JSON.stringify(inputsData,null,4), (err) => {
@@ -130,7 +117,7 @@ module.exports = (yargs) => {
 		var nextSteps = 'Next steps: \n \
 	1) make standard deviation files for the dat files you wish to vary using the same format as their corresponding mean file \n \
 	2) add an inp_variation.txt file to MC/inputs if you want to vary .inp files (follow instructions from link) \n \n \
-More in depth instructions can be found at https://github.com/ecfairle/CHD-Model'.bold;
+More in depth instructions can be found at https://github.com/ecfairle/mccli'.bold;
 
 		console.log(nextSteps)
 	});

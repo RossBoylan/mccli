@@ -174,7 +174,7 @@ class SDFile(object):
 
 	def __init__(self,file_data,mean_lines):
 		self.file_data = file_data
-		sdpath = os.path.join('modfile',file_data['filename'] + 'sd.dat')
+		sdpath = os.path.join('modfile',file_data['filename'] + '_sd.dat')
 		self.mean_lines = mean_lines
 		self.lines = read_lines(sdpath)
 		self.block_nums = [-1]*len(self.lines)

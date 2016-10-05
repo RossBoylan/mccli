@@ -69,7 +69,7 @@ module.exports = (argv) => {
 
 		let start = new Date();
 		let res = null;
-		for (let i = 0; i < ITERATIONS; i++){
+		for (let i = 0; i <= ITERATIONS; i++){
 			let startIter = new Date();
 			let lastTime = 0;
 

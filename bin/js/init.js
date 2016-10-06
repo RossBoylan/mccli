@@ -30,7 +30,7 @@ var questions = [
 		message: 'name of model executable',
 		name: 'model',
 		default() {
-			return 'CHDMOD90';
+			return 'CVDMOD91';
 		},
 		validate(modelName) {
 			if(fs.existsSync(`${modelName}.exe`)){

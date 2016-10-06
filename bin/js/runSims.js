@@ -64,7 +64,7 @@ module.exports = (argv) => {
 			    complete: '=',
 			    incomplete: ' ',
 			    width: 20,
-			    total: ITERATIONS
+			    total: ITERATIONS + 1
 			  });
 
 		let start = new Date();
@@ -80,6 +80,8 @@ module.exports = (argv) => {
 				}
 			}
 			else {
+				let str = String(i + ' '.repeat(16));
+				fs.appendFileSync('./MC/input_variation/inp.txt', str.substring(0,16) + '  ')
 				res = shell.exec(`py ${__dirname}/../python/montecarlo.py -s`,{silent:true});
 				if (res.code !== 0) {
 					error("montecarlo.py run failed",res.stdout);
@@ -103,9 +105,16 @@ module.exports = (argv) => {
 				}
 
 				let modelName = inputsData['model'];
-				res = shell.exec(`${modelName}<${mcFile}> nul`,{silent:true});
+
+				if ( i == 0 ) {
+					res = shell.exec(`${modelName}<${mcFile}> MOD_zerorun.txt`,{silent:true});
+				}
+				else {
+					res = shell.exec(`${modelName}<${mcFile}> nul`,{silent:true});
+				}
+				
 				if (res.code !== 0) {
-					error("Model run failed",res.stdout);
+					error("Model run failed",res.stderr);
 				}
 
 				res = shell.exec(`py ${__dirname}/../python/format.py ${outfile}`,{silent:true});
@@ -127,9 +136,9 @@ module.exports = (argv) => {
 			lastTime = endIter.getTime() - startIter.getTime();
 			process.stdout.clearLine();
 			process.stdout.cursorTo(0);
-			bar.update((i+1)/ITERATIONS);
-			if( i < ITERATIONS - 1){
-				process.stdout.write(` eta:${parseFloat(lastTime*(ITERATIONS-i-1)/60000).toFixed(2)}m`);
+			bar.update((i+1)/(ITERATIONS+1));
+			if( i < ITERATIONS ){
+				process.stdout.write(` eta:${parseFloat(lastTime*(ITERATIONS-i)/60000).toFixed(2)}m`);
 			}	
 		}
 
@@ -142,8 +151,17 @@ module.exports = (argv) => {
 		let totalS = (end.getTime() - start.getTime())/1000;
 		let hours = Math.floor(totalS / (60 * 60));
 	  	let minutes = Math.floor(totalS / 60) % 60;
-
+	  	let runData = {
+			startTime: start.toLocaleString("en-US", {timeZone: "America/Los_Angeles"}),
+			endTime: end.toLocaleString("en-US", {timeZone: "America/Los_Angeles"}),
+			iterations: ITERATIONS,
+			model: inputsData.model,
+			inp_files: inputsData.inp_files,
+			dat_files: inputsData.dat_files.map((fileData) => fileData.filename)
+		};
+		fs.appendFileSync('MC/results/.run',JSON.stringify(runData, null, 4));
 		console.log(`  simulations completed in ${hours>0 ? hours + ' hours and ' : ''}${minutes} mintues!`.green)
+		
 	}
 
 	

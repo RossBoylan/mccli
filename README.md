@@ -43,7 +43,7 @@ where `input_data.json` contains the initial data for montecarlo simulation.
 #### .inp file setup
 Create files with the same format as original model files but with standard deviations instead of means. These files use a similar naming convention: `{name}_sd.dat` (not for .inp files).
 
-Then create `inp_distribution.txt`, which should break down the .inp file variation by keyword (indicating the lines to vary), e.g.:
+Then create `inp_distribution.txt`, which should break down the .inp file variation into sections by keyword (indicating the lines to vary), e.g.:
 ```
 HIEFFECT,1
    g=1,0.5477,0.02
@@ -71,7 +71,7 @@ STATINQALY,5
         0.0, 0.0008, 0.0             #Pill disutility
 ```
 
-Here, the labels include *HIEFFECT*, *MODEFFECT* etc. and each are further broken down by components.
+The sections are further broken down by components, which each make up a part of their overall distribution. Here, sections include *HIEFFECT* (one component), *HICOSTAHA* (six components) etc.
 
 ##### Components
 A section can consist of a single component but multiple components allows you to separate data in ways that aren't considered by the model itself. 
@@ -92,7 +92,7 @@ Lower and/or upper bounds can be included but will default to -inf, +inf respect
 
 ##### MEAN option
 
-For normal distributions `param1` can simply be **'MEAN'**, indicating the mean of the distribution should be determined by the line in the **.inp** file. Here, `param2` must be a coefficient of variation. This option is used to simplify the case in which there are many lines with the same significance but different means (these should clearly be correlated and have the same coefficient of variation).
+For normal distributions `param1` can simply be **'MEAN'**, indicating the mean of the distribution should be determined by the line in the **.inp** file. Here, `param2` must be a coefficient of variation. This option is used to simplify the case in which there are many lines with the same significance but different means (these will be assumed to be correlated and have the same coefficient of variation).
 
 
 ```
@@ -154,3 +154,16 @@ MC
            ageranges_TOT_MI.csv
            ageranges_TOT_STROKE.csv
 ```
+Monte Carlo runs produce two output directories: `results` and `input_variation`. 
+
+### Results
+Directory `results` contains model outputs, including: 
+1. *cumulative* results (copies of *outfile.dat*). Naming convention: `{name}_{simulation #}.dat`,
+2. *breakdown* results (rearranged data from *.out* file). Naming convention: `{name}_{simulation #}.frmt`,
+3. *summary* results (comma separated value files split up by outcome and organized by age-range and gender).
+
+### Input Variation
+
+Directory `input_variation` contains varied model inputs. These can be used to verify that inputs follow the desired distributions. In particular:
+1. File `inp.txt` shows the ultimate value used to replace corresponding values in the *.inp* file (regardless if it's actually used). In addition, at the top it includes counts of the number of places in each *.inp* file the label is found.
+2. Directory `dat_files` contains copies of the modified dat files (from modfile) for each run. Naming convention: `{name}_{simulation #}.dat`

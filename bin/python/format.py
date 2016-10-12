@@ -23,12 +23,15 @@ SECTIONS = [["NEW CHD CASES"],
 			["Non-CVD Death (DE)"],
 			["DE Intervened Non-CVD Deaths"],
 			["Non-CVD Death (DH)"],
+			['+',"Non-CVD Death",
+						"Non-CVD Death (DE)","Non-CVD Death (DH)"],
 			["Total Pop (DE)"],
 			["Total Pop (DH 1-10)"],
 			['+',"Total Pop -- DE + (DH 1-10)",
 						"Total Pop (DE)","Total Pop (DH 1-10)"],
 			["Total Pop (DH 11-17)"],
 			["Total DE Diabetes Pop"],
+			["NEW DIABETES CASES"],
 			["NEW HEART FAILURE CASES"],
 			["CVD EVENTS",17],
 			["Revascularization Events"],
@@ -51,7 +54,7 @@ SECTIONS = [["NEW CHD CASES"],
 			["STROKE DEATHS"],
 			["TOTAL DEATHS"],
 			["NON-CVD Costs"],
-			["TOTAL CHD COSTS"],
+			["CHD TREATMENT COSTS"],
 			["TOTAL PREVENTION COSTS"],
 			["TOTAL STROKE COSTS"],
 			["Total QALY"],
@@ -81,7 +84,7 @@ def add_sections(reformatter,title,*add_titles):
 	reformatter.format(first_section)
 
 	section = first_section
-	section.title = title
+	section.set_title(title)
 
 	for cur_title in add_titles[1:]:
 		cur_section = TrackedSection(cur_title)
@@ -125,6 +128,10 @@ class TrackedSection(object):
 		self.lines = [title]
 		self.num_format = ''
 
+	def set_title(self,title):
+		self.title = title
+		self.lines[0] = title
+
 	def append_line(self,str):
 		self.lines.append(str)
 
@@ -138,7 +145,13 @@ class TrackedSection(object):
 	def add_line(self,line,line_num):
 			nums_to_add = line[1:]
 			nums_self = self.lines[line_num].split()[1:]
-			sums = [int(a)+int(b) for a,b in zip(nums_to_add,nums_self)]
+			sums = []
+			for a,b in zip(nums_to_add,nums_self):
+				try:
+					num = int(a)+int(b)
+				except:
+					num = round(float(a)+float(b),2)
+				sums.append(num)
 			sum_line = [line[0]] + sums
 			self.lines[line_num] = self.num_format.format(*sum_line)
 

@@ -28,6 +28,7 @@ def main():
 		if i == 0 and args.save:
 			if args.zero_run:
 				inpfile.effects.print_labels()
+				inpfile.count_varied_lines()
 			else:
 				inpfile.effects.print_data()
 
@@ -174,7 +175,7 @@ class SDFile(object):
 
 	def __init__(self,file_data,mean_lines):
 		self.file_data = file_data
-		sdpath = os.path.join('modfile',file_data['filename'] + 'sd.dat')
+		sdpath = os.path.join('modfile',file_data['filename'] + '_sd.dat')
 		self.mean_lines = mean_lines
 		self.lines = read_lines(sdpath)
 		self.block_nums = [-1]*len(self.lines)
@@ -258,11 +259,12 @@ class InpFile(VFile):
 		self.effects = Effects()
 		self.frmt_str = '{:<8.6f}'
 		self.lead_spaces = 0
+		self.fileprefix = fname
 
 	def vary_line(self,line_num):
 		line = self.lines[line_num]
 
-		line_data =  self.effects.get_data(line)
+		line_data = self.effects.get_data(line)
 
 		if line_data != None:
 			varied,add_mean = line_data
@@ -274,18 +276,26 @@ class InpFile(VFile):
 			formatted = self.format_line([varied])
 			self.replace_line(formatted,line_num)
 
+	def count_varied_lines(self):
+		varied_line_counts = self.effects.key_matches(self.lines)
+		counts = [value for key,value in varied_line_counts.items()]
+		format_str = '{:<16}  '*(len(counts) + 1)
+		if len(counts) > 0:
+			self.effects.save_write(format_str.format(self.fileprefix,*counts) + '\n')
+
+
 
 class Effects(object):
-	"""Contains data from inp_variation.txt
+	"""Contains data from inp_distribution.txt
 
 	Used to vary .inp file.
-	inp_variation.txt format can be found on github.com/ecfairle/CHDMOD
+	inp_distribution.txt format can be found on github.com/ecfairle/CHDMOD
 	Attr:
 		key_result_pairs: Dict of key->data pairs - where
 			key_result_pairs[key][0]' replaces the value on the current line
 			and 'key_result_pairs[key][1]' indicates whether to add the mean
 			on the current line
-		lines: Raw lines of inp_variation.txt
+		lines: Raw lines of inp_distribution.txt
 	"""
 
 	save_file_name = 'MC\input_variation\inp.txt'
@@ -299,19 +309,21 @@ class Effects(object):
 	def print_data(self):
 		vals = [data[0] for key,data in self.key_result_pairs.items()]
 		format_str = '{:<16.7f}  '*len(vals)
-		self.save_write(format_str.format(*vals) + '\n')
+		if len(vals) > 0:
+			self.save_write(format_str.format(*vals) + '\n')
 
 	def print_labels(self):
 		labels = [key for key in self.key_result_pairs]
 		format_str = '{:<16}  '*(len(labels) + 1)
-		self.save_write(format_str.format('line #',*labels) + '\n')
+		if len(labels) > 0:
+			self.save_write(format_str.format('simulation #',*labels) + '\n')
 
 	def save_write(self,string):
 		with open(self.save_file_name,'a') as f:
 			f.write(string)
 
 	def _read_lines(self):
-		fname = 'MC/inputs/inp_variation.txt'
+		fname = 'MC/inputs/inp_distribution.txt'
 		file_lines = []
 		if os.path.isfile(fname):
 			file_lines = read_lines(fname)
@@ -358,6 +370,16 @@ class Effects(object):
 				self._test_for_repeats(key,line)
 				return varied
 		return None
+
+	def key_matches(self,lines):
+		matches_by_key = collections.OrderedDict()
+		for key in self.key_result_pairs:
+			matches_by_key[key] = 0
+		for line in lines:
+			for key,varied in self.key_result_pairs.items():
+				if line.find(key)!=-1:
+					matches_by_key[key]+=1
+		return matches_by_key
 
 	def _test_for_repeats(self,key,line):
 		"""Make only one key found in line"""

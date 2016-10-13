@@ -81,7 +81,10 @@ module.exports = (argv) => {
 			}
 			else {
 				let str = String(i + ' '.repeat(16));
-				fs.appendFileSync('./MC/input_variation/inp.txt', str.substring(0,16) + '  ')
+				let INP_OUTPUT_FILE = './MC/input_variation/inp.txt';
+				if (fs.existsSync(INP_OUTPUT_FILE)) {
+					fs.appendFileSync(INP_OUTPUT_FILE, str.substring(0,16) + '  ')
+				}
 				res = shell.exec(`py ${__dirname}/../python/montecarlo.py -s`,{silent:true});
 				if (res.code !== 0) {
 					error("montecarlo.py run failed",res.stdout);

@@ -10,6 +10,7 @@ import re
 
 INP_FILE_LIST = 'MC/inputs/input_data.json'
 DATFILE_DIR = 'MC/results/cumulative'
+INP_OUTPUTS = 'MC/input_variation/inp.txt'
 
 
 def main():
@@ -21,6 +22,21 @@ def main():
 		inp_file = InpFile(inp_file_name)
 
 		inp_file.csv_dump()
+
+	if isfile(INP_OUTPUTS):
+		with open(INP_OUTPUTS,'r') as f:
+			lines = f.readlines()
+			
+		res = []
+		for line in lines[1+len(inp_files):]:
+			res.append([float(v) for v in line.split()[1:]])
+		means = np.mean(np.array(res),axis=0).tolist()
+		sds = np.std(np.array(res),axis=0).tolist()
+		
+		format_str = '{:<16}  ' + '{:<16.7f}  '*len(means)
+		with open(INP_OUTPUTS,'a') as f:
+			f.write(format_str.format('means', *means) + '\n')
+			f.write(format_str.format('sds', *sds) + '\n')
 
 def atoi(text):
     return int(text) if text.isdigit() else text

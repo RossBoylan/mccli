@@ -158,12 +158,14 @@ Monte Carlo runs produce two output directories: `results` and `input_variation`
 
 ### Results
 Directory `results` contains model outputs, including: 
-1. *cumulative* results (copies of *outfile.dat*). Naming convention: `{name}_{simulation #}.dat`,
-2. *breakdown* results (rearranged data from *.out* file). Naming convention: `{name}_{simulation #}.frmt`,
+
+1. *cumulative* results (copies of *outfile.dat*). Naming convention: `{name}_{simulation #}.dat`
+2. *breakdown* results (rearranged data from *.out* file). Naming convention: `{name}_{simulation #}.frmt`
 3. *summary* results (comma separated value files split up by outcome and organized by age-range and gender).
 
 ### Input Variation
 
 Directory `input_variation` contains varied model inputs. These can be used to verify that inputs follow the desired distributions. In particular:
+
 1. File `inp.txt` shows the ultimate value used to replace corresponding values in the *.inp* file (regardless if it's actually used). In addition, at the top it includes counts of the number of places in each *.inp* file the label is found.
 2. Directory `dat_files` contains copies of the modified dat files (from modfile) for each run. Naming convention: `{name}_{simulation #}.dat`

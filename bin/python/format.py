@@ -36,7 +36,7 @@ SECTIONS = [["NEW CHD CASES"],
 			["CVD EVENTS",17],
 			["Revascularization Events"],
 			["CVD POPULATION DISTRIBUTION BY STATE"],
-			["CVD POPULATION DISTRIBUTION BY STATE",15],   
+			["CVD POPULATION DISTRIBUTION BY STATE",15],
 			["CVD POPULATION DISTRIBUTION BY STATE",26],
 			["CVD POPULATION DISTRIBUTION BY STATE",37],
 			["CVD POPULATION DISTRIBUTION BY STATE",48],
@@ -68,7 +68,7 @@ def main():
 	formatted_file = open(args.filename + OUTPUT_EXTENSION,'w')
 
 	reformatter = Reformatter(outfile,formatted_file)
-	
+
 	for section_params in SECTIONS:
 		if section_params[0] == '+':
 			section = add_sections(reformatter,*section_params[1:])
@@ -186,7 +186,7 @@ class OutputHeader(object):
 		categories: List of categories in containing section
 	"""
 
-	top_line= ['M35-44', 'M45-54', 'M55-64', 'M65-74', 'M75-84', 'M85-94', 
+	top_line= ['M35-44', 'M45-54', 'M55-64', 'M65-74', 'M75-84', 'M85-94',
 	'F35-44',  'F45-54',  'F55-64',   'F65-74',  'F75-84',  'F85-94']
 
 	def __init__(self,category_line):
@@ -233,14 +233,16 @@ class Reformatter(object):
 	def __init__(self,outfile,formatted_file):
 		self.formatted_file = formatted_file
 		self.outfile = outfile
-	
+
 	def format(self,section):
 		""" Reformats sections with particular label
 
 		Args:
 			section: TrackedSection object to be formatted
-		""" 
+		"""
 		for line_num in range(self.outfile.num_lines):
+			if self.outfile.lines_list[line_num].find('SUMMED VARIABLES') > -1:
+				break
 			if self.outfile.find_title(line_num,section.title):
 				self._format_block(line_num,section)
 
@@ -258,7 +260,7 @@ class Reformatter(object):
 
 	def _next_block_line(self, section, line_num):
 		"""Returns first line of next numeric block to read in"""
-		return (section.linesdown + line_num if section.linesdown!=0 
+		return (section.linesdown + line_num if section.linesdown!=0
 						else self.outfile.next_data_line(line_num))
 
 class CVDOutfile(object):
@@ -274,7 +276,7 @@ class CVDOutfile(object):
 		num_lines: Integer number of lines in lines_list
 	"""
 	base_year_line = 9
-	max_lines_after = 15 
+	max_lines_after = 15
 
 	def __init__(self,filename):
 		self.lines_list = self._get_lines(filename)
@@ -288,15 +290,15 @@ class CVDOutfile(object):
 	def _replace_bad_chars(self, start_line):
 		"""Replace characters that mess with reading in file"""
 		for i in range(start_line, start_line + 6):
-			self.lines_list[i] = self.lines_list[i].replace('. ', ' ') 
+			self.lines_list[i] = self.lines_list[i].replace('. ', ' ')
 			self.lines_list[i] = self.lines_list[i].replace('.\n',' ')
 			#for CVD prevalence -- don't want 'x/y' just want rate
 			self.lines_list[i] = re.sub(r'[0-9]*./ \s*[0-9]*',' ',
 												self.lines_list[i])
- 
+
 	def find_title(self, line_num, title):
-		return (self.lines_list[line_num].find(title + '     ') != -1 or 
-			self.lines_list[line_num].find(title + '\n') != -1 and 
+		return (self.lines_list[line_num].find(title + '     ') != -1 or
+			self.lines_list[line_num].find(title + '\n') != -1 and
 			self.lines_list[line_num].find('Acute ' + title) == -1)
 
 	def next_data_line(self, line_num):
@@ -321,7 +323,7 @@ class CVDOutfile(object):
 
 class NumBlock(object):
 	"""Block of values for one year in .out file
-	
+
 	Attr:
 		num_list: List of the values in a data block of .out file
 		columns: Number of columns in data block of .out file

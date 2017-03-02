@@ -41,9 +41,9 @@ def parse_args():
 	parser = argparse.ArgumentParser()
 	inpgroup = parser.add_argument_group('.inp files, -r is default')
 	mut_group = inpgroup.add_mutually_exclusive_group()
-	mut_group.add_argument('--list','-l',dest='prefixes', nargs='+', type=str, 
+	mut_group.add_argument('--list','-l',dest='prefixes', nargs='+', type=str,
 							help='list of .inp file prefixes')
-	mut_group.add_argument('--readfile','-r',dest='prefix_file', 
+	mut_group.add_argument('--readfile','-r',dest='prefix_file',
 							action='store_const', const='MC/inputs/inp_files.txt',
 							help='determine .inp files to be varied from listings in '
 							'MC/inputs/inp_files.txt',default='MC/inputs/inp_files.txt (default)')
@@ -58,7 +58,7 @@ def parse_args():
 def get_input_data():
 	fname = 'MC/inputs/input_data.json'
 	if os.path.isfile(fname):
-		with open(fname) as data_file:    
+		with open(fname) as data_file:
 			return json.load(data_file)
 	else:
 		print('Error: could not find inputs file at {}'.format(fname))
@@ -108,7 +108,7 @@ class VFile(object):
 
 	def num_lines(self):
 		return len(self.lines)
-		
+
 	def print_mc(self):
 		"""Print varied lines to  mc_file"""
 		for line in self.lines:
@@ -138,7 +138,7 @@ class DatFile(VFile):
 
 	def __init__(self,file_data):
 		self.file_data = file_data
-		self.fpath = os.path.join('modfile',file_data['filename'] + '.dat')	
+		self.fpath = os.path.join('modfile',file_data['filename'] + '.dat')
 		VFile.__init__(self,self.fpath)
 		self.sdfile = SDFile(file_data,self.lines)
 		self.frmt_str = ''
@@ -186,12 +186,14 @@ class SDFile(object):
 		if file_data['correlation'] == 'block':
 			self._set_block_nums()
 			self.rnd = np.random.randn(file_data['blocksPerGroup'],self.cols)
+			self.rndStates = [np.random.RandomState()
+				for i in range(file_data['blocksPerGroup'] * self.cols)]
 
 	def _count_cols(self):
 		"""Get number of data columns"""
 		for line in self.lines:
 			if is_data_line(line.split()):
-				return len(line.split())-1 
+				return len(line.split())-1
 
 	def _set_block_nums(self):
 		"""Set num_blocks, block_nums"""
@@ -200,9 +202,10 @@ class SDFile(object):
 			if is_data_line(line.split()):
 				self.block_nums[i] = n_line//6
 				n_line += 1
+				self.num_blocks = n_line//6
 
 	def get_block_num(self,line_num):
-		return self.block_nums[line_num]
+		return self.block_nums[line_num] % (self.num_blocks // 2)
 
 	def get_variation(self,line_num):
 		"""Returns list of variations for line 'line_num'"""
@@ -218,6 +221,9 @@ class SDFile(object):
 		rnd = np.random.randn(self.cols)
 		sds = [float(sd) for sd in self.lines[line_num].split()[self.row_offset:]]
 		means = [float(mean) for mean in self.mean_lines[line_num].split()[self.row_offset:]]
+		if 'distribution' in self.file_data and self.file_data['distribution'] == 'lognormal':
+			return [np.random.lognormal(mean,sd)
+				for i,(sd,mean) in enumerate(zip(sds,means))]
 		if 'distribution' in self.file_data and self.file_data['distribution'] == 'beta':
 			res = []
 			for mean,sd in zip(means,sds):
@@ -228,22 +234,63 @@ class SDFile(object):
 					beta = alpha*(1/mean - 1)
 					res.append(np.random.beta(alpha,beta))
 			return res
-
 		return [float(sd)*rnd[i] + mean for i,(sd,mean) in enumerate(zip(sds,means))]
 
 	def vary_by_row(self,line_num):
 		rnd = np.random.randn()
+		rndState = np.random.RandomState()
 		sds = [float(sd) for sd in self.lines[line_num].split()[self.row_offset:]]
 		means = [float(mean) for mean in self.mean_lines[line_num].split()[self.row_offset:]]
-
+		if 'distribution' in self.file_data and self.file_data['distribution'] == 'lognormal':
+			return [rndState.lognormal(mean,sd)
+				for i,(sd,mean) in enumerate(zip(sds,means))]
+			res = []
+			for i,(sd,mean) in enumerate(zip(sds,means)):
+				state = rndState.get_state()
+				res.append(rndState.lognormal(mean,sd))
+				rndState.set_state(state)
+		if 'distribution' in self.file_data and self.file_data['distribution'] == 'beta':
+			res = []
+			for i,(mean,sd) in enumerate(zip(means,sds)):
+				if mean == 0 or sd == 0:
+					res.append(mean)
+				else:
+					alpha = ((1 - mean)/sd**2 - 1/mean)*mean**2
+					beta = alpha*(1/mean - 1)
+					state = rndState.get_state()
+					res.append(rndState.beta(alpha,beta))
+					rndState.set_state(state)
+			return res
 		return [float(sd)*rnd + mean for sd,mean in zip(sds,means)]
 
 	def vary_by_block(self,line_num):
 		block_num = self.get_block_num(line_num)
 		sds = [float(sd) for sd in self.lines[line_num].split()[self.row_offset:]]
 		means = [float(mean) for mean in self.mean_lines[line_num].split()[self.row_offset:]]
-
-		return [float(sd)*self.rnd[block_num%2,i] + mean for i,(sd,mean) in enumerate(zip(sds,means))]
+		if 'distribution' in self.file_data and self.file_data['distribution'] == 'lognormal':
+			return [self.rndStates[i + self.cols*block_num].lognormal(mean,sd)
+				for i,(sd,mean) in enumerate(zip(sds,means))]
+			res = []
+			for i,(sd,mean) in enumerate(zip(sds,means)):
+				state_ind = i + self.cols*block_num
+				state = self.rndStates[state_ind].get_state()
+				res.append(self.rndStates[state_ind].lognormal(mean,sd))
+				self.rndStates[state_ind].set_state(state)
+		if 'distribution' in self.file_data and self.file_data['distribution'] == 'beta':
+			res = []
+			for i,(mean,sd) in enumerate(zip(means,sds)):
+				if mean == 0 or sd == 0:
+					res.append(mean)
+				else:
+					sd = sd*.001
+					alpha = ((1 - mean)/sd**2 - 1/mean)*mean**2
+					beta = alpha*(1/mean - 1)
+					state_ind = i + self.cols*block_num
+					state = self.rndStates[state_ind].get_state()
+					res.append(self.rndStates[state_ind].beta(alpha,beta))
+					self.rndStates[state_ind].set_state(state)
+			return res
+		return [float(sd)*self.rnd[block_num,i] + mean for i,(sd,mean) in enumerate(zip(sds,means))]
 
 
 
@@ -355,7 +402,7 @@ class Effects(object):
 			component = Component(line)
 			s += component.sample()
 			add_mean = component.depends_on_mean_line()
-			
+
 		if add_mean and len(component_lines) != 1:
 			print('error: the MEAN placeholder only makes sense when '
 				'the label contains a single component')
@@ -384,7 +431,7 @@ class Effects(object):
 	def _test_for_repeats(self,key,line):
 		"""Make only one key found in line"""
 		other_keys = [k for k in self.key_result_pairs.keys() if k!=key]
-		if any(line.find(k)!=-1 for k in other_keys): 
+		if any(line.find(k)!=-1 for k in other_keys):
 			print('keys overlap -- keys must be unique to'
 								 'achieve desired behavior')
 			sys.exit(1)
@@ -403,10 +450,10 @@ class Component(object):
 			parts = parts[1:]
 
 		# if first listing (after group) is a number, assume normal distribution
-		if is_number(parts[0]) or parts[0].upper() == 'MEAN':  
+		if is_number(parts[0]) or parts[0].upper() == 'MEAN':
 			self.set_dist('norm')
 			params = parts
-		else: 
+		else:
 			self.set_dist(parts[0])
 			params = parts[1:]
 
@@ -470,7 +517,7 @@ class Component(object):
 			self.num_params = 2
 
 		else:
-			invalid_distribution_error(dist_name) 
+			invalid_distribution_error(dist_name)
 
 	def sample(self):
 		if self.group:
@@ -482,7 +529,7 @@ class Component(object):
 			val = self.fn(*self.params)
 
 		return self.threshold(val)
-		
+
 	def threshold(self,val):
 		if val > self.upper_bound:
 			return self.upper_bound

@@ -68,7 +68,8 @@
 				"num_format": "8.2f"
 			},
 			"correlation": "row",
-			"rowLabels" : false
+			"rowLabels" : false,
+			"distribution": "lognormal"
 		},
 		{
 			"filename": "rsk",
@@ -99,6 +100,28 @@
 			},
 			"correlation": "row",
 			"rowLabels" : false
+		},
+		{
+			"filename": "shortwgt",
+			"format": {
+				"leading_spaces": 8,
+				"mid_spaces": 1,
+				"num_format": "8.6f"
+			},
+			"correlation": "block",
+			"blocksPerGroup": 1,
+			"distribution": "beta"
+		},
+		{
+			"filename": "qolwgts",
+			"format": {
+				"leading_spaces": 8,
+				"mid_spaces": 1,
+				"num_format": "8.6f"
+			},
+			"correlation": "block",
+			"blocksPerGroup": 1,
+			"distribution": "beta"
 		}
 	]
 }

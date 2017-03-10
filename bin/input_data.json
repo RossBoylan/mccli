@@ -102,7 +102,7 @@
 			"rowLabels" : false
 		},
 		{
-			"filename": "shortwgt",
+			"filename": "shrt",
 			"format": {
 				"leading_spaces": 8,
 				"mid_spaces": 1,
@@ -113,7 +113,7 @@
 			"distribution": "beta"
 		},
 		{
-			"filename": "qolwgts",
+			"filename": "qol",
 			"format": {
 				"leading_spaces": 8,
 				"mid_spaces": 1,

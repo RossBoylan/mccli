@@ -222,7 +222,7 @@ class SDFile(object):
 		sds = [float(sd) for sd in self.lines[line_num].split()[self.row_offset:]]
 		means = [float(mean) for mean in self.mean_lines[line_num].split()[self.row_offset:]]
 		if 'distribution' in self.file_data and self.file_data['distribution'] == 'lognormal':
-			return [np.random.lognormal(mean,sd)
+			return [np.random.lognormal(np.log(mean),sd)
 				for i,(sd,mean) in enumerate(zip(sds,means))]
 		if 'distribution' in self.file_data and self.file_data['distribution'] == 'beta':
 			res = []
@@ -242,13 +242,15 @@ class SDFile(object):
 		sds = [float(sd) for sd in self.lines[line_num].split()[self.row_offset:]]
 		means = [float(mean) for mean in self.mean_lines[line_num].split()[self.row_offset:]]
 		if 'distribution' in self.file_data and self.file_data['distribution'] == 'lognormal':
-			return [rndState.lognormal(mean,sd)
-				for i,(sd,mean) in enumerate(zip(sds,means))]
 			res = []
 			for i,(sd,mean) in enumerate(zip(sds,means)):
-				state = rndState.get_state()
-				res.append(rndState.lognormal(mean,sd))
-				rndState.set_state(state)
+				if sd > 0:
+					state = rndState.get_state()
+					res.append(rndState.lognormal(np.log(mean),sd))
+					rndState.set_state(state)
+				else:
+					res.append(mean)
+			return res
 		if 'distribution' in self.file_data and self.file_data['distribution'] == 'beta':
 			res = []
 			for i,(mean,sd) in enumerate(zip(means,sds)):
@@ -272,10 +274,13 @@ class SDFile(object):
 				for i,(sd,mean) in enumerate(zip(sds,means))]
 			res = []
 			for i,(sd,mean) in enumerate(zip(sds,means)):
-				state_ind = i + self.cols*block_num
-				state = self.rndStates[state_ind].get_state()
-				res.append(self.rndStates[state_ind].lognormal(mean,sd))
-				self.rndStates[state_ind].set_state(state)
+				if sd > 0:
+					state_ind = i + self.cols*block_num
+					state = self.rndStates[state_ind].get_state()
+					res.append(self.rndStates[state_ind].lognormal(np.log(mean),sd))
+					self.rndStates[state_ind].set_state(state)
+				else:
+					res.append(mean)
 		if 'distribution' in self.file_data and self.file_data['distribution'] == 'beta':
 			res = []
 			for i,(mean,sd) in enumerate(zip(means,sds)):

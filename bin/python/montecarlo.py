@@ -230,9 +230,13 @@ class SDFile(object):
 				if mean == 0 or sd == 0:
 					res.append(mean)
 				else:
+					switchSigns = mean < 0
+					mean = abs(mean)
 					alpha = ((1 - mean)/sd**2 - 1/mean)*mean**2
 					beta = alpha*(1/mean - 1)
-					res.append(np.random.beta(alpha,beta))
+					val = np.random.beta(alpha,beta)
+					if switchSigns: val = -1 * val
+					res.append(val)
 			return res
 		return [float(sd)*rnd[i] + mean for i,(sd,mean) in enumerate(zip(sds,means))]
 
@@ -257,10 +261,14 @@ class SDFile(object):
 				if mean == 0 or sd == 0:
 					res.append(mean)
 				else:
+					switchSigns = mean < 0
+					mean = abs(mean)
 					alpha = ((1 - mean)/sd**2 - 1/mean)*mean**2
 					beta = alpha*(1/mean - 1)
 					state = rndState.get_state()
-					res.append(rndState.beta(alpha,beta))
+					val = rndState.beta(alpha,beta)
+					if switchSigns: val = -1 * val
+					res.append(val)
 					rndState.set_state(state)
 			return res
 		return [float(sd)*rnd + mean for sd,mean in zip(sds,means)]
@@ -287,12 +295,15 @@ class SDFile(object):
 				if mean == 0 or sd == 0:
 					res.append(mean)
 				else:
-					sd = sd*.001
+					switchSigns = mean < 0
+					mean = abs(mean)
 					alpha = ((1 - mean)/sd**2 - 1/mean)*mean**2
 					beta = alpha*(1/mean - 1)
 					state_ind = i + self.cols*block_num
 					state = self.rndStates[state_ind].get_state()
-					res.append(self.rndStates[state_ind].beta(alpha,beta))
+					val = self.rndStates[state_ind].beta(alpha,beta)
+					if switchSigns: val = -1 * val
+					res.append(val)
 					self.rndStates[state_ind].set_state(state)
 			return res
 		return [float(sd)*self.rnd[block_num,i] + mean for i,(sd,mean) in enumerate(zip(sds,means))]

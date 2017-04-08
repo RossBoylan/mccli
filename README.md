@@ -39,11 +39,11 @@ where `input_data.json` contains the initial data for montecarlo simulation.
 #### Modfile setup
 1. Copy files for simulation to corresponding montecarlo files using the naming convention `{name}_mc0.dat` (or `{name}_mc0.inp`) where *name* is the file name specified when chossing .dat/.inp files during `mc init`.
 2. Add _mc.dat files to corresponding .lst files and change lines in _mc0.inp file to choose the apporopriate line from the .lst file.
+3. Create files with the same format as original model files but with standard deviations instead of means. These files use a similar naming convention: `{name}_sd.dat` (not for .inp files)
 
-#### .inp file setup
-Create files with the same format as original model files but with standard deviations instead of means. These files use a similar naming convention: `{name}_sd.dat` (not for .inp files).
+#### .inp file setup.
 
-Then create `inp_distribution.txt`, which should break down the .inp file variation into sections by keyword (indicating the lines to vary), e.g.:
+Then create `inp_distribution.txt` in directory `MC/inputs`, which should break down the .inp file variation into sections by keyword (indicating the lines to vary), e.g.:
 ```
 HIEFFECT,1
    g=1,0.5477,0.02

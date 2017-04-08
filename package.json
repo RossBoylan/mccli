@@ -1,6 +1,6 @@
 {
   "name": "@ecfairle/mccli",
-  "version": "1.0.98",
+  "version": "1.0.99",
   "description": "cli for CVD Policy Model Montecarlo simulation",
   "main": "index.js",
   "scripts": {

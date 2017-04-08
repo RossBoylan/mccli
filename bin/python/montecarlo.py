@@ -2,6 +2,7 @@
 from __future__ import print_function
 from operator import add
 import argparse
+import csv
 import collections
 import json
 import numpy as np
@@ -20,6 +21,7 @@ def main():
 		datfile = DatFile(datfiledata)
 		if not args.zero_run:
 			datfile.vary()
+			datfile.save_raw_data()
 		datfile.print_mc()
 
 	inp_files = input_data['inp_files']
@@ -144,6 +146,13 @@ class DatFile(VFile):
 		self.frmt_str = ''
 		self.lead_spaces = 0
 		self.set_format()
+		self.data_vec = []
+
+	def save_raw_data(self):
+		with open('MC/input_variation/dat_files/' + self.file_data['filename'] + '.csv', 'a',newline='') as totals_file:
+			print(self.data_vec)
+			writer = csv.writer(totals_file)
+			writer.writerow(self.data_vec)
 
 	def vary_line(self,line_num):
 		means = self.lines[line_num].split()
@@ -151,6 +160,8 @@ class DatFile(VFile):
 			varied = self.sdfile.get_variation(line_num)
 			if 'sumToOne' in self.file_data and self.file_data['sumToOne']:
 				varied[:] = [v/sum(varied) for v in varied]
+
+			self.data_vec += varied
 			formatted = self.format_line(varied)
 			self.replace_line(formatted,line_num)
 

@@ -17,7 +17,7 @@ Options:
 ### Installation
 1. Download [Nodejs v6.5](https://nodejs.org/download/release/v6.5.0/node-v6.5.0-x64.msi)
 2. Download [Python v3.5.2](https://www.python.org/ftp/python/3.5.2/python-3.5.2-amd64.exe)
-3. In the command line, install the montecarlo CLI by running `npm install -g @ecfairle/mccli`
+3. In the command line, install the montecarlo CLI by running `npm install -g @ecfairle/mccli` (this same command can be used to update to the latest version)
 
 ### Initialization
 

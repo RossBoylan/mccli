@@ -75,7 +75,7 @@ def main():
 		else:
 			section = TrackedSection(*section_params)
 			reformatter.format(section)
-
+		
 		section.print_lines(formatted_file)
 
 
@@ -159,14 +159,16 @@ class TrackedSection(object):
 		format_str = self.num_format
 		cur_year = base_year + self.year_offset
 		self.year_offset = self.year_offset + 1
+		if len(num_list) != self.num_nums:
+		    num_list = [0] * self.num_nums
 		return format_str.format(cur_year,*num_list)
 
 	def write_header(self,category_line):
 		header = OutputHeader(category_line)
 		formatted_topline = header.get_topline()
 		formatted_categories = header.get_categories()
-
-		self.num_format = '{}     ' + '{:<18} '*(12*len(header.categories))
+		self.num_nums = 12*len(header.categories)
+		self.num_format = '{}     ' + '{:<18} ' * self.num_nums
 		self.append_line(formatted_categories)
 		self.append_line(formatted_topline)
 

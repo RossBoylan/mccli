@@ -216,7 +216,7 @@ class SDFile(object):
 				self.num_blocks = n_line//6
 
 	def get_block_num(self,line_num):
-		return self.block_nums[line_num] % (self.num_blocks // 2)
+		return self.block_nums[line_num] % (self.num_blocks // self.file_data['blocksPerGroup'])
 
 	def get_variation(self,line_num):
 		"""Returns list of variations for line 'line_num'"""

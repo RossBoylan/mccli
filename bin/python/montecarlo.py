@@ -30,9 +30,11 @@ def main():
 		if i == 0 and args.save:
 			if args.zero_run:
 				inpfile.effects.print_labels()
-				inpfile.count_varied_lines()
 			else:
 				inpfile.effects.print_data()
+
+		if args.zero_run:
+				inpfile.count_varied_lines()
 
 		if not args.zero_run:
 			inpfile.vary()
@@ -216,7 +218,7 @@ class SDFile(object):
 				self.num_blocks = n_line//6
 
 	def get_block_num(self,line_num):
-		return self.block_nums[line_num] % (self.num_blocks // self.file_data['blocksPerGroup'])
+		return self.block_nums[line_num] % self.file_data['blocksPerGroup']
 
 	def get_variation(self,line_num):
 		"""Returns list of variations for line 'line_num'"""
@@ -294,8 +296,11 @@ class SDFile(object):
 			res = []
 			for i,(sd,mean) in enumerate(zip(sds,means)):
 				if sd > 0:
-					state_ind = i + self.cols*block_num
-					state = self.rndStates[state_ind].get_state()
+					try:
+						state_ind = i + self.cols*block_num
+						state = self.rndStates[state_ind].get_state()
+					except:
+						raise Exception("index {} len {}".format(state_ind, len(self.rndStates)))
 					res.append(self.rndStates[state_ind].lognormal(np.log(mean),sd))
 					self.rndStates[state_ind].set_state(state)
 				else:
@@ -311,7 +316,10 @@ class SDFile(object):
 					alpha = ((1 - mean)/sd**2 - 1/mean)*mean**2
 					beta = alpha*(1/mean - 1)
 					state_ind = i + self.cols*block_num
-					state = self.rndStates[state_ind].get_state()
+					try:
+						state = self.rndStates[state_ind].get_state()
+					except:
+						raise Exception("{}".format(self.block_nums))
 					val = self.rndStates[state_ind].beta(alpha,beta)
 					if switchSigns: val = -1 * val
 					res.append(val)

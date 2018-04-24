@@ -60,16 +60,10 @@ module.exports = (argv) => {
 			fsx.emptyDirSync(outputDirs[i]);
 		}
 
-		let bar = new ProgressBar(`  running simulations [:bar] :percent`, {
-			    complete: '=',
-			    incomplete: ' ',
-			    width: 20,
-			    total: ITERATIONS + 1
-			  });
-
 		let start = new Date();
 		let res = null;
 		for (let i = 0; i <= ITERATIONS; i++){
+
 			let startIter = new Date();
 			let lastTime = 0;
 
@@ -87,7 +81,7 @@ module.exports = (argv) => {
 				}
 				res = shell.exec(`py ${__dirname}/../python/montecarlo.py -s`,{silent:true});
 				if (res.code !== 0) {
-					error("montecarlo.py run failed",res.stdout);
+					error("montecarlo.py run failed",res.stderr);
 				}
 			}
 
@@ -139,16 +133,17 @@ module.exports = (argv) => {
 			lastTime = endIter.getTime() - startIter.getTime();
 			process.stdout.clearLine();
 			process.stdout.cursorTo(0);
-			bar.update((i+1)/(ITERATIONS+1));
 			if( i < ITERATIONS ){
-				process.stdout.write(` eta:${parseFloat(lastTime*(ITERATIONS-i)/60000).toFixed(2)}m`);
+				process.stdout.write(`simulations remaining: ${ITERATIONS-i} eta:${parseFloat(lastTime*(ITERATIONS-i)/60000).toFixed(2)}m`);
 			}	
 		}
 
+		console.log('sum results')
 		res = shell.exec(`py ${__dirname}/../python/sum_results.py`,{silent:true});
 		if (res.code !== 0) {
-			error("sum_results.py run failed",res.stdout);
+			error("sum_results.py run failed",res.stderr);
 		}
+		console.log('done')
 
 		let end = new Date();
 		let totalS = (end.getTime() - start.getTime())/1000;
@@ -175,7 +170,6 @@ module.exports = (argv) => {
 	let saveFileDir = './MC/saved_runs';
 	let resultsDir = './MC/results';
 	if (fs.existsSync(resultsDir) && fs.readdirSync(path.join(resultsDir,'cumulative')).length !== 0) {
-		console.log('  looks like there are already some montecarlo results stored'.bold);
 		inquirer.prompt({
 			type: 'confirm',
 	    name: 'saveResults',

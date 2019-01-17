@@ -53,9 +53,11 @@ def parse_args():
 							'MC/inputs/inp_files.txt',default='MC/inputs/inp_files.txt (default)')
 	options_group = parser.add_argument_group('options')
 	options_group.add_argument('--zero_run','-z',help='test simulation '
-							'with no variation',action='store_true')
+							   'with no variation',action='store_true')
 	options_group.add_argument('--save','-s',help='save montecarlo results to modfile',
-							action='store_true')
+                            action='store_true')
+	options_group.add_argument('--iteration', '-i', type=int, help='Which simulation this is.')
+	options_group.add_argument('--seed', type=int, help="This seed and the iteration number pick a random number stream")
 	return parser.parse_args()
 
 

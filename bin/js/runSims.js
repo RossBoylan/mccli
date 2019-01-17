@@ -62,8 +62,10 @@ module.exports = (argv) => {
 		}
 
 		let start = new Date();
-		let res = null;
-		for (let i = 0; i <= ITERATIONS; i++){
+        let res = null;
+        let i0 = argv.start
+        let i1 = ITERATIONS+i0-1
+		for (let i = i0; i <= i1; i++){
 
 			let startIter = new Date();
 			let lastTime = 0;
@@ -79,8 +81,11 @@ module.exports = (argv) => {
 				let INP_OUTPUT_FILE = './MC/input_variation/inp.txt';
 				if (fs.existsSync(INP_OUTPUT_FILE)) {
 					fs.appendFileSync(INP_OUTPUT_FILE, str.substring(0,16) + '  ')
-				}
-				res = shell.exec(py+` ${__dirname}/../python/montecarlo.py -s`,{silent:true});
+                }
+                let cmd = py + ` ${__dirname}/../python/montecarlo.py -s -i ${i}`
+                if (argv.seed)
+                    cmd += ` --seed ${argv.seed}`
+				res = shell.exec(cmd,{silent:true});
 				if (res.code !== 0) {
 					error("montecarlo.py run failed",res.stderr);
 				}
@@ -134,8 +139,8 @@ module.exports = (argv) => {
 			lastTime = endIter.getTime() - startIter.getTime();
 			process.stdout.clearLine();
 			process.stdout.cursorTo(0);
-			if( i < ITERATIONS ){
-				process.stdout.write(`simulations remaining: ${ITERATIONS-i} eta:${parseFloat(lastTime*(ITERATIONS-i)/60000).toFixed(2)}m`);
+			if( i < i1 ){
+				process.stdout.write(`simulations remaining: ${i1-i} eta:${parseFloat(lastTime*(i1-i)/60000).toFixed(2)}m`);
 			}	
 		}
 
@@ -156,7 +161,10 @@ module.exports = (argv) => {
 			iterations: ITERATIONS,
 			model: inputsData.model,
 			inp_files: inputsData.inp_files,
-			dat_files: inputsData.dat_files.map((fileData) => fileData.filename)
+                dat_files: inputsData.dat_files.map((fileData) => fileData.filename),
+                i0: i0,
+                i1: i1,
+            seed: argv.seed
 		};
 		fs.appendFileSync('MC/results/.run',JSON.stringify(runData, null, 4));
 		console.log(`  simulations completed in ${hours>0 ? hours + ' hours and ' : ''}${minutes} mintues!`.green)

@@ -31,16 +31,15 @@ module.exports = (argv) => {
 		let inputsFile = fs.readFileSync(INPUTS_FILENAME, 'utf8');
 
 		let inputsData = JSON.parse(inputsFile);
-		let ITERATIONS = 1000;
 
 		if (argv.iterations) {
-			ITERATIONS = argv.iterations;
+			let ITERATIONS = argv.iterations;
 		}
 		else if (Number(argv._[0]) === argv._[0]) {
-			ITERATIONS = argv._[0];
+			let ITERATIONS = argv._[0];
 		}
 		else {
-			ITERATIONS = inputsData['default_iterations'];
+			let ITERATIONS = inputsData['default_iterations'];
 		}
 
         let py = argv.py

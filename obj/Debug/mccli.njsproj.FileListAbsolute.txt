@@ -1,0 +1,3 @@
+C:\Users\rdboylan\Documents\KBD\mccli\obj\Debug\mccli.njsprojAssemblyReference.cache
+C:\Users\rdboylan\Documents\KBD\mccli\obj\Debug\mccli.njsproj.CoreCompileInputs.cache
+C:\Users\rdboylan\Documents\KBD\mccli\bin\Microsoft.NodejsTools.WebRole.dll

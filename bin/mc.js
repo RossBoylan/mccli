@@ -7,7 +7,7 @@ const yargs = require("yargs"),
 let argv = yargs
 .command({
     command: 'init',
-    desc: 'initialize MC system in this directory',
+    desc: 'initialize MC system in current directory',
     handler: init
     })
 .command({
@@ -32,6 +32,13 @@ let argv = yargs
         })
         .epilog("All numbers should be unsigned integers."),
     handler: runSims,
+})
+.option('python', {
+    decribe: "command to invoke python.  May include a path or options.",
+    alias: 'py',
+    default: 'py',
+    defaultDescription: 'py probably only works on MS-Windows',
+    type: 'string'
 })
 .help()
 .argv

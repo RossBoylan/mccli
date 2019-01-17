@@ -43,6 +43,7 @@ module.exports = (argv) => {
 			ITERATIONS = inputsData['default_iterations'];
 		}
 
+        let py = argv.py
 		let dat_files = inputsData['dat_files'].map((datfile) => datfile.filename)
 
 		let inp_files = inputsData['inp_files'];
@@ -68,7 +69,7 @@ module.exports = (argv) => {
 			let lastTime = 0;
 
 			if(i == 0) {
-				res = shell.exec(`py ${__dirname}/../python/montecarlo.py -z -s`,{silent:true});
+				res = shell.exec(py+` ${__dirname}/../python/montecarlo.py -z -s`,{silent:true});
 				if (res.code !== 0) {
 					error("montecarlo.py run failed",res.stdout);
 				}
@@ -79,7 +80,7 @@ module.exports = (argv) => {
 				if (fs.existsSync(INP_OUTPUT_FILE)) {
 					fs.appendFileSync(INP_OUTPUT_FILE, str.substring(0,16) + '  ')
 				}
-				res = shell.exec(`py ${__dirname}/../python/montecarlo.py -s`,{silent:true});
+				res = shell.exec(py+` ${__dirname}/../python/montecarlo.py -s`,{silent:true});
 				if (res.code !== 0) {
 					error("montecarlo.py run failed",res.stderr);
 				}
@@ -114,7 +115,7 @@ module.exports = (argv) => {
 					error("Model run failed",res.stderr);
 				}
 
-				res = shell.exec(`py ${__dirname}/../python/format.py ${outfile}`,{silent:true});
+				res = shell.exec(py+` ${__dirname}/../python/format.py ${outfile}`,{silent:true});
 				if (res.code !== 0) {
 					error("format.py run failed",res.stdout);
 				}
@@ -139,7 +140,7 @@ module.exports = (argv) => {
 		}
 
 		console.log('sum results')
-		res = shell.exec(`py ${__dirname}/../python/sum_results.py`,{silent:true});
+		res = shell.exec(py+` ${__dirname}/../python/sum_results.py`,{silent:true});
 		if (res.code !== 0) {
 			error("sum_results.py run failed",res.stderr);
 		}

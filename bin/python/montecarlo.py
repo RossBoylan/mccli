@@ -9,10 +9,17 @@ import numpy as np
 import os.path
 import re
 import sys
+from randomgen import RandomGenerator, PCG64
 
 
 def main():
+	global RG  # the random generator
 	args = parse_args()
+	seed = args.seed
+	if seed:
+		RG = RandomGenerator(PCG64(seed, args.iteration))
+	else:
+		RG = RandomGenerator(PCG64())
 
 	input_data = get_input_data()
 
@@ -55,7 +62,7 @@ def parse_args():
 	options_group.add_argument('--zero_run','-z',help='test simulation '
 							   'with no variation',action='store_true')
 	options_group.add_argument('--save','-s',help='save montecarlo results to modfile',
-                            action='store_true')
+							action='store_true')
 	options_group.add_argument('--iteration', '-i', type=int, help='Which simulation this is.')
 	options_group.add_argument('--seed', type=int, help="This seed and the iteration number pick a random number stream")
 	return parser.parse_args()
@@ -89,11 +96,11 @@ def invalid_distribution_error(dist_name):
 
 
 def is_number(s):
-    try:
-        float(s)
-        return True
-    except ValueError:
-        return False
+	try:
+		float(s)
+		return True
+	except ValueError:
+		return False
 
 
 class VFile(object):
@@ -128,7 +135,7 @@ class VFile(object):
 		pass
 
 	def format_line(self,out_list):
-		line_format = self.lead_spaces*' ' + len(out_list)*self.frmt_str
+		line_format = self.lead_spaces * ' ' + len(out_list) * self.frmt_str
 		return line_format.format(*out_list)
 
 	def replace_line(self,line,line_num):
@@ -163,7 +170,7 @@ class DatFile(VFile):
 		if is_data_line(means):
 			varied = self.sdfile.get_variation(line_num)
 			if 'sumToOne' in self.file_data and self.file_data['sumToOne']:
-				varied[:] = [v/sum(varied) for v in varied]
+				varied[:] = [v / sum(varied) for v in varied]
 
 			self.data_vec += varied
 			formatted = self.format_line(varied)
@@ -174,7 +181,7 @@ class DatFile(VFile):
 		self.lead_spaces = self.file_data['format']['leading_spaces']
 		num_spaces = self.file_data['format']['mid_spaces']
 		num_format = self.file_data['format']['num_format']
-		self.frmt_str = ('{{:<{0}}}{1}'.format(num_format,' '*int(num_spaces)))
+		self.frmt_str = ('{{:<{0}}}{1}'.format(num_format,' ' * int(num_spaces)))
 
 
 class SDFile(object):
@@ -193,31 +200,40 @@ class SDFile(object):
 		sdpath = os.path.join('modfile',file_data['filename'] + '_sd.dat')
 		self.mean_lines = mean_lines
 		self.lines = read_lines(sdpath)
-		self.block_nums = [-1]*len(self.lines)
+		self.block_nums = [-1] * len(self.lines)
 		self.cols = self._count_cols()
 		self.row_offset = 1
 		if 'rowLabels' in file_data and file_data['rowLabels'] == False:
 			self.row_offset = 0
 		if file_data['correlation'] == 'block':
 			self._set_block_nums()
-			self.rnd = np.random.randn(file_data['blocksPerGroup'],self.cols)
-			self.rndStates = [np.random.RandomState()
+			self.rnd = RG.randn(file_data['blocksPerGroup'],self.cols)
+			# RB: since the motivation for getting the state is unclear--
+			# though it may be to repeat exactly the same random numbers for
+			# each block--
+			# I leave it mostly intact, but set seeds from RG to assure
+			# reproducibility
+			# Note that the setting the state is only effective if the same
+			# generator
+			# is used for the draws, and so I should preserve np.random for
+			# those cases.
+			self.rndStates = [np.random.RandomState(RG.random_uintegers(bits=32))
 				for i in range(file_data['blocksPerGroup'] * self.cols)]
 
 	def _count_cols(self):
 		"""Get number of data columns"""
 		for line in self.lines:
 			if is_data_line(line.split()):
-				return len(line.split())-1
+				return len(line.split()) - 1
 
 	def _set_block_nums(self):
 		"""Set num_blocks, block_nums"""
 		n_line = 0
 		for i,line in enumerate(self.lines):
 			if is_data_line(line.split()):
-				self.block_nums[i] = n_line//6
+				self.block_nums[i] = n_line // 6
 				n_line += 1
-				self.num_blocks = n_line//6
+				self.num_blocks = n_line // 6
 
 	def get_block_num(self,line_num):
 		return self.block_nums[line_num] % self.file_data['blocksPerGroup']
@@ -233,11 +249,11 @@ class SDFile(object):
 
 
 	def vary_individually(self,line_num):
-		rnd = np.random.randn(self.cols)
+		rnd = RG.randn(self.cols)
 		sds = [float(sd) for sd in self.lines[line_num].split()[self.row_offset:]]
 		means = [float(mean) for mean in self.mean_lines[line_num].split()[self.row_offset:]]
 		if 'distribution' in self.file_data and self.file_data['distribution'] == 'lognormal':
-			return [np.random.lognormal(np.log(mean),sd)
+			return [RG.lognormal(np.log(mean),sd)
 				for i,(sd,mean) in enumerate(zip(sds,means))]
 		if 'distribution' in self.file_data and self.file_data['distribution'] == 'beta':
 			res = []
@@ -247,17 +263,17 @@ class SDFile(object):
 				else:
 					switchSigns = mean < 0
 					mean = abs(mean)
-					alpha = ((1 - mean)/sd**2 - 1/mean)*mean**2
-					beta = alpha*(1/mean - 1)
-					val = np.random.beta(alpha,beta)
+					alpha = ((1 - mean) / sd ** 2 - 1 / mean) * mean ** 2
+					beta = alpha * (1 / mean - 1)
+					val = RG.beta(alpha,beta)
 					if switchSigns: val = -1 * val
 					res.append(val)
 			return res
-		return [float(sd)*rnd[i] + mean for i,(sd,mean) in enumerate(zip(sds,means))]
+		return [float(sd) * rnd[i] + mean for i,(sd,mean) in enumerate(zip(sds,means))]
 
 	def vary_by_row(self,line_num):
-		rnd = np.random.randn()
-		rndState = np.random.RandomState()
+		rnd = RG.randn()
+		rndState = np.random.RandomState(RG.random_uintegers(bits=32))
 		sds = [float(sd) for sd in self.lines[line_num].split()[self.row_offset:]]
 		means = [float(mean) for mean in self.mean_lines[line_num].split()[self.row_offset:]]
 		if 'distribution' in self.file_data and self.file_data['distribution'] == 'lognormal':
@@ -278,28 +294,28 @@ class SDFile(object):
 				else:
 					switchSigns = mean < 0
 					mean = abs(mean)
-					alpha = ((1 - mean)/sd**2 - 1/mean)*mean**2
-					beta = alpha*(1/mean - 1)
+					alpha = ((1 - mean) / sd ** 2 - 1 / mean) * mean ** 2
+					beta = alpha * (1 / mean - 1)
 					state = rndState.get_state()
 					val = rndState.beta(alpha,beta)
 					if switchSigns: val = -1 * val
 					res.append(val)
 					rndState.set_state(state)
 			return res
-		return [float(sd)*rnd + mean for sd,mean in zip(sds,means)]
+		return [float(sd) * rnd + mean for sd,mean in zip(sds,means)]
 
 	def vary_by_block(self,line_num):
 		block_num = self.get_block_num(line_num)
 		sds = [float(sd) for sd in self.lines[line_num].split()[self.row_offset:]]
 		means = [float(mean) for mean in self.mean_lines[line_num].split()[self.row_offset:]]
 		if 'distribution' in self.file_data and self.file_data['distribution'] == 'lognormal':
-			return [self.rndStates[i + self.cols*block_num].lognormal(mean,sd)
+			return [self.rndStates[i + self.cols * block_num].lognormal(mean,sd)
 				for i,(sd,mean) in enumerate(zip(sds,means))]
 			res = []
 			for i,(sd,mean) in enumerate(zip(sds,means)):
 				if sd > 0:
 					try:
-						state_ind = i + self.cols*block_num
+						state_ind = i + self.cols * block_num
 						state = self.rndStates[state_ind].get_state()
 					except:
 						raise Exception("index {} len {}".format(state_ind, len(self.rndStates)))
@@ -315,9 +331,9 @@ class SDFile(object):
 				else:
 					switchSigns = mean < 0
 					mean = abs(mean)
-					alpha = ((1 - mean)/sd**2 - 1/mean)*mean**2
-					beta = alpha*(1/mean - 1)
-					state_ind = i + self.cols*block_num
+					alpha = ((1 - mean) / sd ** 2 - 1 / mean) * mean ** 2
+					beta = alpha * (1 / mean - 1)
+					state_ind = i + self.cols * block_num
 					try:
 						state = self.rndStates[state_ind].get_state()
 					except:
@@ -327,7 +343,7 @@ class SDFile(object):
 					res.append(val)
 					self.rndStates[state_ind].set_state(state)
 			return res
-		return [float(sd)*self.rnd[block_num,i] + mean for i,(sd,mean) in enumerate(zip(sds,means))]
+		return [float(sd) * self.rnd[block_num,i] + mean for i,(sd,mean) in enumerate(zip(sds,means))]
 
 
 
@@ -355,7 +371,7 @@ class InpFile(VFile):
 			mean = float(line.split()[0])
 
 			if add_mean:
-				varied = mean + mean*varied
+				varied = mean + mean * varied
 
 			formatted = self.format_line([varied])
 			self.replace_line(formatted,line_num)
@@ -363,7 +379,7 @@ class InpFile(VFile):
 	def count_varied_lines(self):
 		varied_line_counts = self.effects.key_matches(self.lines)
 		counts = [value for key,value in varied_line_counts.items()]
-		format_str = '{:<16}  '*(len(counts) + 1)
+		format_str = '{:<16}  ' * (len(counts) + 1)
 		if len(counts) > 0:
 			self.effects.save_write(format_str.format(self.fileprefix,*counts) + '\n')
 
@@ -392,13 +408,13 @@ class Effects(object):
 
 	def print_data(self):
 		vals = [data[0] for key,data in self.key_result_pairs.items()]
-		format_str = '{:<16.7f}  '*len(vals)
+		format_str = '{:<16.7f}  ' * len(vals)
 		if len(vals) > 0:
 			self.save_write(format_str.format(*vals) + '\n')
 
 	def print_labels(self):
 		labels = [key for key in self.key_result_pairs]
-		format_str = '{:<16}  '*(len(labels) + 1)
+		format_str = '{:<16}  ' * (len(labels) + 1)
 		if len(labels) > 0:
 			self.save_write(format_str.format('simulation #',*labels) + '\n')
 
@@ -450,7 +466,7 @@ class Effects(object):
 	def get_data(self,line):
 		"""Return varied value appropriate for line, else None"""
 		for key,varied in self.key_result_pairs.items():
-			if line.find(key)!=-1:
+			if line.find(key) != -1:
 				self._test_for_repeats(key,line)
 				return varied
 		return None
@@ -461,14 +477,14 @@ class Effects(object):
 			matches_by_key[key] = 0
 		for line in lines:
 			for key,varied in self.key_result_pairs.items():
-				if line.find(key)!=-1:
+				if line.find(key) != -1:
 					matches_by_key[key]+=1
 		return matches_by_key
 
 	def _test_for_repeats(self,key,line):
 		"""Make only one key found in line"""
-		other_keys = [k for k in self.key_result_pairs.keys() if k!=key]
-		if any(line.find(k)!=-1 for k in other_keys):
+		other_keys = [k for k in self.key_result_pairs.keys() if k != key]
+		if any(line.find(k) != -1 for k in other_keys):
 			print('keys overlap -- keys must be unique to'
 								 'achieve desired behavior')
 			sys.exit(1)
@@ -495,7 +511,7 @@ class Component(object):
 			params = parts[1:]
 
 		if self.name == 'NORMAL' and params[0].upper() == 'MEAN':
-			self.fn = np.random.randn
+			self.fn = RG.randn
 			self.params = float(params[1])
 		else:
 			self.params = [float(p) for p in params[:self.num_params]]
@@ -505,15 +521,18 @@ class Component(object):
 		self.upper_bound = self.get_upper(bounds)
 
 	def depends_on_mean_line(self):
-		return self.fn == np.random.randn
+		return self.fn == RG.randn
 
 	def set_group(self,group_str):
 		"""Sets group for component, returns True if successful"""
+		# here I get state from new RG.  Motivation for using it remains
+		# obscure.
 		match = re.search(r'g=(.+)',group_str)
 		if match is not None:
 			self.group = match.group(1).strip()
 			if not self.group in self.group_state:
-				self.group_state[self.group] = np.random.get_state()
+				self.group_state[self.group] = RG.state()
+				# RB: Why isn't this the same for every group?
 			return True
 		return False
 
@@ -535,22 +554,22 @@ class Component(object):
 		dist_name = dist_name.lower()
 		if dist_name == 'norm' or dist_name == 'normal' or dist_name == '':
 			self.name = 'NORMAL'
-			self.fn = np.random.normal
+			self.fn = RG.normal
 			self.num_params = 2
 
 		elif dist_name == 'lognormal':
 			self.name = 'LOGNORMAL'
-			self.fn = np.random.lognormal
+			self.fn = RG.lognormal
 			self.num_params = 2
 
 		elif dist_name == 'beta' or dist_name == 'b':
 			self.name = 'BETA'
-			self.fn = np.random.beta
+			self.fn = RG.beta
 			self.num_params = 2
 
 		elif dist_name == 'gamma':
 			self.name = 'GAMMA'
-			self.fn = np.random.gamma
+			self.fn = RG.gamma
 			self.num_params = 2
 
 		else:
@@ -558,10 +577,10 @@ class Component(object):
 
 	def sample(self):
 		if self.group:
-			np.random.set_state(self.group_state[self.group])
+			RG.state(self.group_state[self.group])
 
-		if self.fn == np.random.randn:
-			val = self.fn()*self.params
+		if self.fn == RG.randn:
+			val = self.fn() * self.params
 		else:
 			val = self.fn(*self.params)
 

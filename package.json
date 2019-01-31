@@ -1,6 +1,6 @@
 {
   "name": "@ecfairle/mccli",
-  "version": "1.10.3",
+  "version": "2.0.0",
   "description": "cli for CVD Policy Model Montecarlo simulation",
   "main": "index.js",
   "scripts": {
@@ -11,6 +11,7 @@
     "mc": "bin/mc.js"
   },
   "author": "",
+  "contributors": ["Ross Boylan <ross.boylan@ucsf.edu>"],
   "license": "ISC",
   "dependencies": {
     "colors": "^1.1.2",
@@ -23,30 +24,11 @@
     "single-line-log": "^1.1.1",
     "yargs": "^11.0.0"
   },
-  "gitHead": "69b00431e4986d4bf8f0a6d19f0bedec5a259ea6",
-  "_id": "@ecfairle/mccli@1.0.5",
-  "_shasum": "9116d0cd07142217904cae3ef535d40323ef36b0",
-  "_from": "@ecfairle/mccli@1.0.5",
-  "_npmVersion": "2.15.9",
-  "_nodeVersion": "4.5.0",
-  "_npmUser": {
-    "name": "ecfairle",
-    "email": "ecfairley@ucdavis.edu"
-  },
-  "dist": {
-    "shasum": "9116d0cd07142217904cae3ef535d40323ef36b0",
-    "tarball": "https://registry.npmjs.org/@ecfairle/mccli/-/mccli-1.0.5.tgz"
-  },
   "maintainers": [
     {
       "name": "ecfairle",
       "email": "ecfairley@ucdavis.edu"
     }
   ],
-  "_npmOperationalInternal": {
-    "host": "packages-16-east.internal.npmjs.com",
-    "tmp": "tmp/mccli-1.0.5.tgz_1473710696339_0.7254255935549736"
-  },
   "directories": {},
-  "_resolved": "https://registry.npmjs.org/@ecfairle/mccli/-/mccli-1.0.5.tgz"
 }

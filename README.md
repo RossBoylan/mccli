@@ -21,6 +21,14 @@ Options:
 
 ### Initialization
 
+Prerequisites:
+   * `.inp` files in the current directory
+   * a populated `input` directory
+   * a `modfile` directory
+   * Probably other stuff
+   * Though probably not essential for this step, it would be good to put the model executable in the
+     top-level directory.
+
 Execute `mc init` (in command line within model directory) to initialize Montecarlo inputs:
 
 1. default number of iterations

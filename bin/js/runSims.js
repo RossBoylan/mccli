@@ -33,13 +33,13 @@ module.exports = (argv) => {
 		let inputsData = JSON.parse(inputsFile);
 
 		if (argv.iterations) {
-			let ITERATIONS = argv.iterations;
+			var ITERATIONS = argv.iterations;
 		}
 		else if (Number(argv._[0]) === argv._[0]) {
-			let ITERATIONS = argv._[0];
+			var ITERATIONS = argv._[0];
 		}
 		else {
-			let ITERATIONS = inputsData['default_iterations'];
+			var ITERATIONS = inputsData['default_iterations'];
 		}
 
         let py = argv.py

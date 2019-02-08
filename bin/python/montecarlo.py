@@ -531,7 +531,7 @@ class Component(object):
 		if match is not None:
 			self.group = match.group(1).strip()
 			if not self.group in self.group_state:
-				self.group_state[self.group] = RG.state()
+				self.group_state[self.group] = RG.state
 				# RB: Why isn't this the same for every group?
 			return True
 		return False
@@ -577,7 +577,7 @@ class Component(object):
 
 	def sample(self):
 		if self.group:
-			RG.state(self.group_state[self.group])
+			RG.state = self.group_state[self.group]
 
 		if self.fn == RG.randn:
 			val = self.fn() * self.params

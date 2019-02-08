@@ -14,6 +14,41 @@ Options:
 
 ## Getting Started
 
+### TESTING!
+This code is under development, may not work properly, and might seize your firstborn.
+
+This code is the `repeatable` branch of RossBoylan/mccli on github.com.  Despite that, it is still identified as "@ecfairle/mccli",
+and because of that the conventional installation with npm install may not work, especially if you have already installed the earlier version.
+
+I recommend putting a copy of this package on your local hard drive, e.g., `Documents\mccli`.  You can clone it from github and switch to the `repeatable` branch,
+or get it from an archive file.
+
+To ensure setup, you should
+`npm install -g colors fs fs-extra inquirer path progress shelljs single-line-log yargs` 
+if you are on a new machine.  If you have a previous `mccli` installation they should all be present.
+
+Then do
+`py -m pip install numpy matplotlib randomgen`
+If you already had an install,
+`py -m pip install randomgen`
+should suffice.
+
+Then, assuming you have this package in `Documents\mccli`, model file in `Documents\mymodel`, and you are in the latter directory, type
+`node ..\mccli\bin\mc init`
+to set it up and
+`node ..\mccli\bin\mc run <nsims> <first index> <seed>`
+e.g., `node ..\mccli\bin\mc run 5 0 8093218` to run 5 simulations starting at 0.  Index 0 is special because it uses the original parameters.
+
+`node ..\mccli\bin\mc --help` for more information, and
+`node ..\mccli\bin\mc run --help` for even more information on the `run` command.
+
+If you're curious, the reason for using `node <path to main file>` instead of just `mc` is that `mc` only works because it was registered as a global
+shortcut by `npm install`, which these instructions deliberately avoid using.  To be sure of getting the right version we invoke `node` directly and give it the location of the file
+to execute.
+
+The regular instructions appear below here.
+
+
 ### Installation
 1. If it is not installed, download and install [Node.js](https://nodejs.org/) (known to  work with v6.5, but try the latest stable release)
 2. If it is not installed, download and install [Python](https://www.python.org/downloads/) (known to work with v3.5.2, but try the the latest stable version)

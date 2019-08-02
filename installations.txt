@@ -1,0 +1,1453 @@
+[from Windows Command Prompt]
+Microsoft Windows [Version 10.0.16299.904]
+(c) 2017 Microsoft Corporation. All rights reserved.
+
+C:\Users\rdboylan>cd Documents
+
+C:\Users\rdboylan\Documents>npm --version
+6.4.1
+
+C:\Users\rdboylan\Documents>npm install KBD
+
+> spawn-sync@1.0.15 postinstall C:\Users\rdboylan\Documents\node_modules\spawn-sync
+> node postinstall
+
+
+> @ecfairle/mccli@1.10.3 postinstall C:\Users\rdboylan\Documents\node_modules\@ecfairle\mccli
+> py -m pip install numpy matplotlib randomgen
+
+Collecting numpy
+  Downloading https://files.pythonhosted.org/packages/dd/3e/0d7a914ee6cceef588dd83b18e257dc474ac67028a8d340dfec644878128/numpy-1.16.0-cp37-cp37m-win_amd64.whl (11.9MB)
+    100% |████████████████████████████████| 11.9MB 1.5MB/s
+Collecting matplotlib
+  Downloading https://files.pythonhosted.org/packages/5c/ee/efaf04efc763709f6840cd8d08865d194f7453f43e98d042c92755cdddec/matplotlib-3.0.2-cp37-cp37m-win_amd64.whl (8.9MB)
+    100% |████████████████████████████████| 8.9MB 1.8MB/s
+Collecting randomgen
+  Downloading https://files.pythonhosted.org/packages/86/2a/b8bf7d36afe0aa3068beda322aad13fad298bb1e969680f7f1d7654a0dc4/randomgen-1.15.1-cp37-cp37m-win_amd64.whl (3.0MB)
+    100% |████████████████████████████████| 3.0MB 2.9MB/s
+Collecting kiwisolver>=1.0.1 (from matplotlib)
+  Downloading https://files.pythonhosted.org/packages/7c/be/7ae355b45699460e369ebf88d86058fca26827933974cc3f6b6b7800a324/kiwisolver-1.0.1-cp37-none-win_amd64.whl (57kB)
+    100% |████████████████████████████████| 61kB 2.3MB/s
+Collecting python-dateutil>=2.1 (from matplotlib)
+  Downloading https://files.pythonhosted.org/packages/74/68/d87d9b36af36f44254a8d512cbfc48369103a3b9e474be9bdfe536abfc45/python_dateutil-2.7.5-py2.py3-none-any.whl (225kB)
+    100% |████████████████████████████████| 235kB 2.9MB/s
+Collecting pyparsing!=2.0.4,!=2.1.2,!=2.1.6,>=2.0.1 (from matplotlib)
+  Downloading https://files.pythonhosted.org/packages/de/0a/001be530836743d8be6c2d85069f46fecf84ac6c18c7f5fb8125ee11d854/pyparsing-2.3.1-py2.py3-none-any.whl (61kB)
+    100% |████████████████████████████████| 71kB 3.4MB/s
+Collecting cycler>=0.10 (from matplotlib)
+  Downloading https://files.pythonhosted.org/packages/f7/d2/e07d3ebb2bd7af696440ce7e754c59dd546ffe1bbe732c8ab68b9c834e61/cycler-0.10.0-py2.py3-none-any.whl
+Collecting cython>=0.26 (from randomgen)
+  Downloading https://files.pythonhosted.org/packages/bc/98/0831b426399adbc965f4adcc591505ffbb0be61b923b8684370d4e9f9d4e/Cython-0.29.3-cp37-cp37m-win_amd64.whl (1.7MB)
+    100% |████████████████████████████████| 1.7MB 2.9MB/s
+Collecting wheel (from randomgen)
+  Downloading https://files.pythonhosted.org/packages/ff/47/1dfa4795e24fd6f93d5d58602dd716c3f101cfd5a77cd9acbe519b44a0a9/wheel-0.32.3-py2.py3-none-any.whl
+Requirement already satisfied: setuptools in c:\program files (x86)\microsoft visual studio\shared\python37_64\lib\site-packages (from randomgen) (39.0.1)
+Collecting six>=1.5 (from python-dateutil>=2.1->matplotlib)
+  Downloading https://files.pythonhosted.org/packages/73/fb/00a976f728d0d1fecfe898238ce23f502a721c0ac0ecfedb80e0d88c64e9/six-1.12.0-py2.py3-none-any.whl
+Installing collected packages: numpy, kiwisolver, six, python-dateutil, pyparsing, cycler, matplotlib, cython, wheel, randomgen
+Could not install packages due to an EnvironmentError: [WinError 5] Access is denied: 'C:\\Program Files (x86)\\Microsoft Visual Studio\\Shared\\Python37_64\\Lib\\site-packages\\numpy'
+Consider using the `--user` option or check the permissions.
+
+You are using pip version 10.0.1, however version 19.0.1 is available.
+You should consider upgrading via the 'python -m pip install --upgrade pip' command.
+npm WARN enoent ENOENT: no such file or directory, open 'C:\Users\rdboylan\Documents\package.json'
+npm WARN Documents No description
+npm WARN Documents No repository field.
+npm WARN Documents No README data
+npm WARN Documents No license field.
+
+npm ERR! code ELIFECYCLE
+npm ERR! errno 1
+npm ERR! @ecfairle/mccli@1.10.3 postinstall: `py -m pip install numpy matplotlib randomgen`
+npm ERR! Exit status 1
+npm ERR!
+npm ERR! Failed at the @ecfairle/mccli@1.10.3 postinstall script.
+npm ERR! This is probably not a problem with npm. There is likely additional logging output above.
+
+npm ERR! A complete log of this run can be found in:
+npm ERR!     C:\Users\rdboylan\AppData\Roaming\npm-cache\_logs\2019-01-31T01_29_46_312Z-debug.log
+
+C:\Users\rdboylan\Documents>node KBD/bin/mc.js --help
+internal/modules/cjs/loader.js:583
+    throw err;
+    ^
+
+Error: Cannot find module 'yargs'
+    at Function.Module._resolveFilename (internal/modules/cjs/loader.js:581:15)
+    at Function.Module._load (internal/modules/cjs/loader.js:507:25)
+    at Module.require (internal/modules/cjs/loader.js:637:17)
+    at require (internal/modules/cjs/helpers.js:22:18)
+    at Object.<anonymous> (C:\Users\rdboylan\Documents\KBD\bin\mc.js:3:15)
+    at Module._compile (internal/modules/cjs/loader.js:689:30)
+    at Object.Module._extensions..js (internal/modules/cjs/loader.js:700:10)
+    at Module.load (internal/modules/cjs/loader.js:599:32)
+    at tryModuleLoad (internal/modules/cjs/loader.js:538:12)
+    at Function.Module._load (internal/modules/cjs/loader.js:530:3)
+
+C:\Users\rdboylan\Documents>npm --list
+
+Usage: npm <command>
+
+where <command> is one of:
+    access, adduser, audit, bin, bugs, c, cache, ci, cit,
+    completion, config, create, ddp, dedupe, deprecate,
+    dist-tag, docs, doctor, edit, explore, get, help,
+    help-search, hook, i, init, install, install-test, it, link,
+    list, ln, login, logout, ls, outdated, owner, pack, ping,
+    prefix, profile, prune, publish, rb, rebuild, repo, restart,
+    root, run, run-script, s, se, search, set, shrinkwrap, star,
+    stars, start, stop, t, team, test, token, tst, un,
+    uninstall, unpublish, unstar, up, update, v, version, view,
+    whoami
+
+npm <command> -h  quick help on <command>
+npm -l            display full usage info
+npm help <term>   search for help on <term>
+npm help npm      involved overview
+
+Specify configs in the ini-formatted file:
+    C:\Users\rdboylan\.npmrc
+or on the command line via: npm <command> --key value
+Config info can be viewed via: npm help config
+
+npm@6.4.1 C:\Program Files\nodejs\node_modules\npm
+
+C:\Users\rdboylan\Documents>npm ls
+C:\Users\rdboylan\Documents
+`-- @ecfairle/mccli@1.10.3 -> C:\Users\rdboylan\Documents\KBD
+  +-- UNMET DEPENDENCY colors@^1.1.2
+  +-- UNMET DEPENDENCY fs@0.0.1-security
+  +-- UNMET DEPENDENCY fs-extra@^0.30.0
+  +-- UNMET DEPENDENCY inquirer@^1.1.3
+  +-- UNMET DEPENDENCY path@^0.12.7
+  +-- UNMET DEPENDENCY progress@^1.1.8
+  +-- UNMET DEPENDENCY shelljs@^0.7.4
+  +-- UNMET DEPENDENCY single-line-log@^1.1.1
+  `-- UNMET DEPENDENCY yargs@^11.0.0
+
+npm ERR! missing: colors@^1.1.2, required by @ecfairle/mccli@1.10.3
+npm ERR! missing: fs@0.0.1-security, required by @ecfairle/mccli@1.10.3
+npm ERR! missing: fs-extra@^0.30.0, required by @ecfairle/mccli@1.10.3
+npm ERR! missing: inquirer@^1.1.3, required by @ecfairle/mccli@1.10.3
+npm ERR! missing: path@^0.12.7, required by @ecfairle/mccli@1.10.3
+npm ERR! missing: progress@^1.1.8, required by @ecfairle/mccli@1.10.3
+npm ERR! missing: shelljs@^0.7.4, required by @ecfairle/mccli@1.10.3
+npm ERR! missing: single-line-log@^1.1.1, required by @ecfairle/mccli@1.10.3
+npm ERR! missing: yargs@^11.0.0, required by @ecfairle/mccli@1.10.3
+
+C:\Users\rdboylan\Documents>npm install colors fs fs-extra inquirer path progress shelljs single-line-log yargs
+
+> spawn-sync@1.0.15 postinstall C:\Users\rdboylan\Documents\node_modules\spawn-sync
+> node postinstall
+
+npm WARN saveError ENOENT: no such file or directory, open 'C:\Users\rdboylan\Documents\package.json'
+npm notice created a lockfile as package-lock.json. You should commit this file.
+npm WARN enoent ENOENT: no such file or directory, open 'C:\Users\rdboylan\Documents\package.json'
+npm WARN Documents No description
+npm WARN Documents No repository field.
+npm WARN Documents No README data
+npm WARN Documents No license field.
+
++ single-line-log@1.1.2
++ colors@1.3.3
++ progress@2.0.3
++ inquirer@6.2.1
++ path@0.12.7
++ fs@0.0.1-security
++ fs-extra@7.0.1
++ shelljs@0.8.3
++ yargs@12.0.5
+added 179 packages from 69 contributors and audited 307 packages in 48.666s
+found 0 vulnerabilities
+
+
+C:\Users\rdboylan\Documents>node KBD/bin/mc.js --help
+mc.js [command]
+
+Commands:
+  mc.js init                                initialize MC system in current
+                                            directory
+  mc.js run-sims [iterations] [start]       run MC simulations
+  [seed]                                                       [aliases: run, r]
+
+Options:
+  --version       Show version number                                  [boolean]
+  --python, --py        [string] [default: py probably only works on MS-Windows]
+  --help          Show help                                            [boolean]
+
+
+C:\Users\rdboylan\Documents>cd KBD2\test2
+
+C:\Users\rdboylan\Documents\KBD2\test2>dir
+ Volume in drive C is OSDisk
+ Volume Serial Number is 4E8E-64BE
+
+ Directory of C:\Users\rdboylan\Documents\KBD2\test2
+
+01/30/2019  05:39 PM    <DIR>          .
+01/30/2019  05:39 PM    <DIR>          ..
+01/30/2019  05:22 PM             1,646 A10y_mc0.inp
+01/30/2019  05:22 PM             7,293 B10y_mc0.inp
+01/30/2019  05:22 PM             1,615 C10y_mc0.inp
+01/30/2019  05:22 PM         1,075,028 CVDMOD91.exe
+01/30/2019  05:22 PM             7,299 D10y_mc0.inp
+01/30/2019  05:38 PM    <DIR>          input
+01/30/2019  05:22 PM               389 inp_distribution.txt
+               6 File(s)      1,093,270 bytes
+               3 Dir(s)  1,835,599,134,720 bytes free
+
+C:\Users\rdboylan\Documents\KBD2\test2>node ..\..\KBD\bin\mc init
+? default number of iterations 3
+? name of model executable CVDMOD91
+? select dat files to vary b, bstk
+? select inp files to use (Press <space> to select, <a> to toggle all, <i> to inverse selection)A10y, B10y, C10y, D10y
+Next steps:
+        1) make standard deviation files for the dat files you wish to vary using the same format as their corresponding mean file
+        2) add an inp_variation.txt file to MC/inputs if you want to vary .inp files (follow instructions from link)
+
+ More in depth instructions can be found at https://github.com/ecfairle/mccli
+ [at this point it hung, not even responsive to ^C and not debuggable
+ This was probably the first terminal I opened]
+
+=============================================================================
+[probably next, though my actions in different terminal were
+interleaved.]
+Microsoft Windows [Version 10.0.16299.904]
+(c) 2017 Microsoft Corporation. All rights reserved.
+
+C:\Users\rdboylan>cd Documents\KBD2\test2
+
+C:\Users\rdboylan\Documents\KBD2\test2>CVDMOD91.exe
+
+
+             CORONARY HEART DISEASE POLICY MODEL (Version 9.0)
+
+           Copyright (c) 1987 President and Fellows of Harvard College
+           and Brigham and Womens Hospital.
+
+
+
+The Coronary Heart Disease Model uses diastolic (or systolic)
+blood pressure, LDL, smoking status, HDL, BMI and diabetes as primary risk factors.
+
+
+Do you wish to incorporate other risk factors?
+         1 = yes
+         2 = no
+
+1
+ using:   1
+
+Please select a baseline risk factor model:
+         1 = Baseline - 4 risk factor model using DBP
+         2 = Baseline - 4 risk factor model using SBP
+         3 = Baseline - 6 risk factor model using DBP,BMI and Diabetes
+         4 = Baseline - 6 risk factor model using SBP,BMI and Diabetes
+         5 = Baseline - 6 risk factor model using DBP, Meds and Diabetes
+         6 = Baseline - 6 risk factor model using SBP, Meds and Diabetes
+         press Enter for DEFAULT - Basic BMI 6 factor using DBP (3)
+
+4
+ using:   4
+Which risk factor(s) would you like to include(up to 2 additiional):
+         1 = Body Mass Index
+         2 = Systolic Blood Pressure
+         3 = Diabetes
+         4 = Prescription Meds
+         5 = Statins
+         6 = Isolated diastolic hypertension
+         7 = Chronic Kidney Disease
+         8 = Alcohol
+         9 = Depression
+         10 = Isolated systolic blood pressure
+         11 = Walking
+         12 = Heart Failure
+         Type "?" for help or press Enter for baseline model risk factors only
+
+
+using default:
+ using: Basic BMI 6 factor using SBP  only
+
+
+ Number of risk factors = 6, extension = sbd, number of dimensions = 27
+
+
+ MODELING: Basic BMI 6 factor using SBP  and BMI      and Diabetes
+
+
+U.S. Population          to modfile\popUSA.def          1 file(s) copied.
+
+U.S. Pop turning 35      to modfile\m35.def             1 file(s) copied.
+
+U.S. Pop with CVD        to modfile\pcvd.def            1 file(s) copied.
+
+Non CHD Incidence        to modfile\inc.def             1 file(s) copied.
+
+Beta Coefficient         to modfile\b.def               1 file(s) copied.
+
+Risk Averages            to modfile\rsk.def             1 file(s) copied.
+
+Risk Proportions         to modfile\prfp.def            1 file(s) copied.
+
+Transition Rate          to modfile\tran.def            1 file(s) copied.
+
+Adjusted Life Years      to modfile\qolwgts.def         1 file(s) copied.
+
+Adjusted Life Years      to modfile\shortwgt.def        1 file(s) copied.
+
+DH initial state         to modfile\chdr.def            1 file(s) copied.
+
+Non-CHD Cost Variables   to modfile\NoCHDCst.def        1 file(s) copied.
+
+Risk Proportions         to modfile\modprfp.def         1 file(s) copied.
+
+95 Year Old Survivor     to modfile\ely95.def           1 file(s) copied.
+
+Start year for Model     to modfile\startyr.def         1 file(s) copied.
+
+IPF joint marginal risk  to modfile\xprfp.def           1 file(s) copied.
+
+BMI and Smoking Risk Fac to modfile\decalib.def         1 file(s) copied.
+
+DH calibration arrays    to modfile\dhcalib.def         1 file(s) copied.
+
+Ten year CHD risk        to modfile\risk.def            1 file(s) copied.
+
+Beta Stroke Coefficient  to modfile\bstrok.def          1 file(s) copied.
+
+Incidence of Stroke      to modfile\incstrok.def        1 file(s) copied.
+
+Risk factor multivariate to modfile\mdis.def            1 file(s) copied.
+
+Beta Diabetes Coefficien to modfile\bdia.def            1 file(s) copied.
+
+Incidence of Diabetes    to modfile\incdia.def          1 file(s) copied.
+
+DH Risk Factor Proportio to modfile\dhrfp.def           1 file(s) copied.
+
+Event Rate Probabilities to modfile\evtdat.def          1 file(s) copied.
+
+Case Fatality Probabilit to modfile\cfrdat.def          1 file(s) copied.
+
+Allocation Probabilities to modfile\alocdat.def         1 file(s) copied.
+
+Relative Risk Probabilit to modfile\rrdat.def           1 file(s) copied.
+
+Non-CHD Mortality Rates  to modfile\oddat.def           1 file(s) copied.
+
+Cost Probabilities       to modfile\cstdat.def          1 file(s) copied.
+
+
+Would you like to modify any input arrays?
+         1 = yes
+         2 = no
+
+1
+ using:   1
+
+Which input file would you like to modify?
+    1 = U.S. population, by age and sex,
+    2 = Projected U.S. population turning age 35, by sex and calendar year,
+    3 = Proportion of U.S. population with CHD history, by age range and sex,
+    4 = Risk factor proportions among people with no CHD, by age range and sex,
+    5 = Mean values of risk factors within strata, by age range and sex,
+    6 = Annual rates of transition between risk factor cells,
+    7 = Beta coefficients for risk factors, by age range and sex,
+    8 = Incidence of Non-CHD death and CHD, by age range and sex,
+    9 = Quality adjusted life years, by age range and sex,
+    10 = Short Term Quality adjusted life years, by age range and sex,
+    11 = Disease History initial state distribution by age and sex,
+    12 = Non-CHD Cost variables,
+    13 = Non-CHD Gamma/Relative Risk, by age range and sex - NO LONGER USED,
+    14 = Joint (CHD and Non-CHD) Risk Proportions, by age range and sex,
+    15 = Modified risk factor proportions in population with no CVD (modpfrp),
+    16 = 95 Year Old Survivor Estimates
+    17 = Starting year for the Coronary Heart Disease Model
+    18 = IPF joint marginal risk factor definition
+    19 = BMI and Smoking Risk Factor Links for DE and DH
+    20 = DH calibration arrays
+    21 = Ten year CHD risk
+    22 = Beta coefficients for Stroke
+    23 = Incidence of Stroke
+    24 = Multivariate distribution of risk factors (mdis)
+    25 = Beta coefficients for Diabetes
+    26 = Incidence of Diabetes
+    27 = Enable writing to Annual PRFP and Rsakave output tables
+    28 = DH Risk Factor Proportions
+    29 = Minimize risk factor intervention mortality benefit
+    hit return to exit
+
+Please note;
+ Arrays are printed with row 1=males & row 2=females,
+ Each column represents an age range where column 1=35-44 thru column 6=85-94,
+ If input files 4 or 5 are modified you must also modify file 6 and visa versa.
+
+7
+ using:   7
+Which Beta Coefficient     input file?
+
+      1 = b.def
+      2 = b_mc.dat
+
+Type a number between 1 and   2 or return for default.
+         (Default = b.def       )
+
+2
+ using:   2The system cannot find the path specified.
+        0 file(s) copied.
+
+Would you like to:
+ 1 = edit file  2 = delete this file  Return to exit.
+1
+ using:   1
+
+Type a File Name Up To 12 Characters Long to file edits
+ or return if you do not want to save changes.
+
+b_mc.dat
+ b_mc.dat     already exits or improper filename syntax.
+              Proper syntax is 1 to 8 characters followed by "."
+              followed by 1-3 characters. Example - "test.tmp"
+
+
+Type a File Name Up To 12 Characters Long to file edits
+ or return if you do not want to save changes.
+
+
+The system cannot find the path specified.
+
+Which input file would you like to modify?
+    1 = U.S. population, by age and sex,
+    2 = Projected U.S. population turning age 35, by sex and calendar year,
+    3 = Proportion of U.S. population with CHD history, by age range and sex,
+    4 = Risk factor proportions among people with no CHD, by age range and sex,
+    5 = Mean values of risk factors within strata, by age range and sex,
+    6 = Annual rates of transition between risk factor cells,
+    7 = Beta coefficients for risk factors, by age range and sex,
+    8 = Incidence of Non-CHD death and CHD, by age range and sex,
+    9 = Quality adjusted life years, by age range and sex,
+    10 = Short Term Quality adjusted life years, by age range and sex,
+    11 = Disease History initial state distribution by age and sex,
+    12 = Non-CHD Cost variables,
+    13 = Non-CHD Gamma/Relative Risk, by age range and sex - NO LONGER USED,
+    14 = Joint (CHD and Non-CHD) Risk Proportions, by age range and sex,
+    15 = Modified risk factor proportions in population with no CVD (modpfrp),
+    16 = 95 Year Old Survivor Estimates
+    17 = Starting year for the Coronary Heart Disease Model
+    18 = IPF joint marginal risk factor definition
+    19 = BMI and Smoking Risk Factor Links for DE and DH
+    20 = DH calibration arrays
+    21 = Ten year CHD risk
+    22 = Beta coefficients for Stroke
+    23 = Incidence of Stroke
+    24 = Multivariate distribution of risk factors (mdis)
+    25 = Beta coefficients for Diabetes
+    26 = Incidence of Diabetes
+    27 = Enable writing to Annual PRFP and Rsakave output tables
+    28 = DH Risk Factor Proportions
+    29 = Minimize risk factor intervention mortality benefit
+    hit return to exit
+
+Please note;
+ Arrays are printed with row 1=males & row 2=females,
+ Each column represents an age range where column 1=35-44 thru column 6=85-94,
+ If input files 4 or 5 are modified you must also modify file 6 and visa versa.
+
+
+
+Would you like to modify any input arrays?
+         1 = yes
+         2 = no
+
+2
+ using:   2
+
+
+
+              Reading in initialization files...
+
+
+A format specification must begin with a left parenthesis (unit= 2).
+ Error occurs at or near line 441 of _inital_
+ Called from or near line 443 of _modary_
+ Called from or near line 77 of _MAIN__
+
+C:\Users\rdboylan\Documents\KBD2\test2>node ..\..\KBD\bin\mc run 2 0 7789
+C:\Users\rdboylan\Documents\KBD\node_modules\yargs\yargs.js:1133
+      else throw err
+           ^
+
+ReferenceError: ITERATIONS is not defined
+    at simRuns (C:\Users\rdboylan\Documents\KBD\bin\js\runSims.js:66:18)
+    at Object.module.exports [as handler] (C:\Users\rdboylan\Documents\KBD\bin\js\runSims.js:218:3)
+    at Object.runCommand (C:\Users\rdboylan\Documents\KBD\node_modules\yargs\lib\command.js:235:44)
+    at Object.parseArgs [as _parseArgs] (C:\Users\rdboylan\Documents\KBD\node_modules\yargs\yargs.js:1046:30)
+    at Object.get [as argv] (C:\Users\rdboylan\Documents\KBD\node_modules\yargs\yargs.js:989:21)
+    at Object.<anonymous> (C:\Users\rdboylan\Documents\KBD\bin\mc.js:44:1)
+    at Module._compile (internal/modules/cjs/loader.js:689:30)
+    at Object.Module._extensions..js (internal/modules/cjs/loader.js:700:10)
+    at Module.load (internal/modules/cjs/loader.js:599:32)
+    at tryModuleLoad (internal/modules/cjs/loader.js:538:12)
+
+C:\Users\rdboylan\Documents\KBD2\test2>mc --help
+'mc' is not recognized as an internal or external command,
+operable program or batch file.
+
+C:\Users\rdboylan\Documents\KBD2\test2>node ..\..\KBD\bin\mc init
+? default number of iterations (1000)
+
+
+C:\Users\rdboylan\Documents\KBD2\test2>
+
+====================================================================
+Microsoft Windows 2000 [Version 6.02.9200]
+(C) Copyright 1985-2000 Microsoft Corp.
+
+C:\windows\system32>node
+> 3+3
+6
+> error("foo")
+ReferenceError: error is not defined
+> const shell = require("shelljs");
+{ Error: Cannot find module 'shelljs'
+    at Function.Module._resolveFilename (internal/modules/cjs/loader.js:581:15)
+    at Function.Module._load (internal/modules/cjs/loader.js:507:25)
+    at Module.require (internal/modules/cjs/loader.js:637:17)
+    at require (internal/modules/cjs/helpers.js:22:18) code: 'MODULE_NOT_FOUND' }
+> npm ls
+npm should be run outside of the node repl, in your normal shell.
+(Press Control-D to exit.)
+>
+C:\windows\system32>npm ls
+C:\windows\system32
+`-- (empty)
+
+
+C:\windows\system32>cd %USERPROFILE%
+
+C:\Users\rdboylan>cd Documents\
+
+C:\Users\rdboylan\Documents>npm ls
+C:\Users\rdboylan\Documents
++-- UNMET DEPENDENCY @ecfairle/mccli@file:https:/registry.npmjs.org/@ecfairle/mccli/-/mccli-1.0.5.tgz
+| +-- colors@1.3.3
+| +-- fs@0.0.1-security
+| +-- UNMET DEPENDENCY fs-extra@0.30.0
+| +-- UNMET DEPENDENCY inquirer@1.2.3
+| +-- path@0.12.7
+| | +-- process@0.11.10
+| | `-- util@0.10.4
+| |   `-- inherits@2.0.3 deduped
+| +-- UNMET DEPENDENCY progress@1.1.8
+| +-- UNMET DEPENDENCY shelljs@0.7.8
+| +-- single-line-log@1.1.2
+| | `-- string-width@1.0.2 extraneous
+| `-- UNMET DEPENDENCY yargs@11.1.0
++-- fs-extra@7.0.1
+| +-- graceful-fs@4.1.15
+| +-- jsonfile@4.0.0
+| | `-- graceful-fs@4.1.15 deduped
+| `-- universalify@0.1.2
++-- inquirer@6.2.1
+| +-- ansi-escapes@3.2.0
+| +-- chalk@2.4.2
+| | +-- ansi-styles@3.2.1
+| | | `-- color-convert@1.9.3
+| | |   `-- color-name@1.1.3
+| | +-- escape-string-regexp@1.0.5
+| | `-- supports-color@5.5.0
+| |   `-- has-flag@3.0.0
+| +-- cli-cursor@2.1.0
+| | `-- restore-cursor@2.0.0
+| |   +-- onetime@2.0.1
+| |   | `-- mimic-fn@1.2.0 deduped
+| |   `-- signal-exit@3.0.2
+| +-- cli-width@2.2.0
+| +-- external-editor@3.0.3
+| | +-- chardet@0.7.0
+| | +-- iconv-lite@0.4.24
+| | | `-- safer-buffer@2.1.2
+| | `-- tmp@0.0.33
+| |   `-- os-tmpdir@1.0.2
+| +-- figures@2.0.0
+| | `-- escape-string-regexp@1.0.5 deduped
+| +-- lodash@4.17.11
+| +-- mute-stream@0.0.7
+| +-- run-async@2.3.0
+| | `-- is-promise@2.1.0
+| +-- rxjs@6.4.0
+| | `-- tslib@1.9.3
+| +-- string-width@2.1.1
+| | +-- is-fullwidth-code-point@2.0.0
+| | `-- strip-ansi@4.0.0 extraneous
+| +-- strip-ansi@5.0.0
+| | `-- ansi-regex@4.0.0 extraneous
+| `-- through@2.3.8
++-- progress@2.0.3
++-- shelljs@0.8.3
+| +-- glob@7.1.3
+| | +-- fs.realpath@1.0.0
+| | +-- inflight@1.0.6
+| | | +-- once@1.4.0 deduped
+| | | `-- wrappy@1.0.2
+| | +-- inherits@2.0.3
+| | +-- minimatch@3.0.4
+| | | `-- brace-expansion@1.1.11
+| | |   +-- balanced-match@1.0.0
+| | |   `-- concat-map@0.0.1
+| | +-- once@1.4.0
+| | | `-- wrappy@1.0.2 deduped
+| | `-- path-is-absolute@1.0.1
+| +-- interpret@1.2.0
+| `-- rechoir@0.6.2
+|   `-- resolve@1.10.0
+|     `-- path-parse@1.0.6
+`-- yargs@12.0.5
+  +-- cliui@4.1.0
+  | +-- string-width@2.1.1 deduped
+  | +-- strip-ansi@4.0.0 extraneous
+  | `-- wrap-ansi@2.1.0
+  |   +-- string-width@1.0.2 extraneous
+  |   `-- strip-ansi@3.0.1 extraneous
+  +-- decamelize@1.2.0
+  +-- find-up@3.0.0
+  | `-- locate-path@3.0.0
+  |   +-- p-locate@3.0.0
+  |   | `-- p-limit@2.1.0
+  |   |   `-- p-try@2.0.0
+  |   `-- path-exists@3.0.0
+  +-- get-caller-file@1.0.3
+  +-- os-locale@3.1.0
+  | +-- execa@1.0.0
+  | | +-- cross-spawn@6.0.5
+  | | | +-- nice-try@1.0.5
+  | | | +-- path-key@2.0.1
+  | | | +-- semver@5.6.0
+  | | | +-- shebang-command@1.2.0
+  | | | | `-- shebang-regex@1.0.0
+  | | | `-- which@1.3.1
+  | | |   `-- isexe@2.0.0
+  | | +-- get-stream@4.1.0
+  | | | `-- pump@3.0.0
+  | | |   +-- end-of-stream@1.4.1
+  | | |   | `-- once@1.4.0 deduped
+  | | |   `-- once@1.4.0 deduped
+  | | +-- is-stream@1.1.0
+  | | +-- npm-run-path@2.0.2
+  | | | `-- path-key@2.0.1 deduped
+  | | +-- p-finally@1.0.0
+  | | +-- signal-exit@3.0.2 deduped
+  | | `-- strip-eof@1.0.0
+  | +-- lcid@2.0.0
+  | | `-- invert-kv@2.0.0
+  | `-- mem@4.1.0
+  |   +-- map-age-cleaner@0.1.3
+  |   | `-- p-defer@1.0.0
+  |   +-- mimic-fn@1.2.0
+  |   `-- p-is-promise@2.0.0
+  +-- require-directory@2.1.1
+  +-- require-main-filename@1.0.1
+  +-- set-blocking@2.0.0
+  +-- string-width@2.1.1 deduped
+  +-- which-module@2.0.0
+  +-- y18n@4.0.0
+  `-- yargs-parser@11.1.1
+    +-- camelcase@5.0.0
+    `-- decamelize@1.2.0 deduped
+
+npm ERR! missing: @ecfairle/mccli@file:https:/registry.npmjs.org/@ecfairle/mccli/-/mccli-1.0.5.tgz, required by Documents
+npm ERR! missing: fs-extra@0.30.0, required by @ecfairle/mccli@file:https:/registry.npmjs.org/@ecfairle/mccli/-/mccli-1.0.5.tgz
+npm ERR! missing: inquirer@1.2.3, required by @ecfairle/mccli@file:https:/registry.npmjs.org/@ecfairle/mccli/-/mccli-1.0.5.tgz
+npm ERR! missing: progress@1.1.8, required by @ecfairle/mccli@file:https:/registry.npmjs.org/@ecfairle/mccli/-/mccli-1.0.5.tgz
+npm ERR! missing: shelljs@0.7.8, required by @ecfairle/mccli@file:https:/registry.npmjs.org/@ecfairle/mccli/-/mccli-1.0.5.tgz
+npm ERR! missing: yargs@11.1.0, required by @ecfairle/mccli@file:https:/registry.npmjs.org/@ecfairle/mccli/-/mccli-1.0.5.tgz
+npm ERR! extraneous: fs-extra@0.30.0 C:\Users\rdboylan\Documents\node_modules\@ecfairle\mccli\node_modules\fs-extra
+npm ERR! extraneous: inquirer@1.2.3 C:\Users\rdboylan\Documents\node_modules\@ecfairle\mccli\node_modules\inquirer
+npm ERR! extraneous: progress@1.1.8 C:\Users\rdboylan\Documents\node_modules\@ecfairle\mccli\node_modules\progress
+npm ERR! extraneous: shelljs@0.7.8 C:\Users\rdboylan\Documents\node_modules\@ecfairle\mccli\node_modules\shelljs
+npm ERR! extraneous: yargs@11.1.0 C:\Users\rdboylan\Documents\node_modules\@ecfairle\mccli\node_modules\yargs
+npm ERR! extraneous: string-width@1.0.2 C:\Users\rdboylan\Documents\node_modules\single-line-log\node_modules\string-width
+npm ERR! extraneous: strip-ansi@4.0.0 C:\Users\rdboylan\Documents\node_modules\string-width\node_modules\strip-ansi
+npm ERR! extraneous: ansi-regex@4.0.0 C:\Users\rdboylan\Documents\node_modules\strip-ansi\node_modules\ansi-regex
+npm ERR! extraneous: strip-ansi@4.0.0 C:\Users\rdboylan\Documents\node_modules\cliui\node_modules\strip-ansi
+npm ERR! extraneous: string-width@1.0.2 C:\Users\rdboylan\Documents\node_modules\wrap-ansi\node_modules\string-width
+npm ERR! extraneous: strip-ansi@3.0.1 C:\Users\rdboylan\Documents\node_modules\wrap-ansi\node_modules\strip-ansi
+
+C:\Users\rdboylan\Documents>npm ls --help
+npm ls [[<@scope>/]<pkg> ...]
+
+aliases: list, la, ll
+
+C:\Users\rdboylan\Documents>npm --help
+
+Usage: npm <command>
+
+where <command> is one of:
+    access, adduser, audit, bin, bugs, c, cache, ci, cit,
+    completion, config, create, ddp, dedupe, deprecate,
+    dist-tag, docs, doctor, edit, explore, get, help,
+    help-search, hook, i, init, install, install-test, it, link,
+    list, ln, login, logout, ls, outdated, owner, pack, ping,
+    prefix, profile, prune, publish, rb, rebuild, repo, restart,
+    root, run, run-script, s, se, search, set, shrinkwrap, star,
+    stars, start, stop, t, team, test, token, tst, un,
+    uninstall, unpublish, unstar, up, update, v, version, view,
+    whoami
+
+npm <command> -h  quick help on <command>
+npm -l            display full usage info
+npm help <term>   search for help on <term>
+npm help npm      involved overview
+
+Specify configs in the ini-formatted file:
+    C:\Users\rdboylan\.npmrc
+or on the command line via: npm <command> --key value
+Config info can be viewed via: npm help config
+
+npm@6.4.1 C:\Program Files\nodejs\node_modules\npm
+
+C:\Users\rdboylan\Documents>npm ls -h
+npm ls [[<@scope>/]<pkg> ...]
+
+aliases: list, la, ll
+
+C:\Users\rdboylan\Documents>cat ..\.npmrc
+'cat' is not recognized as an internal or external command,
+operable program or batch file.
+
+C:\Users\rdboylan\Documents>more ..\.npmrc
+Cannot access file C:\Users\rdboylan\.npmrc
+
+C:\Users\rdboylan\Documents>
+=========================================================
+
+
+[almost certainly last, still command.exe BUT WITH ADMIN RIGHTS]
+Microsoft Windows [Version 10.0.16299.904]
+(c) 2017 Microsoft Corporation. All rights reserved.
+
+C:\windows\system32>py -m pip install numpy
+Collecting numpy
+  Using cached https://files.pythonhosted.org/packages/41/b8/3a6b07352c2542ca1c89be7583e7ca07bf513895b6ac59ae008054f326b1/numpy-1.16.1-cp37-cp37m-win_amd64.whl
+Installing collected packages: numpy
+  The script f2py.exe is installed in 'C:\Program Files (x86)\Microsoft Visual Studio\Shared\Python37_64\Scripts' which is not on PATH.
+  Consider adding this directory to PATH or, if you prefer to suppress this warning, use --no-warn-script-location.
+Successfully installed numpy-1.16.1
+You are using pip version 10.0.1, however version 19.0.1 is available.
+You should consider upgrading via the 'python -m pip install --upgrade pip' command.
+
+C:\windows\system32>py -m pip install pip
+Requirement already satisfied: pip in c:\program files (x86)\microsoft visual studio\shared\python37_64\lib\site-packages (10.0.1)
+You are using pip version 10.0.1, however version 19.0.1 is available.
+You should consider upgrading via the 'python -m pip install --upgrade pip' command.
+
+C:\windows\system32>py -m pip install pip --upgrade pip
+Collecting pip
+  Downloading https://files.pythonhosted.org/packages/46/dc/7fd5df840efb3e56c8b4f768793a237ec4ee59891959d6a215d63f727023/pip-19.0.1-py2.py3-none-any.whl (1.4MB)
+    100% |████████████████████████████████| 1.4MB 3.1MB/s
+Installing collected packages: pip
+  Found existing installation: pip 10.0.1
+    Uninstalling pip-10.0.1:
+      Successfully uninstalled pip-10.0.1
+Could not install packages due to an EnvironmentError: [WinError 2] The system cannot find the file specified: 'C:\\Users\\rdboylan\\AppData\\Local\\Temp\\pip-uninstall-ist26108\\program files (x86)\\microsoft visual studio\\shared\\python37_64\\lib\\site-packages\\pip-10.0.1.dist-info\\CEFE8d5.top_level.txt.TMP'
+
+
+C:\windows\system32>
+C:\windows\system32>py -m pip list
+Package    Version
+---------- -------
+numpy      1.16.1
+pip        19.0.1
+setuptools 39.0.1
+
+C:\windows\system32>py -m pip install matplotlib randomgen
+Collecting matplotlib
+  Using cached https://files.pythonhosted.org/packages/5c/ee/efaf04efc763709f6840cd8d08865d194f7453f43e98d042c92755cdddec/matplotlib-3.0.2-cp37-cp37m-win_amd64.whl
+Collecting randomgen
+  Downloading https://files.pythonhosted.org/packages/b9/d2/ee36d5b8d569e1ec353c14c8a4907330ee81fe9835ef74fdb82078ba8bb6/randomgen-1.16.0-cp37-cp37m-win_amd64.whl (3.0MB)
+    100% |████████████████████████████████| 3.0MB 2.8MB/s
+Requirement already satisfied: numpy>=1.10.0 in c:\program files (x86)\microsoft visual studio\shared\python37_64\lib\site-packages (from matplotlib) (1.16.1)
+Collecting pyparsing!=2.0.4,!=2.1.2,!=2.1.6,>=2.0.1 (from matplotlib)
+  Using cached https://files.pythonhosted.org/packages/de/0a/001be530836743d8be6c2d85069f46fecf84ac6c18c7f5fb8125ee11d854/pyparsing-2.3.1-py2.py3-none-any.whl
+Collecting cycler>=0.10 (from matplotlib)
+  Using cached https://files.pythonhosted.org/packages/f7/d2/e07d3ebb2bd7af696440ce7e754c59dd546ffe1bbe732c8ab68b9c834e61/cycler-0.10.0-py2.py3-none-any.whl
+Collecting kiwisolver>=1.0.1 (from matplotlib)
+  Using cached https://files.pythonhosted.org/packages/7c/be/7ae355b45699460e369ebf88d86058fca26827933974cc3f6b6b7800a324/kiwisolver-1.0.1-cp37-none-win_amd64.whl
+Collecting python-dateutil>=2.1 (from matplotlib)
+  Downloading https://files.pythonhosted.org/packages/41/17/c62faccbfbd163c7f57f3844689e3a78bae1f403648a6afb1d0866d87fbb/python_dateutil-2.8.0-py2.py3-none-any.whl (226kB)
+    100% |████████████████████████████████| 235kB 3.9MB/s
+Collecting cython>=0.26 (from randomgen)
+  Downloading https://files.pythonhosted.org/packages/f5/81/d84dabbec043fc4745e58c98e5a90a51ae03defe4454321cbc18da09f86f/Cython-0.29.4-cp37-cp37m-win_amd64.whl (1.7MB)
+    100% |████████████████████████████████| 1.7MB 1.6MB/s
+Collecting wheel (from randomgen)
+  Using cached https://files.pythonhosted.org/packages/ff/47/1dfa4795e24fd6f93d5d58602dd716c3f101cfd5a77cd9acbe519b44a0a9/wheel-0.32.3-py2.py3-none-any.whl
+Requirement already satisfied: setuptools in c:\program files (x86)\microsoft visual studio\shared\python37_64\lib\site-packages (from randomgen) (39.0.1)
+Collecting six (from cycler>=0.10->matplotlib)
+  Using cached https://files.pythonhosted.org/packages/73/fb/00a976f728d0d1fecfe898238ce23f502a721c0ac0ecfedb80e0d88c64e9/six-1.12.0-py2.py3-none-any.whl
+Installing collected packages: pyparsing, six, cycler, kiwisolver, python-dateutil, matplotlib, cython, wheel, randomgen
+  The scripts cygdb.exe, cython.exe and cythonize.exe are installed in 'C:\Program Files (x86)\Microsoft Visual Studio\Shared\Python37_64\Scripts' which is not on PATH.
+  Consider adding this directory to PATH or, if you prefer to suppress this warning, use --no-warn-script-location.
+  The script wheel.exe is installed in 'C:\Program Files (x86)\Microsoft Visual Studio\Shared\Python37_64\Scripts' which is not on PATH.
+  Consider adding this directory to PATH or, if you prefer to suppress this warning, use --no-warn-script-location.
+Successfully installed cycler-0.10.0 cython-0.29.4 kiwisolver-1.0.1 matplotlib-3.0.2 pyparsing-2.3.1 python-dateutil-2.8.0 randomgen-1.16.0 six-1.12.0 wheel-0.32.3
+
+C:\windows\system32>
+=====================================================================
+Microsoft Windows 2000 [Version 6.02.9200]
+(C) Copyright 1985-2000 Microsoft Corp.
+
+C:\Users\rdboylan\Documents\KBD2\Canada2>CVDMOD91.exe
+
+
+             CORONARY HEART DISEASE POLICY MODEL (Version 9.0)
+
+           Copyright (c) 1987 President and Fellows of Harvard College
+           and Brigham and Womens Hospital.
+
+
+
+The Coronary Heart Disease Model uses diastolic (or systolic)
+blood pressure, LDL, smoking status, HDL, BMI and diabetes as primary risk factors.
+
+
+Do you wish to incorporate other risk factors?
+         1 = yes
+         2 = no
+
+1
+ using:   1
+
+Please select a baseline risk factor model:
+         1 = Baseline - 4 risk factor model using DBP
+         2 = Baseline - 4 risk factor model using SBP
+         3 = Baseline - 6 risk factor model using DBP,BMI and Diabetes
+         4 = Baseline - 6 risk factor model using SBP,BMI and Diabetes
+         5 = Baseline - 6 risk factor model using DBP, Meds and Diabetes
+         6 = Baseline - 6 risk factor model using SBP, Meds and Diabetes
+         press Enter for DEFAULT - Basic BMI 6 factor using DBP (3)
+
+4
+ using:   4
+Which risk factor(s) would you like to include(up to 2 additiional):
+         1 = Body Mass Index
+         2 = Systolic Blood Pressure
+         3 = Diabetes
+         4 = Prescription Meds
+         5 = Statins
+         6 = Isolated diastolic hypertension
+         7 = Chronic Kidney Disease
+         8 = Alcohol
+         9 = Depression
+         10 = Isolated systolic blood pressure
+         11 = Walking
+         12 = Heart Failure
+         Type "?" for help or press Enter for baseline model risk factors only
+
+
+using default:
+ using: Basic BMI 6 factor using SBP  only
+
+
+ Number of risk factors = 6, extension = sbd, number of dimensions = 27
+
+
+ MODELING: Basic BMI 6 factor using SBP  and BMI      and Diabetes
+
+
+U.S. Population          to modfile\popUSA.def          1 file(s) copied.
+
+U.S. Pop turning 35      to modfile\m35.def             1 file(s) copied.
+
+U.S. Pop with CVD        to modfile\pcvd.def            1 file(s) copied.
+
+Non CHD Incidence        to modfile\inc.def             1 file(s) copied.
+
+Beta Coefficient         to modfile\b.def               1 file(s) copied.
+
+Risk Averages            to modfile\rsk.def             1 file(s) copied.
+
+Risk Proportions         to modfile\prfp.def            1 file(s) copied.
+
+Transition Rate          to modfile\tran.def            1 file(s) copied.
+
+Adjusted Life Years      to modfile\qolwgts.def         1 file(s) copied.
+
+Adjusted Life Years      to modfile\shortwgt.def        1 file(s) copied.
+
+DH initial state         to modfile\chdr.def            1 file(s) copied.
+
+Non-CHD Cost Variables   to modfile\NoCHDCst.def        1 file(s) copied.
+
+Risk Proportions         to modfile\modprfp.def         1 file(s) copied.
+
+95 Year Old Survivor     to modfile\ely95.def           1 file(s) copied.
+
+Start year for Model     to modfile\startyr.def         1 file(s) copied.
+
+IPF joint marginal risk  to modfile\xprfp.def           1 file(s) copied.
+
+BMI and Smoking Risk Fac to modfile\decalib.def         1 file(s) copied.
+
+DH calibration arrays    to modfile\dhcalib.def         1 file(s) copied.
+
+Ten year CHD risk        to modfile\risk.def            1 file(s) copied.
+
+Beta Stroke Coefficient  to modfile\bstrok.def          1 file(s) copied.
+
+Incidence of Stroke      to modfile\incstrok.def        1 file(s) copied.
+
+Risk factor multivariate to modfile\mdis.def            1 file(s) copied.
+
+Beta Diabetes Coefficien to modfile\bdia.def            1 file(s) copied.
+
+Incidence of Diabetes    to modfile\incdia.def          1 file(s) copied.
+
+DH Risk Factor Proportio to modfile\dhrfp.def           1 file(s) copied.
+
+Event Rate Probabilities to modfile\evtdat.def          1 file(s) copied.
+
+Case Fatality Probabilit to modfile\cfrdat.def          1 file(s) copied.
+
+Allocation Probabilities to modfile\alocdat.def         1 file(s) copied.
+
+Relative Risk Probabilit to modfile\rrdat.def           1 file(s) copied.
+
+Non-CHD Mortality Rates  to modfile\oddat.def           1 file(s) copied.
+
+Cost Probabilities       to modfile\cstdat.def          1 file(s) copied.
+
+
+Would you like to modify any input arrays?
+         1 = yes
+         2 = no
+
+1
+ using:   1
+
+Which input file would you like to modify?
+    1 = U.S. population, by age and sex,
+    2 = Projected U.S. population turning age 35, by sex and calendar year,
+    3 = Proportion of U.S. population with CHD history, by age range and sex,
+    4 = Risk factor proportions among people with no CHD, by age range and sex,
+    5 = Mean values of risk factors within strata, by age range and sex,
+    6 = Annual rates of transition between risk factor cells,
+    7 = Beta coefficients for risk factors, by age range and sex,
+    8 = Incidence of Non-CHD death and CHD, by age range and sex,
+    9 = Quality adjusted life years, by age range and sex,
+    10 = Short Term Quality adjusted life years, by age range and sex,
+    11 = Disease History initial state distribution by age and sex,
+    12 = Non-CHD Cost variables,
+    13 = Non-CHD Gamma/Relative Risk, by age range and sex - NO LONGER USED,
+    14 = Joint (CHD and Non-CHD) Risk Proportions, by age range and sex,
+    15 = Modified risk factor proportions in population with no CVD (modpfrp),
+    16 = 95 Year Old Survivor Estimates
+    17 = Starting year for the Coronary Heart Disease Model
+    18 = IPF joint marginal risk factor definition
+    19 = BMI and Smoking Risk Factor Links for DE and DH
+    20 = DH calibration arrays
+    21 = Ten year CHD risk
+    22 = Beta coefficients for Stroke
+    23 = Incidence of Stroke
+    24 = Multivariate distribution of risk factors (mdis)
+    25 = Beta coefficients for Diabetes
+    26 = Incidence of Diabetes
+    27 = Enable writing to Annual PRFP and Rsakave output tables
+    28 = DH Risk Factor Proportions
+    29 = Minimize risk factor intervention mortality benefit
+    hit return to exit
+
+Please note;
+ Arrays are printed with row 1=males & row 2=females,
+ Each column represents an age range where column 1=35-44 thru column 6=85-94,
+ If input files 4 or 5 are modified you must also modify file 6 and visa versa.
+
+7
+ using:   7
+Which Beta Coefficient     input file?
+
+      1 = b.def
+      2 = b_mc.dat
+
+Type a number between 1 and   2 or return for default.
+         (Default = b.def       )
+
+2
+ using:   2        1 file(s) copied.
+
+Would you like to:
+ 1 = edit file  2 = delete this file  Return to exit.
+
+
+Which input file would you like to modify?
+    1 = U.S. population, by age and sex,
+    2 = Projected U.S. population turning age 35, by sex and calendar year,
+    3 = Proportion of U.S. population with CHD history, by age range and sex,
+    4 = Risk factor proportions among people with no CHD, by age range and sex,
+    5 = Mean values of risk factors within strata, by age range and sex,
+    6 = Annual rates of transition between risk factor cells,
+    7 = Beta coefficients for risk factors, by age range and sex,
+    8 = Incidence of Non-CHD death and CHD, by age range and sex,
+    9 = Quality adjusted life years, by age range and sex,
+    10 = Short Term Quality adjusted life years, by age range and sex,
+    11 = Disease History initial state distribution by age and sex,
+    12 = Non-CHD Cost variables,
+    13 = Non-CHD Gamma/Relative Risk, by age range and sex - NO LONGER USED,
+    14 = Joint (CHD and Non-CHD) Risk Proportions, by age range and sex,
+    15 = Modified risk factor proportions in population with no CVD (modpfrp),
+    16 = 95 Year Old Survivor Estimates
+    17 = Starting year for the Coronary Heart Disease Model
+    18 = IPF joint marginal risk factor definition
+    19 = BMI and Smoking Risk Factor Links for DE and DH
+    20 = DH calibration arrays
+    21 = Ten year CHD risk
+    22 = Beta coefficients for Stroke
+    23 = Incidence of Stroke
+    24 = Multivariate distribution of risk factors (mdis)
+    25 = Beta coefficients for Diabetes
+    26 = Incidence of Diabetes
+    27 = Enable writing to Annual PRFP and Rsakave output tables
+    28 = DH Risk Factor Proportions
+    29 = Minimize risk factor intervention mortality benefit
+    hit return to exit
+
+Please note;
+ Arrays are printed with row 1=males & row 2=females,
+ Each column represents an age range where column 1=35-44 thru column 6=85-94,
+ If input files 4 or 5 are modified you must also modify file 6 and visa versa.
+
+
+
+Would you like to modify any input arrays?
+         1 = yes
+         2 = no
+
+2
+ using:   2
+
+
+
+              Reading in initialization files...
+
+
+
+
+              Creating derived input arrays.....
+
+
+              ADJUSTED NON-CHD RISK FACTOR TABLE (modrfp) using IPF COMPLETE!
+              NON-CHD RISK FACTOR TABLE (RFP) using IPF COMPLETE!
+             Base intercept calculation complete
+             Stroke intercept calculation complete
+             Diabetes intercept calculation complete
+              ALPHA TABLE USING NEWTON-RAPHSON METHOD COMPLETE!
+              35 YEAR OLD POP W/OUT CHD TABLE (N35) COMPLETE!
+              RISK FACTOR CELL POPULATION TABLE (NN) COMPLETE!
+
+What year will the printout begin?
+    (Default is 2012)
+
+2012
+using : 2012
+
+What year will the printout end?
+    (Default is 2012)
+
+2014
+using : 2014
+
+Output will consist of
+         1 = individual year(s)
+         2 = interval printing (i.e. every 5 years)
+         3 = print specifications complete/exit print menu
+
+2
+ using:   2
+
+Please select a print interval.
+    (i.e. 1 would print every year, 10 would print every 10 years)
+    Default is every 5 years.
+
+1
+
+using :    1
+
+
+Output will consist of
+         1 = individual year(s)
+         2 = interval printing (i.e. every 5 years)
+         3 = print specifications complete/exit print menu
+
+
+                   !!!ERROR ON INPUT, TRY AGAIN!!!
+
+
+Output will consist of
+         1 = individual year(s)
+         2 = interval printing (i.e. every 5 years)
+         3 = print specifications complete/exit print menu
+
+3
+ using:   3
+
+Would you prefer output sent to
+         1 = your screen
+         2 = your printer
+         3 = a Windows file
+         4 = no output
+
+3
+ using:   3
+
+Type a File Name Up To 12 Characters Long.
+
+rossfake
+
+Sum Costs and Person Years over time range?
+         1 = yes
+         2 = no
+
+1
+ using:   1
+
+What year will summation begin?
+    (Default is 2012)
+
+
+using : 2012
+
+What year will summation end?
+    (Default is 2014)
+
+
+using : 2014
+
+Do you want Summations for Cost-Effectiveness Analysis?
+         1 = yes
+         2 = no
+
+1
+ using:   1
+Please enter the Discount Rate as a Percent.
+    (e.g. 15% should be entered as .15)
+
+.03
+
+using:  0.0300
+
+What year will Discounting begin?
+    (Default is 2012)
+
+
+using : 2012
+
+Write variables to the space delimited Windows file outfile.dat?
+         1 = yes
+         2 = no
+
+1
+ using:   1
+Enter a description of the simulation (up to 100 characters) that will be stored in the output file.
+
+toy run
+
+Append to the existing outfile.dat?
+         1 = yes
+         2 = no
+
+2
+ using:   2
+
+Would you like to perform a DE primary intervention?
+         1 = yes
+         2 = no
+
+1
+ using:   1
+What year will this intervention begin:
+(year must be between 2012 and 2014, default is 2012)
+
+
+
+using : 2012
+
+
+Would you like to adjust the DH Probability or Cost data?
+         1 = yes
+         2 = no
+
+2
+ using:   2
+                     SIMULATION COMPILING...
+
+
+--------------------------------------------------
+The year is 2012, performing a DE Intervention
+
+Please select a DE risk factor to modify:
+         1 = systolic blood pressure
+         2 = LDL
+         3 = smoking score
+         4 = HDL
+         5 = BMI
+         6 = diabetes
+
+3
+ using:   3
+
+Do you want to select a 10-year risk threshold?
+         1 = yes
+         2 = no
+
+2
+ using:   2
+Do you want to make a percent or an absolute change,
+or redefine the risk factor?
+         1 = percent
+         2 = absolute
+         3 = redefine
+
+3
+ using:   3
+Please enter the risk factor change.
+    e.g. 10% should be entered as .10, 10 absolute or
+    10 as a new value should be entered as 10.00 or 10
+    Note: the value returned is the actual value for the run.
+
+0
+
+  0.000000
+Please type the age range(s) you wish to modify:
+         1 = 35-44 year olds
+         2 = 45-54 year olds
+         3 = 55-64 year olds
+         4 = 65-74 year olds
+         5 = 75-84 year olds
+         6 = 85-94 year olds
+         return for all age ranges
+         or  b  to back up one step
+
+
+using:  1 2 3 4 5 6
+Please type the sex you wish to modify:
+         1 = males
+         2 = females
+         return for both sexes
+         or  b  to back up one step
+
+
+using:  1 2
+
+Please type the SBP range(s) you wish to modify:
+         1 = < 130
+         2 = 130 - <140
+         3 = >=140
+         return for all SBP ranges
+         or  b  to back up one step
+
+
+using:  1 2 3
+Please type the LDL range(s) you wish to modify:
+         1 = <100
+         2 = 100-130
+         3 = > 130
+         return for all LDL ranges
+         or  b  to back up one step
+
+
+using:  1 2 3
+Please type the smoking type(s) you wish to modify:
+         1 = nonsmokers
+         2 = environmental tobacco smoke
+         3 = smokers
+         return for both smoking types
+         or  b  to back up one step
+
+
+using:  1 2 3
+
+Please type the HDL range(s) you wish to modify:
+         1 = < 35
+         2 = 35-49
+         3 = > 49
+         return for all HDL ranges
+         or  b  to back up one step
+
+
+using:  1 2 3
+
+Please type the BMI range(s) you wish to modify:
+         1 = < 25
+         2 = 25-29
+         3 = > 29
+         return for all BMI ranges
+         or  b  to back up one step
+
+
+using:  1 2 3
+
+Please type the Diabetes state you wish to modify:
+         1 = diagnosed with diabetes
+         2 = no diabetes
+         3 = not applicable
+         return for all diabetes ranges
+         or  b  to back up one step
+
+
+using:  1 2 3
+
+Would you like to enter a prevention cost dollar estimate per case?
+         1 = yes
+         2 = no
+
+1
+ using:   1
+Please enter the dollar value (e.g. 10.00 would be 10 dollars
+
+1000
+
+**********
+
+Does intervention reduce quality of life?
+         1 = yes
+         2 = no
+
+2
+ using:   2
+
+Would you like to modify more DE risk factor levels?
+         1 = yes
+         2 = no
+
+2
+ using:   2
+
+Would you like to perform another DE primary intervention?
+         1 = yes
+         2 = no
+
+2
+ using:   2
+
+Would you like to adjust the DH Probability or Cost data?
+         1 = yes
+         2 = no
+
+2
+ using:   2
+
+
+         Simulation completed
+
+C:\Users\rdboylan\Documents\KBD2\Canada2>node ..\KBD\bin\mc run 3 0 456
+internal/modules/cjs/loader.js:583
+    throw err;
+    ^
+
+Error: Cannot find module 'C:\Users\rdboylan\Documents\KBD2\KBD\bin\mc'
+    at Function.Module._resolveFilename (internal/modules/cjs/loader.js:581:15)
+    at Function.Module._load (internal/modules/cjs/loader.js:507:25)
+    at Function.Module.runMain (internal/modules/cjs/loader.js:742:12)
+    at startup (internal/bootstrap/node.js:283:19)
+    at bootstrapNodeJSCore (internal/bootstrap/node.js:743:3)
+
+C:\Users\rdboylan\Documents\KBD2\Canada2>node ..\..\KBD\bin\mc run 3 0 456
+C:\Users\rdboylan\Documents\KBD\node_modules\yargs\yargs.js:1133
+      else throw err
+           ^
+
+ReferenceError: ITERATIONS is not defined
+    at simRuns (C:\Users\rdboylan\Documents\KBD\bin\js\runSims.js:66:18)
+    at Object.module.exports [as handler] (C:\Users\rdboylan\Documents\KBD\bin\js\runSims.js:218:3)
+    at Object.runCommand (C:\Users\rdboylan\Documents\KBD\node_modules\yargs\lib\command.js:235:44)
+    at Object.parseArgs [as _parseArgs] (C:\Users\rdboylan\Documents\KBD\node_modules\yargs\yargs.js:1046:30)
+    at Object.get [as argv] (C:\Users\rdboylan\Documents\KBD\node_modules\yargs\yargs.js:989:21)
+    at Object.<anonymous> (C:\Users\rdboylan\Documents\KBD\bin\mc.js:44:1)
+    at Module._compile (internal/modules/cjs/loader.js:689:30)
+    at Object.Module._extensions..js (internal/modules/cjs/loader.js:700:10)
+    at Module.load (internal/modules/cjs/loader.js:599:32)
+    at tryModuleLoad (internal/modules/cjs/loader.js:538:12)
+
+C:\Users\rdboylan\Documents\KBD2\Canada2>node ..\..\KBD\bin\mc run 3 0 456
+ERR montecarlo.py run failed
+
+C:\Users\rdboylan\Documents\KBD2\Canada2>py c:\Users\rdboylan\Documents\KBD\bin\js/../python/montecarlo.py -z -s
+Traceback (most recent call last):
+  File "c:\Users\rdboylan\Documents\KBD\bin\js/../python/montecarlo.py", line 8, in <module>
+    import numpy as np
+ModuleNotFoundError: No module named 'numpy'
+
+C:\Users\rdboylan\Documents\KBD2\Canada2>py -m pip install numpy
+Collecting numpy
+  Downloading https://files.pythonhosted.org/packages/41/b8/3a6b07352c2542ca1c89be7583e7ca07bf513895b6ac59ae008054f326b1/numpy-1.16.1-cp37-cp37m-win_amd64.whl (11.9MB)
+    100% |████████████████████████████████| 11.9MB 1.5MB/s
+Installing collected packages: numpy
+Could not install packages due to an EnvironmentError: [WinError 5] Access is denied: 'C:\\Program Files (x86)\\Microsoft Visual Studio\\Shared\\Python37_64\\Lib\\site-packages\\numpy'
+Consider using the `--user` option or check the permissions.
+
+You are using pip version 10.0.1, however version 19.0.1 is available.
+You should consider upgrading via the 'python -m pip install --upgrade pip' command.
+
+C:\Users\rdboylan\Documents\KBD2\Canada2>py c:\Users\rdboylan\Documents\KBD\bin\js/../python/montecarlo.py -z -s
+Traceback (most recent call last):
+  File "c:\Users\rdboylan\Documents\KBD\bin\js/../python/montecarlo.py", line 599, in <module>
+    main()
+  File "c:\Users\rdboylan\Documents\KBD\bin\js/../python/montecarlo.py", line 36, in main
+    inpfile = InpFile(fname)
+  File "c:\Users\rdboylan\Documents\KBD\bin\js/../python/montecarlo.py", line 359, in __init__
+    self.effects = Effects()
+  File "c:\Users\rdboylan\Documents\KBD\bin\js/../python/montecarlo.py", line 407, in __init__
+    self._generate_pairs()
+  File "c:\Users\rdboylan\Documents\KBD\bin\js/../python/montecarlo.py", line 448, in _generate_pairs
+    self.key_result_pairs[key] = self._sum_components(component_lines)
+  File "c:\Users\rdboylan\Documents\KBD\bin\js/../python/montecarlo.py", line 455, in _sum_components
+    component = Component(line)
+  File "c:\Users\rdboylan\Documents\KBD\bin\js/../python/montecarlo.py", line 502, in __init__
+    if self.set_group(parts[0]):
+  File "c:\Users\rdboylan\Documents\KBD\bin\js/../python/montecarlo.py", line 534, in set_group
+    self.group_state[self.group] = RG.state()
+TypeError: 'dict' object is not callable
+
+C:\Users\rdboylan\Documents\KBD2\Canada2>py c:\Users\rdboylan\Documents\KBD\bin\js/../python/montecarlo.py -z -s
+
+C:\Users\rdboylan\Documents\KBD2\Canada2>node ..\..\KBD\bin\mc run 3 0 333
+sum results
+done
+  simulations completed in 6 mintues!
+
+C:\Users\rdboylan\Documents\KBD2\Canada2>node ..\..\KBD\bin\mc --help
+mc [command]
+
+Commands:
+  mc init                                  initialize MC system in current
+                                           directory
+  mc run-sims [iterations] [start] [seed]  run MC simulations  [aliases: run, r]
+
+Options:
+  --version       Show version number                                  [boolean]
+  --python, --py        [string] [default: py probably only works on MS-Windows]
+  --help          Show help                                            [boolean]
+
+
+C:\Users\rdboylan\Documents\KBD2\Canada2>node ..\..\KBD\bin\mc run --help
+mc run-sims [iterations] [start] [seed]
+
+run MC simulations
+
+Positionals:
+  iterations  Number of simulations to perform          [number] [default: 1000]
+  start       Number of first simulation.  Simulations will range from start to
+              start+iterations-1                           [number] [default: 0]
+  seed        seed for random number generator.  Will be combined with
+              simulation number.  If omitted random numbers will not be
+              reproducible, and may not be sufficiently independent across
+              simulations.                                              [number]
+
+Options:
+  --version       Show version number                                  [boolean]
+  --python, --py        [string] [default: py probably only works on MS-Windows]
+  --help          Show help                                            [boolean]
+
+All numbers should be unsigned integers.
+
+
+C:\Users\rdboylan\Documents\KBD2\Canada2>

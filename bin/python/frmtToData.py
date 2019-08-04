@@ -30,12 +30,12 @@ def header2(line):
             break
     if len(r)>1:
         # a single field is not multiple columns
-        print("Subheads: ", r)
+        #print("Subheads: ", r)
         return r
     else:
         return None
     
-def examine(fn, top=100):
+def examine(fn, vs, top=100):
     i = 0
     state = 0  # scan for variable name
     with open(fn, "rt") as fin:
@@ -45,27 +45,31 @@ def examine(fn, top=100):
             i += 1
             if state == 0:
                 varname = line.strip()
+                varid = vs.id(varname)
                 state = 1
             elif state == 1:
                 #sub heads
                 if blankRE.match(line):
-                    print("%s has an empty line after it. Skipping.".format(varname))
+                    print("{} on line {} has an empty line after it. Skipping.".format(varname, i))
                     state = 0
                     continue
                 colgroups = header2(line)
                 if colgroups:
-                    firstSet = colgroups[0][1]
-                    if firstSet == varname or firstSet == "Age/Sex Breakdown":
-                        colgroups[0] = (colgroups[0][0], None)
-                    else:
-                        pass
+                    subVars = []  # list of (iPost, varID)
+                    for iStart, subName in colgroups:
+                        if subName == varname or subName == "Age/Sex Breakdown":
+                            subVars.append( (iStart, None) )
+                        else:
+                            subVars.append( (iStart, vs.id(subName)) )
+                else:
+                    subVars = None
                 state = 2
             elif state==2:
                 #individual column headings
                 assert line.startswith(expectColStart)
                 oldStart = 0
-                if colgroups:
-                    for iStart, subvar in colgroups:
+                if subVars:
+                    for iStart, subvar in subVars:
                         if oldStart > 9:
                             assert line[oldStart:iStart] == expectCols
                         oldStart = iStart
@@ -78,21 +82,22 @@ def examine(fn, top=100):
                     state = 0
                     continue
                 year = line[:4]
-                if colgroups:
+                if subVars:
                     iOld = 0
                     oldSub = None
-                    for iStart, subvar in colgroups:
-                        if iOld and oldSub != "TBD":
-                            vs = line[iOld:iStart].split()
-                            print("{}:{}:{}:{}".format(varname, oldSub, year, vs))
+                    for iStart, subvarid in colgroups:
+                        if iOld and not vs.skipID(subvarid):
+                            pass
+                            #vvs = line[iOld:iStart].split()
+                            #print("{}:{}:{}:{}".format(varname, oldSub, year, vself._c.execute("SELECT varid FROM variable WHERE name=?;", (varname, ))))
                         iOld = iStart
                         oldSub = subvar
                     # fall through to get last group
                 else:
                     iOld = 9
                     oldSub = None
-                vs = line[iOld:].split()
-                print("{}:{}:{}:{}".format(varname, oldSub, year, vs))
+                #vvs = line[iOld:].split()
+                #print("{}:{}:{}:{}".format(varname, oldSub, year, vvs))
 
             #print(i, len(line), line, end="")
 
@@ -100,23 +105,51 @@ def makeTable(d):
     "Create database tables in d, a cursor"
     design = [("batch", "batchid integer primary key, production bool, description text, start text, end text"),
               ("variable", "varid integer primary key, name text, description text"),
-              ("demo", "demoid integer primary key, sex text, ageStart integer, ageEnd integer"),
+              ("demo", "demoid integer primary key, label text, sex text, ageStart integer, ageEnd integer"),
               ("data", "batchid references batch(batchid), varid references variable(varid), "
                "subvarid references variable(varid), demoid references demo(demoid), "
                "year integer, value real")
               ]
     for tbl, cols in design:
         d.execute("CREATE TABLE {} ({});".format(tbl, cols))
+    # populate demographics
+    i=0
+    for label in expectCols.split():
+        d.execute("INSERT INTO demo VALUES (?, ?, ?, ?, ?);", (i, label, label[0], label[1:3], label[4:6]))
+        i += 1
 
-if False:  
+class Variables:
+    "Return rowid of variable, creating if necessary.  May cache"
+    def __init__(self, cursor):
+        self._c = cursor
+        self.TBDID = None  # if set, varid for TBD (skip) subvar 
+
+    def id(self, varname):
+        self._c.execute("SELECT varid FROM variable WHERE name=?;", (varname, ))
+        r = self._c.fetchone()
+        if r:
+            return r[0]
+        else:
+            x = self._c.execute("INSERT INTO variable (name) VALUES (?);", (varname, ))
+            self._c.execute("SELECT varid FROM variable WHERE name=?;", (varname, ))
+            r = self._c.fetchone()
+            if varname == "TBD":
+                self.TBDID = r[0]
+            return r[0]
+
+    def skipID(self, varid):
+        "return true if this is a variable we should skip"
+        return self.TBDID != None and self.TBDID == varid
+    
+if True:  
     conn = sqlite3.connect(":memory:")
     curs = conn.cursor()
     makeTable(curs)
-    x = curs.execute("select demoid from demo where sex=? and ageStart=?;", ("F", 35))
-    y = curs.fetchone()
+    vs = Variables(curs)
+    examine(r"C:\Users\rdboylan\Documents\KBD\A. Mod91_mexPA_MCs_06.28.2019\intermediate0\P06_mc.frmt", vs,
+        top=None)
+    curs.execute("SELECT varid, name FROM variable;")
+    for r in curs:
+        print(r)
+    print("TBD id = {}".format(vs.TBDID))
     conn.close()
-
-
-examine(r"C:\Users\rdboylan\Documents\KBD\A. Mod91_mexPA_MCs_06.28.2019\intermediate0\P06_mc.frmt",
-        top=50)
-           

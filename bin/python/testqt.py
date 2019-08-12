@@ -1,3 +1,15 @@
+# GUI to summarize all runs in monte carlo, as gathered up by frmtToData.py
+
+# Still to do:
+# output to file
+# user selectable input file and/or generation of same
+# Is this actually the info and format desired?
+#    Note some values are reported with scientific notation now
+# Wire up to recalc with change in stat selection
+# Use all selected variables, not just the most recent click.
+# Implement sd
+# Output per simulation results
+
 import pdb
 import sys
 import random

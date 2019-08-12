@@ -6,6 +6,9 @@ import sys
 import os.path
 import re
 
+#for debug
+import os, pdb
+
 
 OUTPUT_EXTENSION = '.frmt'
 
@@ -73,6 +76,8 @@ def main():
 			section = add_sections(reformatter,*section_params[1:])
 		else:
 			section = TrackedSection(*section_params)
+			if section_params[0] == "NEW DIABETES CASES":
+				xyzzy = 1
 			reformatter.format(section)
 		
 		section.print_lines(formatted_file)
@@ -358,4 +363,7 @@ class NumBlock(object):
 
 
 if __name__ == '__main__':
-    main()
+	# debug
+	os.chdir(r"C:\Users\rdboylan\Documents\KBD\A. Mod91_mexPA_MCs_06.28.2019\intermediate0")
+	
+	main()

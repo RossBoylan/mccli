@@ -3,12 +3,20 @@
 # Still to do:
 # output to file
 # user selectable input file and/or generation of same
-# Is this actually the info and format desired?
+# Is this actually the info and format desired? No
+#    Target results/summary/ageranges_VVV.csv
+#     If there are multiple scenarios they will appear as multiple
+#     blocks with different filenames.
 #    Note some values are reported with scientific notation now
 # Wire up to recalc with change in stat selection
 # Use all selected variables, not just the most recent click.
 # Implement sd
 # Output per simulation results
+
+## allow MSVS "remote" debugging
+import ptvsd
+ptvsd.enable_attach()
+ptvsd.wait_for_attach()
 
 import pdb
 import sys
@@ -47,7 +55,9 @@ class MyWidget(QtWidgets.QWidget):
         # driver type is QtSql.QSqlDriver.SQLite
         self.db = QtSql.QSqlDatabase.addDatabase("QSQLITE")
         self.db.setDatabaseName(DATABASE)
-        return self.db.open()
+        success =  self.db.open()
+        drv = self.db.driver()
+        return success
 
     def _initVariables(self):
         "setup data and view for list of variables"

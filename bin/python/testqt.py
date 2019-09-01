@@ -19,12 +19,14 @@ ptvsd.enable_attach()
 ptvsd.wait_for_attach()
 
 import pdb
+from datetime import datetime
 import sys
 import random
 from PySide2 import QtCore, QtWidgets, QtGui, QtSql
 from PySide2.QtSql import QSqlQuery
 import pandas as pd
 import numpy as np
+from socket import getfqdn
 
 DATABASE=r"C:\Users\rdboylan\Documents\KBD\bin\python\alldata.db"
 
@@ -126,16 +128,66 @@ class MyWidget(QtWidgets.QWidget):
         Compute statistics by column.
         Finally, append per simulation values.
         vars is a list of strings, names of top level variables"""
-        vars = "('" +  "', '".join(vars) + "')"
-        groupVars = ["name", "subCat", "scenario", "iSim", "label"]
-        sqlGroups = ", ".join(groupVars)
-        strSQL = "SELECT "+sqlGroups+", TOTAL(value) as v" +\
-         " FROM data LEFT OUTER JOIN fullvar USING (fullvarid) LEFT OUTER JOIN variable " + \
-            "USING (varid) LEFT OUTER JOIN demo USING (demoid) " +\
-            " WHERE name IN " + vars + " GROUP BY "+sqlGroups +" ORDER BY "+ sqlGroups + ";"
-        print(strSQL)
+        for v in vars:
+            self._doVar(v)
+
+    def _doVar(self, v):
+        "extract info for a single variable"
         q = QSqlQuery()
-        if not q.exec_("CREATE TEMP VIEW allyrs AS " + strSQL):
+        q.prepare("SELECT fullvarid, subcat FROM fullvar INNER JOIN variable USING (varid) WHERE name = ?;")
+        q.addBindValue(v)
+        q.setForwardOnly(True)
+        if not q.exec_():
+             raise MyErr("Unable to get subcategories for {}: {}".format(v, q.lastError().text()))
+        while q.next():
+             self._doSubCat(q.value(0), v, q.value(1))
+
+    def _doSubCat(self, fullvarid, var, subcat):
+        """Output results for one particular var/subcat.
+        This is the unit of the individual output file.
+        fullvarid is the index of this particular var/subcat in the data
+        var, subcat are the text names of same.
+
+        There may be multiple scenarios within this category.
+        Each gets a separate subtable.
+        """
+        f = self._openFile(var, subcat)
+        q = QSqlQuery(("SELECT scenario, min(year) AS y0, max(year) AS y1 FROM data WHERE fullvarid = {}" +\
+            " GROUP BY scenario ORDER BY scenario;").format(fullvarid))
+        while q.next():
+            f.write("Totals for {}-{}.\n".format(q.value(1), q.value(2)))
+            self._doScenario(f, fullvarid, q.value(0))
+        f.close()
+        print("Done with {}: {}".format(var, subcat))
+
+    def _openFile(self, var, subcat):
+        "open an appropriately named file for var/subcat"
+        if subcat == "-":
+            name = var
+        else:
+            name = "{}_{}".format(var, subcat)
+        fname = "ageranges_{}.csv".format(name)
+        fout = open(fname, "wt")
+        if subcat == "-":
+            fout.write(var)
+        else:
+            fout.write("{}: {}".format(var, subcat))
+        fout.write(" summary created by testqt.py run at {} on {} with results in file {}.\n".format(datetime.now(), getfqdn(), fname))
+        return fout
+
+    def _doScenario(self, fout, fullvarid, scenario):
+        "Output appropriately rotated results for one scenario"
+        QSqlQuery("DROP VIEW IF EXISTS allyrs;")
+        groupVars = ["iSim", "label"]
+        sqlGroups = ", ".join(groupVars)
+        # parameters not allowed in views
+        strSQL = "SELECT "+sqlGroups+", TOTAL(value) as v" +\
+            " FROM data LEFT OUTER JOIN demo USING (demoid) " +\
+            " WHERE fullvarid = {} AND scenario = '{}' GROUP BY ".format(fullvarid, scenario) +\
+            sqlGroups +" ORDER BY "+ sqlGroups + ";"
+        q = QSqlQuery()
+        q.prepare("CREATE TEMP VIEW allyrs AS " + strSQL)
+        if not q.exec_():
             raise MyErr("Unable to create temp allyrs: "+q.lastError().text())
         q2 = QSqlQuery()
         if not q2.exec_("SELECT DISTINCT label FROM allyrs ORDER BY label;"):
@@ -152,40 +204,30 @@ class MyWidget(QtWidgets.QWidget):
             print(q.lastError())
             return
         # at this point we have v with totals across years
-        colNames = labels
-        self.df = pd.DataFrame(self._chunk(q, labels), columns=colNames)
+        colNames = ["file"] + labels
+        self.df = pd.DataFrame(self._chunk(q, scenario, labels), columns=colNames)
         self._addTotals()
         self._addStats()
-        #self.df.to_string(float_format=(lambda a : np.format_float_positional(a, precision=2)))
-        print(self.df)
+        # this option worked with to_string, but with to_csv it yields
+        # TypeError: only size-1 arrays can be converted to Python scalars
+        # float_format=(lambda a : np.format_float_positional(a, precision=2))
+        self.df.to_csv(fout, line_terminator="\n")
         return self.df
 
-    def _chunk(self, q, labels):
+    def _chunk(self, q, scenario, labels):
         """Rotate entries for one chunk and return a DataFrame.
-        q is a query result with the necessary data
+        q is a query result with the necessary data, only for one fullvarid/scenario
         labels are the column labels
         a chunk is one particular variable, subCat, and scenario"""
-        chunkValues = None
-        t_row = [ ]  # transposed row
         iSim = -1
         last_label = labels[len(labels)-1]
         while q.next():
-            thisKeys = [q.value(i) for i in range(3)]
-            if chunkValues:
-                if not chunkValues == thisKeys:
-                    # new chunk.  For now we just bail
-                    return
-            else:
-                chunkValues = thisKeys
             if iSim < 0:
                 # start of this row
-                iSim = q.value(3)
-                if iSim>5:
-                    # shortcut for development
-                    return
-                t_row = [ ]
-            t_row.append(q.value(5))
-            if q.value(4) == last_label:
+                t_row = [ scenario ]
+            iSim = q.value(0)
+            t_row.append(q.value(2))
+            if q.value(1) == last_label:
                 # one transposed row is ready
                 yield t_row
                 iSim = -1
@@ -212,7 +254,10 @@ class MyWidget(QtWidgets.QWidget):
         """Compute requested statistics for self.df
         and insert them at the top of same"""
         # for now ignore requested stats and just give all
-        aSumDF = self.df.describe(percentiles=(0.05, .10, .25, .5, .75, .9, .95), include=[np.number])
+        # the dtype of most columns, even the numbers, is object
+        # so filtering based on dtype won't work
+        aSumDF = self.df.iloc[:, 1:].describe(percentiles=(0.05, .10, .25, .5, .75, .9, .95))
+        aSumDF.insert(0, "file", self.df.iloc[0, 0])
         self.df = pd.concat([aSumDF, self.df])
 
 

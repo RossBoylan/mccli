@@ -1,0 +1,29 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 16
+VisualStudioVersion = 16.0.29209.152
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{9092AA53-FB77-4645-B42D-1CCCA6BD08BD}") = "mccli", "mccli.njsproj", "{7714D22F-3CC3-4247-B758-6D7E970172F9}"
+EndProject
+Project("{888888A0-9F3D-457C-B088-3A5042F75D52}") = "Python tester", "bin\python\Python tester\Python tester.pyproj", "{F4331E1F-0E3E-44D0-851B-64CBF526639A}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{7714D22F-3CC3-4247-B758-6D7E970172F9}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{7714D22F-3CC3-4247-B758-6D7E970172F9}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{7714D22F-3CC3-4247-B758-6D7E970172F9}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{7714D22F-3CC3-4247-B758-6D7E970172F9}.Release|Any CPU.Build.0 = Release|Any CPU
+		{F4331E1F-0E3E-44D0-851B-64CBF526639A}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{F4331E1F-0E3E-44D0-851B-64CBF526639A}.Release|Any CPU.ActiveCfg = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {20BD23B7-4A59-408F-BDB5-77C1A83A5F6D}
+	EndGlobalSection
+EndGlobal

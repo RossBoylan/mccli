@@ -20,6 +20,7 @@
   <PropertyGroup Condition="'$(Configuration)' == 'Debug'" />
   <PropertyGroup Condition="'$(Configuration)' == 'Release'" />
   <ItemGroup>
+    <Content Include="bin\python\testqt.py" />
     <Content Include="package.json" />
     <Content Include="README.md" />
     <Content Include="bin\input_data.json" />

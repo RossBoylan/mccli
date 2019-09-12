@@ -15,7 +15,7 @@
 
 from datetime import datetime
 import sys
-import random
+import re
 from PySide2 import QtCore, QtWidgets, QtGui, QtSql
 from PySide2.QtSql import QSqlQuery
 import pandas as pd
@@ -122,6 +122,7 @@ class MyWidget(QtWidgets.QWidget):
             name = var
         else:
             name = "{}_{}".format(var, subcat)
+        name = re.sub("/", " or ", name)
         fname = "ageranges_{}.csv".format(name)
         fout = open(fname, "wt")
         if subcat == "-":

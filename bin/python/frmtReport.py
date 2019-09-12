@@ -1,7 +1,9 @@
 # GUI to summarize all runs in monte carlo, as gathered up by frmtToData.py
+# File: frmtReport.py
+# Author: Ross Boylan
+# Created: 2019-09-12
 
 # Still to do:
-# output to file
 # user selectable input file and/or generation of same
 # Is this actually the info and format desired? No
 #    Target results/summary/ageranges_VVV.csv
@@ -10,15 +12,7 @@
 #    Note some values are reported with scientific notation now
 # Wire up to recalc with change in stat selection
 # Use all selected variables, not just the most recent click.
-# Implement sd
-# Output per simulation results
 
-## allow MSVS "remote" debugging
-import ptvsd
-ptvsd.enable_attach()
-ptvsd.wait_for_attach()
-
-import pdb
 from datetime import datetime
 import sys
 import random
@@ -47,9 +41,6 @@ class MyWidget(QtWidgets.QWidget):
         self.layout.addWidget(self.text)
         
         self._initVariables()
-        #self._initOptions()
-        #self._initStats()
-        #self._initResults()
         self.vVariables.selectionModel().selectionChanged.connect(self.variableSelectionChanged)
         self.setLayout(self.layout)
 
@@ -76,42 +67,7 @@ class MyWidget(QtWidgets.QWidget):
         self.vVariables.setModel(self.qVariables)
         self.vVariables.resizeColumnsToContents()
         self.layout.addWidget(self.vVariables)
-
-    def _initOptions(self):
-        "Setup option GUI and data"
-        self.vOptionGroup = QtWidgets.QGroupBox("Subgroups to break out")
-        innerLayout = QtWidgets.QHBoxLayout()
-        opts = [("age", True), ("sex", True), ("year", False) ]
-        self._opts = {}
-        for fld, default in opts:
-            cb = QtWidgets.QCheckBox(fld)
-            cb.setChecked(default)
-            innerLayout.addWidget(cb)
-            self._opts[fld] = cb
-        self.vOptionGroup.setLayout(innerLayout)
-        self.layout.addWidget(self.vOptionGroup)
-
-    def _initStats(self):
-        "setup GUI and data for statistics to collect"
-        self.vStatsGroup = QtWidgets.QGroupBox("Values to Report")
-        innerLayout = QtWidgets.QHBoxLayout()
-        opts = [("", True), ("avg", True), ("sd", False), ("min", True), ("max", True) ]
-        self._stats = {}
-        for fld, default in opts:
-            cb = QtWidgets.QCheckBox(fld)
-            cb.setChecked(default)
-            innerLayout.addWidget(cb)
-            self._stats[fld] = cb
-        self.vStatsGroup.setLayout(innerLayout)
-        self.layout.addWidget(self.vStatsGroup)
-
-    def _initResults(self):
-        "setup GUI for results, though it will be empty at the start"
-        self.vResults = QtWidgets.QTableView()
-        self.qResults = QtSql.QSqlQueryModel()
-        self.vResults.setModel(self.qResults)
-        self.layout.addWidget(self.vResults)
-        
+    
     def variableSelectionChanged(self, selected, deselected):
         """User has selected a new variable.  For now just show most recent one.
         Compute results and display them.
@@ -259,51 +215,7 @@ class MyWidget(QtWidgets.QWidget):
         aSumDF = self.df.iloc[:, 1:].describe(percentiles=(0.05, .10, .25, .5, .75, .9, .95))
         aSumDF.insert(0, "file", self.df.iloc[0, 0])
         self.df = pd.concat([aSumDF, self.df])
-
-
-
-
-    def _buildResults(self, vars):
-        """Build a results query and show it in vResults
-        vars is a list of strings, names of top level variables"""
-        vars = "('" +  "', '".join(vars) + "')"
-        print(vars)
-
-        # build list of group variables, in order
-        groupVars = ["name", "subCat"]
-        picked = set( [ key for key, widget in self._opts.items() if widget.isChecked()])
-        fulldemo = frozenset(("age", "sex"))
-        if fulldemo <= picked:
-            groupVars.append("label")
-            picked -= fulldemo
-        else:
-            onedemo = picked & fulldemo
-            if onedemo:
-                picked -= onedemo
-                onedemo = onedemo.pop()
-                if onedemo == "age":
-                    onedemo="ageStart"
-                groupVars.append(onedemo)
-        if picked:
-            # must be year
-            groupVars.append("year")
-        
-        # build list of statistics
-        stats = [ key for key, widget in self._stats.items() if widget.isChecked()]
-
-        # put it all together
-        sqlGroups = ", ".join(groupVars)
-        strSQL = "SELECT "+sqlGroups
-        for s in stats:
-            strSQL += ", {0}(value) AS {0}".format(s)
-        strSQL += " FROM data LEFT OUTER JOIN fullvar USING (fullvarid) LEFT OUTER JOIN variable " + \
-            "USING (varid) LEFT OUTER JOIN demo USING (demoid) " +\
-            " WHERE name IN " + vars + " GROUP BY "+sqlGroups +" ORDER BY "+ sqlGroups + ";"
-        print(strSQL)
-        self.qResults.setQuery(strSQL)
-        print(self.qResults.lastError())
-        # maybe need to refresh display?
-        
+     
 if __name__ == "__main__":
     app = QtWidgets.QApplication([])
     screenSize = app.primaryScreen().availableSize()

@@ -1,12 +1,18 @@
-# convert .frmt file to database
-# For now just explore the parsing
+# convert .frmt files, output by CVD policy model in Fortran, to SQLite database
+# File: frmtToData.py
+# Author: Ross Boylan
+# Created: 2019-09-12
 
+import argparse
+import glob
 import os.path
 from pathlib import Path
 import re
 import sqlite3
 from datetime import datetime
 now = datetime.now
+
+frmtSubDir=os.path.join("MC", "results", "breakdown")
 
 expectCols = "M35-44             M45-54             M55-64             M65-74             M75-84             M85-94             " \
     "F35-44             F45-54             F55-64             F65-74             F75-84             F85-94             "
@@ -18,6 +24,41 @@ standardRE = re.compile(r"^(Year     M35-44             M45-54             M55-6
         r"\s*Age/Sex Breakdown$)")                
 h2RE = re.compile(r"\s{9,}(\S+(\s{1,3}\S+)*)")
 
+## command line processing
+
+def getInputDirectory(aPath):
+    """
+    Search for input directory, returning a complete path or raising an error"""
+    aPath = os.path.abspath(aPath)
+    if not _hasFrmts(aPath):
+        bPath = os.path.join(aPath, frmtSubDir)
+        if _hasFrmts(bPath):
+            print("Taking format files from {}".format(bPath))
+            return bPath
+        else:
+            raise ValueError("Input .frmt files not found in {} or its {} subdirectory.".format(
+                aPath, frmtSubDir))
+    return(aPath)
+
+def _hasFrmts(path):
+    "Return True if the path has at least one .frmt file"
+    for fname in glob.iglob(os.path.join(path, "*.frmt")):
+        if os.path.isfile(fname) and FrmtFile.fnameRE.match(os.path.basename(fname)):
+            return True
+    return False
+
+parser=argparse.ArgumentParser(description="Convert CVD Model .frmt files to database")
+parser.add_argument("--frmtDir", default= frmtSubDir, help="""Directory [default %(default)s] containing the .frmt files.
+All appropriate .frmt files will be scanned.
+You may instead specify a top-level project directory and the program will look for %(default)s below it if no .frmt
+files are in the top directory.""")
+
+parser.add_argument("--database", default="allData.db", help="""name of database file to create [default %(default)s].
+Include directories to place it in a particular directory.
+Any previous file of this name will be deleted.""")
+
+
+## main classes
 class WeirdFName(Exception):
     def __init__(self, fname):
         self.fname = fname
@@ -238,24 +279,21 @@ class FullVars:
             r = self._c.fetchone()
         self._cacheval = r[0]
         return self._cacheval
-    
-if True:  
-    fdir = FrmtDir(r"C:\Users\rdboylan\Documents\KBD2\MC_P2012 1000 runs\results\breakdown",
-                   "allData.db", top= None, notifyInterval=100)
-    #              C:\Users\rdboylan\Documents\KBD\A. Mod91_mexPA_MCs_06.28.2019\intermediate0"
+
+if __name__ == "__main__":
+    myPat = FrmtFile.fnameRE.pattern
+    parser.epilog = """The exact pattern for input files scanned is the regular expression {}, 
+    i.e. the name must end with an underscore followed by digits followd by .frmt.""".format(myPat)
+    args = parser.parse_args()
+    inDir = getInputDirectory(args.frmtDir)
+    fdir = FrmtDir(inDir, args.database, top= None, notifyInterval=100)
     fdir._c.execute("SELECT COUNT(*) AS NDataRows FROM data;")
     r = fdir._c.fetchone()
-    print("Total data rows = {}".format(r[0]))
+    print("Total data rows = {}.  Here are the first few:".format(r[0]))
     fdir._c.execute("SELECT data.*, variable.name, demo.label FROM data LEFT JOIN fullvar USING (fullvarid) "
                     "LEFT JOIN variable USING (varid) LEFT JOIN demo USING (demoid) LIMIT 10;")
     for r in fdir._c:
         print(r)
 
-    # when source was :memory: this just hung
-    #c2=sqlite3.Connection("alldata.db")
-    #fdir._conn.backup(c2, pages=10)
-
-    input("Hit enter to exit")
-
-    #c2.close()
+    print("All done.")
     fdir._conn.close()

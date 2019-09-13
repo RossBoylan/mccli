@@ -3,17 +3,54 @@
 # Author: Ross Boylan
 # Created: 2019-09-12
 
-# Still to do:
-# user selectable input file and/or generation of same
-# Is this actually the info and format desired? No
-#    Target results/summary/ageranges_VVV.csv
-#     If there are multiple scenarios they will appear as multiple
-#     blocks with different filenames.
-#    Note some values are reported with scientific notation now
-# Wire up to recalc with change in stat selection
-# Use all selected variables, not just the most recent click.
+# INPUTS
+#    One file with a SQLite database produced by frmtToData.py
+#    By default, allData.db in the current directory, but
+#    user specifiable. MyWidget.inName has the value.
+#
+# OUTPUTS
+#   ageranges_VVV_SSS.csv in the format produced by the Fortran program for some variables
+#               already.  VVV is the variable description and SSS is the subcategory (e.g.,
+#               DE or DH). _SSS will be absent for the primary outcome for VVV.
+#               These go in the current directory by default, but you can reset that in the 
+#               GUI.  MyWidget.outDir has the current output path.
+#               VVV_SSS will have any "/", as in Dead/Alive replace by " or " since Python on
+#               windows will not write files with "/" as a part of a name.
+#               If there are multiple scenarios they will be appended one after the other in the csv
+#               file, with the "file" column distinguishing them (as in the Fortran output).
+
+# DEPENDENCIES
+# This program requires PySide2, pandas and numpy to run.  They in turn have other dependencies.
+# In particular, see https://doc.qt.io/qtforpython/gettingstarted.html says to install 
+# libclang first, as well as a recent python.
+# This was developed with Python 3.7 64 bit; I encountered problems with the 32 bit version.
+# In general, to install python modules on Windows, use
+# py -m pip install <list of modules>.  For example
+# py -m pip install pyside2 numpy pandas
+# You may find that the command pip3 or pip works without the py -m.
+# If you have multiple versions of python installed you can select the one to run with, e.g.,
+# py -3-64
+# meaning run the most recent version of Python 3 that is 64 bit.
+#
+# 
+# OPERATION
+# First you should run frmtToData.py to gather information from a run, or several runs, of the model.
+# These produce allData.db files by default, though you can change that.  These files are the inputs
+# to this program.
+#
+# Second, launch this program, e.g., py -3-64 frmtReport.py.
+# The buttons at the top let you change the default input database (allData.db in the current directory
+# by default) and output directory (current directory by default).  So, if you want, change them.
+# Once you have selected a valid database a list of variables, with their associated subcategories,
+# should display.
+#
+# Third, click on a variable name to get a resport.  This will generate one csv file for each subcategory.
+#
+# If you wish, you can click on other variables to get other reports, or select different input and output
+# files and repeat.
 
 from datetime import datetime
+import os.path
 import sys
 import re
 from PySide2 import QtCore, QtWidgets, QtGui, QtSql
@@ -22,16 +59,12 @@ import pandas as pd
 import numpy as np
 from socket import getfqdn
 
-DATABASE=r"C:\Users\rdboylan\Documents\KBD\bin\python\alldata.db"
-
 class MyErr (Exception):
     pass
 
 class MyWidget(QtWidgets.QWidget):
     def __init__(self, screenSize):
         super().__init__()
-        if not self.getDatabase():
-            raise MyErr("Unable to open database")
 
         self.text = QtWidgets.QLabel("CVD Model Result Disector")
         self.text.setAlignment(QtCore.Qt.AlignCenter)
@@ -39,38 +72,78 @@ class MyWidget(QtWidgets.QWidget):
         self.layout = QtWidgets.QVBoxLayout()
 
         self.layout.addWidget(self.text)
-        
+
+        self._initPaths()
+    
         self._initVariables()
+
+        # try to use the initial default database
+        # This will populate the variable list if that works.
+        # This may slow startup.
+        self.getDatabase()
         self.vVariables.selectionModel().selectionChanged.connect(self.variableSelectionChanged)
         self.setLayout(self.layout)
 
     def getDatabase(self):
         """set database connection and cursor
         return True on success
-        eventually this will open a file picker"""
+        """
         # driver type is QtSql.QSqlDriver.SQLite
+        if hasattr(self, "db"):
+            self.db.close()
+            del self.db
         self.db = QtSql.QSqlDatabase.addDatabase("QSQLITE")
-        self.db.setDatabaseName(DATABASE)
+        self.db.setDatabaseName(self.inName)
         success =  self.db.open()
-        drv = self.db.driver()
+        if success:
+            self._linkVariables()
+        else:
+            del self.db
         return success
 
+    def _initPaths(self):
+        "GUI to set input and output paths"
+        group = QtWidgets.QGroupBox()
+        innerLayout = QtWidgets.QHBoxLayout()
+        group.setLayout(innerLayout)
+        self.vInName = QtWidgets.QPushButton("Input File")
+        self.vOutDir = QtWidgets.QPushButton("Output Directory")
+        innerLayout.addWidget(self.vInName)
+        self.vInName.clicked.connect(self.inNameClicked)
+        innerLayout.addWidget(self.vOutDir)
+        self.vOutDir.clicked.connect(self.outDirClicked)
+        self.layout.addWidget(group)
+        self.inName = "allData.db"
+        self.outDir = "."
+
+    def inNameClicked(self):
+        # getOpenFileName returns a tuple of fileName, selected filter
+        self.inName = QtWidgets.QFileDialog.getOpenFileName(self, "Choose input database", os.path.dirname(self.inName), "SQLite Database (*.db)")[0]
+
+    def outDirClicked(self):
+        self.outDir = QtWidgets.QFileDialog.getExistingDirectory(self, "Output Directory for summary files", self.outDir)
+
+
     def _initVariables(self):
-        "setup data and view for list of variables"
+        "setup skeleton for view of variables in the database"
+        self.vVariables = QtWidgets.QTableView()
+        self.vVariables.resizeColumnsToContents()
+        self.layout.addWidget(self.vVariables)
+
+    def _linkVariables(self):
+        "after a valid database connection is established should the variables in the associated widget"
         self.qVariables = QtSql.QSqlQueryModel()
         self.qVariables.setQuery("SELECT name, count(subCat) AS NSubGroups, group_concat(subcat, ' | ') as subGroups FROM "
                                     "fullvar LEFT OUTER JOIN variable USING (varid) "
                                     "GROUP BY varid ORDER BY name;")
         #self.qVariables.setQuery("SELECT name FROM variable ORDER BY name;")
-        #print("Result of query: {}".format(self.qVariables.lastError()))
-        self.vVariables = QtWidgets.QTableView()
         self.vVariables.setModel(self.qVariables)
         self.vVariables.resizeColumnsToContents()
-        self.layout.addWidget(self.vVariables)
-    
+
+
     def variableSelectionChanged(self, selected, deselected):
         """User has selected a new variable.  For now just show most recent one.
-        Compute results and display them.
+        Write files to the output directory.
         The arguments are <QItemSelection>s"""
         # selected.indexes() returns QModelIndexList, which is iterable yielding QModelIndex
         vars = [idx.data() for idx in selected.indexes()]
@@ -124,12 +197,12 @@ class MyWidget(QtWidgets.QWidget):
             name = "{}_{}".format(var, subcat)
         name = re.sub("/", " or ", name)
         fname = "ageranges_{}.csv".format(name)
-        fout = open(fname, "wt")
+        fout = open(os.path.join(self.outDir, fname), "wt")
         if subcat == "-":
             fout.write(var)
         else:
             fout.write("{}: {}".format(var, subcat))
-        fout.write(" summary created by testqt.py run at {} on {} with results in file {}.\n".format(datetime.now(), getfqdn(), fname))
+        fout.write(" Summary created by testqt.py run at {} on {} with results in file {}.\n".format(datetime.now(), getfqdn(), fname))
         return fout
 
     def _doScenario(self, fout, fullvarid, scenario):
@@ -226,6 +299,4 @@ if __name__ == "__main__":
     #widget.resize(800, 600)
     #widget.adjustSize()
     widget.show()
-
-
     sys.exit(app.exec_())

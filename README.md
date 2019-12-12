@@ -10,6 +10,15 @@ Commands:
 
 Options:
   -h, --help  Show help                                                [boolean]
+
+
+Useage: frmtToData.py
+Scans the output of a simulation run and converts it to a single datafile.
+
+Useage: frmtReport.py
+This GUI takes the datafile produced by frmtToData and shows a list of variables.
+If you click on a variable the program will output a summary file.
+The purpose here is to produce summaries for variables that the basic monte-carlo runs do not summarize.
 ```
 
 ## Getting Started
@@ -18,6 +27,11 @@ Options:
 1. If it is not installed, download and install [Node.js](https://nodejs.org/) (known to  work with v6.5, but try the latest stable release)
 2. If it is not installed, download and install [Python](https://www.python.org/downloads/) (known to work with v3.5.2, but try the the latest stable version)
 3. In the command line, install the montecarlo CLI by running `npm install -g @ecfairle/mccli` (this same command can be used to update to the latest version)
+4. This should have installed some python libraries.  However, pySide2 has many non-python dependencies.  If it is not set up properly, you should follow the instructions there.
+   Currently they involve installing Qt5, which in turn has some requirements.  The clang components it needs are available for download from the Qt5 site and do not seem to be
+   easily available from elsewhere.
+
+Portions of the system currently rely on invoking python with the py command, which is probably Windows-specific.
 
 ### Initialization
 

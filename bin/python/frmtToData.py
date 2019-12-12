@@ -1,3 +1,4 @@
+#!/usr/bin/env python3
 # convert .frmt files, output by CVD policy model in Fortran, to SQLite database
 # File: frmtToData.py
 # Author: Ross Boylan

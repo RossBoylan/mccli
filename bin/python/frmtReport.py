@@ -1,3 +1,4 @@
+#!/usr/bin/env python3
 # GUI to summarize all runs in monte carlo, as gathered up by frmtToData.py
 # File: frmtReport.py
 # Author: Ross Boylan

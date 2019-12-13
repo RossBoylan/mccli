@@ -82,7 +82,6 @@ class MyWidget(QtWidgets.QWidget):
         # This will populate the variable list if that works.
         # This may slow startup.
         self.getDatabase()
-        self.vVariables.selectionModel().selectionChanged.connect(self.variableSelectionChanged)
         self.setLayout(self.layout)
 
     def getDatabase(self):
@@ -133,13 +132,14 @@ class MyWidget(QtWidgets.QWidget):
         self.layout.addWidget(self.vVariables)
 
     def _linkVariables(self):
-        "after a valid database connection is established should the variables in the associated widget"
+        "after a valid database connection is established show the variables in the associated widget"
         self.qVariables = QtSql.QSqlQueryModel()
         self.qVariables.setQuery("SELECT name, count(subCat) AS NSubGroups, group_concat(subcat, ' | ') as subGroups FROM "
                                     "fullvar LEFT OUTER JOIN variable USING (varid) "
                                     "GROUP BY varid ORDER BY name;")
         #self.qVariables.setQuery("SELECT name FROM variable ORDER BY name;")
         self.vVariables.setModel(self.qVariables)
+        self.vVariables.selectionModel().selectionChanged.connect(self.variableSelectionChanged)
         self.vVariables.resizeColumnsToContents()
 
 
@@ -204,7 +204,8 @@ class MyWidget(QtWidgets.QWidget):
             fout.write(var)
         else:
             fout.write("{}: {}".format(var, subcat))
-        fout.write(" Summary created by testqt.py run at {} on {} with results in file {}.\n".format(datetime.now(), getfqdn(), fname))
+        fout.write(" Summary created by frmReport.py run at {} on {}. {} -> {}.\n".format(datetime.now(), 
+                        getfqdn(), self.inName,  fname))
         return fout
 
     def _doScenario(self, fout, fullvarid, scenario):

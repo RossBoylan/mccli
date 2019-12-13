@@ -1,4 +1,3 @@
-#!/usr/bin/env python3
 # convert .frmt files, output by CVD policy model in Fortran, to SQLite database
 # File: frmtToData.py
 # Author: Ross Boylan
@@ -107,8 +106,9 @@ class FrmtFile:
         vs <Variables> table of variables
         fullvs <FullVars> table of variable, subcategory
         cursor  cursor for the database"""
-        self._fn = fn
-        base = os.path.basename(fn)
+        self._fn = str(fn)
+        # Python 3.5.2 basename is allergic with WindowsPath objects
+        base = os.path.basename(self._fn)
         m = FrmtFile.fnameRE.match(base)
         if not m:
             raise WeirdFName(base)

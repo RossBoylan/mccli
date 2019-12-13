@@ -1,4 +1,4 @@
-#!/usr/bin/env python3
+
 # GUI to summarize all runs in monte carlo, as gathered up by frmtToData.py
 # File: frmtReport.py
 # Author: Ross Boylan
@@ -120,6 +120,7 @@ class MyWidget(QtWidgets.QWidget):
     def inNameClicked(self):
         # getOpenFileName returns a tuple of fileName, selected filter
         self.inName = QtWidgets.QFileDialog.getOpenFileName(self, "Choose input database", os.path.dirname(self.inName), "SQLite Database (*.db)")[0]
+        self.getDatabase()
 
     def outDirClicked(self):
         self.outDir = QtWidgets.QFileDialog.getExistingDirectory(self, "Output Directory for summary files", self.outDir)

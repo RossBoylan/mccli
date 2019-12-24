@@ -33,6 +33,13 @@ If you already had an install,
 `py -m pip install randomgen`
 should suffice.
 
+You need either a current `randomgen` (1.18+) or an older one
+(possibly 1.14).  A required function was dropped from the library in
+between.  1.16 will not work.  Also note that `randomgen` is being
+incorporated into `NumPy` 1.17+.  Likely there will be future
+adjustments required, and `randomgen` may become unnecessary.  See
+https://pypi.org/project/randomgen/ and https://github.com/bashtage/randomgen.
+
 Then, assuming you have this package in `Documents\mccli`, model file in `Documents\mymodel`, and you are in the latter directory, type
 `node ..\mccli\bin\mc init`
 to set it up and

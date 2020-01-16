@@ -116,7 +116,7 @@ module.exports = (yargs) => {
 
 		var nextSteps = 'Next steps: \n \
 	1) make standard deviation files for the dat files you wish to vary using the same format as their corresponding mean file \n \
-	2) add an inp_variation.txt file to MC/inputs if you want to vary .inp files (follow instructions from link) \n \n \
+	2) add an inp_distribution.txt file to MC/inputs if you want to vary .inp files (follow instructions from link) \n \n \
 More in depth instructions can be found at https://github.com/ecfairle/mccli'.bold;
 
 		console.log(nextSteps)

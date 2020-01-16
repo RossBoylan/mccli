@@ -148,5 +148,5 @@ class SimFile(object):
 
 if __name__ == '__main__':
 	# debug
-	os.chdir(r"C:\Users\rdboylan\Documents\KBD\A. Mod91_mexPA_MCs_06.28.2019")
+	#os.chdir(r"C:\Users\rdboylan\Documents\KBD\A. Mod91_mexPA_MCs_06.28.2019")
 	main()

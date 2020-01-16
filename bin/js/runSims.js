@@ -114,7 +114,8 @@ module.exports = (argv) => {
 					error("Model run failed",res.stderr);
 				}
 
-				res = shell.exec(`py ${__dirname}/../python/format.py ${outfile}`,{silent:true});
+				/*res = shell.exec(`py ${__dirname}/../python/format.py ${outfile}`,{silent:true});*/
+				res = shell.exec(`py ${__dirname}/../python/format.py ${outfile}`);
 				if (res.code !== 0) {
 					error("format.py run failed",res.stdout);
 				}

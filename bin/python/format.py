@@ -7,8 +7,11 @@ import os.path
 import re
 
 #for debug
-import os, pdb
+#import os, ptvsd
 
+#ptvsd.enable_attach()
+#ptvsd.wait_for_attach()
+#ptvsd.break_into_debugger()
 
 OUTPUT_EXTENSION = '.frmt'
 
@@ -364,6 +367,6 @@ class NumBlock(object):
 
 if __name__ == '__main__':
 	# debug
-	os.chdir(r"C:\Users\rdboylan\Documents\KBD\A. Mod91_mexPA_MCs_06.28.2019\intermediate0")
+	#os.chdir(r"C:\Users\rdboylan\Documents\KBD\A. Mod91_mexPA_MCs_06.28.2019\intermediate0")
 	
 	main()

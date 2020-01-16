@@ -7,7 +7,7 @@
     <ProjectHome>.</ProjectHome>
     <ProjectView>ShowAllFiles</ProjectView>
     <StartupFile>bin\mc.js</StartupFile>
-    <WorkingDirectory>C:\Users\rdboylan\Documents\KBD\A. Mod91_mexPA_MCs_06.28.2019</WorkingDirectory>
+    <WorkingDirectory>c:\Users\Joanne\Desktop\a. low10pct base MOD91-ARG-SSB</WorkingDirectory>
     <OutputPath>.</OutputPath>
     <ProjectTypeGuids>{3AF33F2E-1136-4D97-BBB7-1795711AC8B8};{349c5851-65df-11da-9384-00065b846f21};{9092AA53-FB77-4645-B42D-1CCCA6BD08BD}</ProjectTypeGuids>
     <VisualStudioVersion Condition="'$(VisualStudioVersion)' == ''">14.0</VisualStudioVersion>
@@ -16,10 +16,18 @@
     <ScriptArguments>run 3</ScriptArguments>
     <StartWebBrowser>False</StartWebBrowser>
     <SaveNodeJsSettingsInProjectFile>True</SaveNodeJsSettingsInProjectFile>
+    <Environment>
+    </Environment>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)' == 'Debug'" />
   <PropertyGroup Condition="'$(Configuration)' == 'Release'" />
   <ItemGroup>
+    <Content Include="bin\python\format.py" />
+    <Content Include="bin\python\frmtReport.py" />
+    <Content Include="bin\python\frmtToData.py" />
+    <Content Include="bin\python\montecarlo.py" />
+    <Content Include="bin\python\plot.py" />
+    <Content Include="bin\python\sum_results.py" />
     <Content Include="package.json" />
     <Content Include="README.md" />
     <Content Include="bin\input_data.json" />

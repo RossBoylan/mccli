@@ -5,10 +5,12 @@
   "main": "index.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
-    "postinstall": "py -m pip install numpy matplotlib randomgen"
+    "postinstall": "py -m pip install numpy matplotlib pandas pySide2 randomgen"
   },
   "bin": {
-    "mc": "bin/mc.js"
+    "mc": "bin/mc.js",
+    "frmtToData": "bin/python/frmtToData.py",
+    "frmtReport": "bin/python/frmtReport.py"
   },
   "author": "",
   "contributors": ["Ross Boylan <ross.boylan@ucsf.edu>"],
@@ -22,7 +24,7 @@
     "progress": "^1.1.8",
     "shelljs": "^0.7.4",
     "single-line-log": "^1.1.1",
-    "yargs": "^11.0.0"
+    "yargs": "^11.1.1"
   },
   "maintainers": [
     {

@@ -126,6 +126,10 @@ class VFile(object):
 		"""Print varied lines to  mc_file"""
 		for line in self.lines:
 			print(line,file=self.mc_file)
+		# without the close sometimes the file is not written out
+		# though it seems as if it should be anyway
+		# There do not appear to be any subsequent writes to the file after this call is invoked
+		self.mc_file.close()
 
 	def vary(self):
 		for line_num in range(self.num_lines()):

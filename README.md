@@ -12,10 +12,10 @@ Options:
   -h, --help  Show help                                                [boolean]
 
 
-Useage: frmtToData.py
+Usage: frmtToData.py
 Scans the output of a simulation run and converts it to a single datafile.
 
-Useage: frmtReport.py
+Usage: frmtReport.py
 This GUI takes the datafile produced by frmtToData and shows a list of variables.
 If you click on a variable the program will output a summary file.
 The purpose here is to produce summaries for variables that the basic monte-carlo runs do not summarize.

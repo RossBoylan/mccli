@@ -9,7 +9,7 @@ import numpy as np
 import os.path
 import re
 import sys
-from randomgen import RandomGenerator, PCG64
+from randomgen import Generator, PCG64
 
 
 def main():
@@ -17,9 +17,9 @@ def main():
 	args = parse_args()
 	seed = args.seed
 	if seed:
-		RG = RandomGenerator(PCG64(seed, args.iteration))
+		RG = Generator(PCG64(seed, args.iteration, mode="sequence"))
 	else:
-		RG = RandomGenerator(PCG64())
+		RG = Generator(PCG64(mode="sequence"))
 
 	input_data = get_input_data()
 
@@ -211,7 +211,7 @@ class SDFile(object):
 			self.row_offset = 0
 		if file_data['correlation'] == 'block':
 			self._set_block_nums()
-			self.rnd = RG.randn(file_data['blocksPerGroup'],self.cols)
+			self.rnd = RG.standard_normal((file_data['blocksPerGroup'],self.cols))
 			# RB: since the motivation for getting the state is unclear--
 			# though it may be to repeat exactly the same random numbers for
 			# each block--

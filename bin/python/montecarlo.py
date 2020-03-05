@@ -193,14 +193,44 @@ class SDFile(object):
 
 	Same format as .dat file
 	Attr:
+		file_data:	model specification
 		lines: Raw lines in file
+		mean_lines: values from the means file
 		block_nums: List of block indices for each data line
 		num_blocks: Integer number of blocks in file
-		rnd: List of normally distributed random variables for each sd
+		RG a <RandomGenerator> to use
+		cols:	Number of columns of data
+
+	Internal Use only
+		_do_line:	a function taking a line number as argument
+			Process that line appropriately, returning random values
+
+		_do_dist:	a function taking quantiles (only for correlated variables),
+					means and sds as arguments.  Called by _do_line.
+					returns appropriate "random" values.
+
+
+	This can produce random variables that are correlated by block or row.
+	If the correlation is by block, the correlation is actually across
+	lines aka rows that are members of the same block.  The values in different 
+	columns, returned by _do_lines, are uncorrelated with eah other within a row.
+	In this scenario, different rows usually correspond to different ages.  There may
+	be 2 such groups for male and female; in those cases the men and women are also correlated.
+
+	If the correlation is by row, values within the same row *are* correlated with each other.
+
+	The correlation, if present, is always as perfect as it can be, in that random variables
+	with different means and sds will have different values, but the values will all be at the same
+	percentile of the distribution.  For normal this produces a conventional (Pearson) correlation of 1,
+	but for other distributions the value will be lower because it is impossible to achieve 1.0.
+	In that case, the values are completely dependent, but not linearly dependent.
+
+	
 	"""
 
-	def __init__(self,file_data,mean_lines):
+	def __init__(self, file_data, mean_lines, random_generator):
 		self.file_data = file_data
+		self.RG = random_generator
 		sdpath = os.path.join('modfile',file_data['filename'] + '_sd.dat')
 		self.mean_lines = mean_lines
 		self.lines = read_lines(sdpath)
@@ -209,20 +239,57 @@ class SDFile(object):
 		self.row_offset = 1
 		if 'rowLabels' in file_data and file_data['rowLabels'] == False:
 			self.row_offset = 0
+
+		if 'distribution' in self.file_data and \
+			self.file_data['distribution'] in ('beta', 'lognormal'):
+			self._basic_generator = self.RG.random   # uniform [0, 1]
+		else:
+			self._basic_generator = self.RG.standard_normal
+
 		if file_data['correlation'] == 'block':
 			self._set_block_nums()
-			self.rnd = RG.standard_normal((file_data['blocksPerGroup'],self.cols))
-			# RB: since the motivation for getting the state is unclear--
-			# though it may be to repeat exactly the same random numbers for
-			# each block--
-			# I leave it mostly intact, but set seeds from RG to assure
-			# reproducibility
-			# Note that the setting the state is only effective if the same
-			# generator
-			# is used for the draws, and so I should preserve np.random for
-			# those cases.
-			self.rndStates = [np.random.RandomState(RG.random_uintegers(bits=32))
-				for i in range(file_data['blocksPerGroup'] * self.cols)]
+			self._do_line = self.vary_by_block
+			dims = (file_data['blocksPerGroup'], self.cols)
+			self._rnd = self._basic_generator(dims)
+			self._set_correlated_distribution()
+		elif file_data['correlation'] == 'row':
+			self._rnd = self._basic_generator()
+			# note _rnd will be changed as we advance through the file
+			self._do_line = self.vary_by_row
+			self._set_correlated_distribution()
+		else:
+			self._do_line = self.vary_individually
+			self._set_uncorrelated_distribution()
+
+	def _set_correlated_distribution(self):
+		"Establish right function to call for each line"
+		if 'distribution' in self.file_data:
+			distn = self.file_data['distribution']
+			if distn == 'beta':
+				self._do_dist = self._correlated_beta
+				return
+			elif distn == 'lognormal':
+				self._do_dist = self._correlated_lognormal
+				return
+			elif distn != 'normal':
+				raise ValueError("Unknow distribution type {}".format(distn))
+		# normal is the default
+		self._do_dist = self._correlated_normal
+
+	def _set_uncorrelated_distribution(self):
+		"Establish right function to call for each line when all values are independent"
+		if 'distribution' in self.file_data:
+			distn = self.file_data['distribution']
+			if distn == 'beta':
+				self._do_dist = self._rand_beta
+				return
+			elif distn == 'lognormal':
+				self._do_dist = self._rand_lognormal
+				return
+			elif distn != 'normal':
+				raise ValueError("Unknow distribution type {}".format(distn))
+		# normal is the default
+		self._do_dist = self._rand_normal
 
 	def _count_cols(self):
 		"""Get number of data columns"""
@@ -242,112 +309,129 @@ class SDFile(object):
 	def get_block_num(self,line_num):
 		return self.block_nums[line_num] % self.file_data['blocksPerGroup']
 
+
+	def _correlated_normal(self, e, means, sds):
+		"""Return <np.array> of perfectly correlated normals.
+
+		e is an error term, or a vector of error terms, from
+		the standard normal.
+		means and sds are the means and standard deviations
+		of the distributions from which we draw.
+		"""
+		return means + e*sds
+
+	def _rand_normal(self, means, sds):
+		"""Return <np.array> of random variables drawn from normals
+		with indicated means and sds.
+		"""
+		return self.RG.normal(means, sds)
+
+	def _correlated_lognormal(self, q, means, sds):
+		"""Return <np.array> of correlated or uncorrelated log-normals.
+
+		q are the quantiles to use.  If None, generate independent random variables.
+
+		Each individual element has mean and sd as given in input vectors.
+		q must either be the same size as those vectors or a single number.
+
+		The input means and sds refer to the lognormal variable, not to
+		the related normal variable.  This function derives appropriate
+		parameters for the lognormal parameterized in terms of mu and
+		sigma, which do refer to the related normal variable.
+
+		Formulae for translation from
+		https://en.wikipedia.org/wiki/Log-normal_distribution#Alternative_parameterizations
+		"""
+		f = 1.0 + np.power(sds/means, 2)
+		mu = np.log(means/np.sqrt(f))
+		sigma = np.sqrt(np.log(f))
+		res = empty_like(means)
+		mask = (sigma>0.0)
+		# scipy docs say if log(Y) has mean mu and sd sigma then
+		# use s = sigma and scale = exp(mu)
+		if q is None:
+			res[mask] = self.RG.lognormal(mu[mask], sigma[mask])
+		else:
+			res[mask] = stats.lognorm.ppf(q[mask], s = sigma[mask], scale = np.exp(mu[mask]))
+		# It seems ~x is same as np.logical_not(x) but I can't find that documented anywhere.
+		mask = np.logical_not(mask)
+		# if sd=0 use original mean
+		res[mask] = means[mask]
+		return res
+
+	def _rand_lognormal(self, means, sds):
+		return self._corr_lognormal(None, means, sds)
+
+	def _correlated_beta(self, q, means, sds):
+		"""Return <np.array> of correlated or uncorrelated beta random variables.
+
+		Means in [-1, 0) are permitted and interpreted as negative of the 
+		corresponding value from a beta with abs(means).
+
+		If the mean is 0 or the sd<=0 the generated random variable is
+		always the mean.
+
+		q are the quantiles to use.  If None, generate uncorrelated random variables.
+		Each individual element has mean and sd as given in input vectors.
+		q must either be the same size as those vectors or a single number.
+		"""
+		res = empty_like(means)
+		# mean of 0 should imply sd of 0
+		mask = (means == 0.0) | (sds <= 0.0)
+		res[mask] = means[mask]
+		mask = np.logical_not(mask)
+		switch = (means < 0.0)
+		means = np.abs(means)
+		# to avoid division by zero must remove masked elements
+		ms = means[mask]
+		ss = sds[mask]
+		alpha = ((1 - ms) / ss ** 2 - (1 / ms)) * ms ** 2
+		beta = alpha * (1 / ms - 1)
+		if q is None:
+			res[mask] = self.RG.beta(alpha, beta)
+		else:
+			res[mask] = stats.beta.ppf(q[mask], a = alpha, b = beta )
+		res[switch] = - res[switch]
+		return res
+
+	def _rand_beta(self, means, sds):
+		"return random values from the beta distribution"
+		return self._correlated_beta(None, means, sds)
+
+
 	def get_variation(self,line_num):
 		"""Returns list of variations for line 'line_num'"""
-		if self.file_data['correlation'] == 'row':
-			return self.vary_by_row(line_num)
-		elif self.file_data['correlation'] == 'block':
-			return self.vary_by_block(line_num)
-		else:
-			return self.vary_individually(line_num)
+		return self._do_line(line_num)
 
 
 	def vary_individually(self,line_num):
-		rnd = RG.randn(self.cols)
 		sds = [float(sd) for sd in self.lines[line_num].split()[self.row_offset:]]
 		means = [float(mean) for mean in self.mean_lines[line_num].split()[self.row_offset:]]
-		if 'distribution' in self.file_data and self.file_data['distribution'] == 'lognormal':
-			return [RG.lognormal(np.log(mean),sd)
-				for i,(sd,mean) in enumerate(zip(sds,means))]
-		if 'distribution' in self.file_data and self.file_data['distribution'] == 'beta':
-			res = []
-			for mean,sd in zip(means,sds):
-				if mean == 0 or sd == 0:
-					res.append(mean)
-				else:
-					switchSigns = mean < 0
-					mean = abs(mean)
-					alpha = ((1 - mean) / sd ** 2 - 1 / mean) * mean ** 2
-					beta = alpha * (1 / mean - 1)
-					val = RG.beta(alpha,beta)
-					if switchSigns: val = -1 * val
-					res.append(val)
-			return res
-		return [float(sd) * rnd[i] + mean for i,(sd,mean) in enumerate(zip(sds,means))]
+		return self._do_dist(means, sds)
 
-	def vary_by_row(self,line_num):
-		rnd = RG.randn()
-		rndState = np.random.RandomState(RG.random_uintegers(bits=32))
+
+	def vary_by_row(self,line_num):		
+		rnd = self._rnd
+		# prepare for next call
+		self._rnd = self._basic_generator()
 		sds = [float(sd) for sd in self.lines[line_num].split()[self.row_offset:]]
 		means = [float(mean) for mean in self.mean_lines[line_num].split()[self.row_offset:]]
-		if 'distribution' in self.file_data and self.file_data['distribution'] == 'lognormal':
-			res = []
-			for i,(sd,mean) in enumerate(zip(sds,means)):
-				if sd > 0:
-					state = rndState.get_state()
-					res.append(rndState.lognormal(np.log(mean),sd))
-					rndState.set_state(state)
-				else:
-					res.append(mean)
-			return res
-		if 'distribution' in self.file_data and self.file_data['distribution'] == 'beta':
-			res = []
-			for i,(mean,sd) in enumerate(zip(means,sds)):
-				if mean == 0 or sd == 0:
-					res.append(mean)
-				else:
-					switchSigns = mean < 0
-					mean = abs(mean)
-					alpha = ((1 - mean) / sd ** 2 - 1 / mean) * mean ** 2
-					beta = alpha * (1 / mean - 1)
-					state = rndState.get_state()
-					val = rndState.beta(alpha,beta)
-					if switchSigns: val = -1 * val
-					res.append(val)
-					rndState.set_state(state)
-			return res
-		return [float(sd) * rnd + mean for sd,mean in zip(sds,means)]
+		return self._do_dist(rnd, means, sds)
 
 	def vary_by_block(self,line_num):
+		"""return <np.array> of parameters for indicated line
+		All rows within a column in the same block will return the same quantile.
+
+		It might be a good idea to sanity check the inputs, though it's a little silly to do
+		for each simulation.
+
+		self._rnd are standard normal deviates for normal distributions and 
+		quantiles in [0, 1] for other distributions.
+		"""
 		block_num = self.get_block_num(line_num)
-		sds = [float(sd) for sd in self.lines[line_num].split()[self.row_offset:]]
-		means = [float(mean) for mean in self.mean_lines[line_num].split()[self.row_offset:]]
-		if 'distribution' in self.file_data and self.file_data['distribution'] == 'lognormal':
-			return [self.rndStates[i + self.cols * block_num].lognormal(mean,sd)
-				for i,(sd,mean) in enumerate(zip(sds,means))]
-			res = []
-			for i,(sd,mean) in enumerate(zip(sds,means)):
-				if sd > 0:
-					try:
-						state_ind = i + self.cols * block_num
-						state = self.rndStates[state_ind].get_state()
-					except:
-						raise Exception("index {} len {}".format(state_ind, len(self.rndStates)))
-					res.append(self.rndStates[state_ind].lognormal(np.log(mean),sd))
-					self.rndStates[state_ind].set_state(state)
-				else:
-					res.append(mean)
-		if 'distribution' in self.file_data and self.file_data['distribution'] == 'beta':
-			res = []
-			for i,(mean,sd) in enumerate(zip(means,sds)):
-				if mean == 0 or sd == 0:
-					res.append(mean)
-				else:
-					switchSigns = mean < 0
-					mean = abs(mean)
-					alpha = ((1 - mean) / sd ** 2 - 1 / mean) * mean ** 2
-					beta = alpha * (1 / mean - 1)
-					state_ind = i + self.cols * block_num
-					try:
-						state = self.rndStates[state_ind].get_state()
-					except:
-						raise Exception("{}".format(self.block_nums))
-					val = self.rndStates[state_ind].beta(alpha,beta)
-					if switchSigns: val = -1 * val
-					res.append(val)
-					self.rndStates[state_ind].set_state(state)
-			return res
-		return [float(sd) * self.rnd[block_num,i] + mean for i,(sd,mean) in enumerate(zip(sds,means))]
+		sds = np.array([float(sd) for sd in self.lines[line_num].split()[self.row_offset:]])
+		means = np.array([float(mean) for mean in self.mean_lines[line_num].split()[self.row_offset:]])
+		return self._do_dist(self._rnd[block_num,], means, sds)
 
 
 

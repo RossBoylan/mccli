@@ -1,5 +1,23 @@
 # Montecarlo CLI (Command Line Interface)
 
+WARNING: v 3.0 changes the meaning of inputs for the lognormal distribution.
+The mean and standard deviation now refer to the mean and the sd of the random
+variable being generated.  This is the same as for every other distribution.
+
+Recall that Y has a log-normal distribution if X = log(Y) has a normal distribution.
+The old interpretation was that the mean and sd referred to X; under the new scheme they
+refer to Y. If a and b are the mean and sd of the normal, and m and s are the mean and sd
+of the log-normal, they are related by
+    m = exp(a+b^2/2)
+    s^2 = (exp(b^2)-1)exp(2a+b^2).
+So, if you're being mechanical, the old a and b must be changed to the new m and s.
+However, that exercise might reveal that the old values weren't sensible, in which 
+case a rethink would be in order.
+
+There are other more subtle changes to the handling of correlated random numbers.  The old code was
+ineffective in inducing correlations for beta, and possibly log-normal, distributions.  The new
+code should generally induce higher correlations, though they will necessarily be imperfect.
+
 ## Usage
 ```
 Usage: mc <command> [options]

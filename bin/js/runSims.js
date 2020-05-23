@@ -91,8 +91,24 @@ module.exports = (argv) => {
 			}
 
 			for (let j = 0; j < dat_files.length; j++){
-				let datfile = path.join('modfile',`${dat_files[j]}_mc.dat`);
-				files.copy(datfile,`MC\\input_variation\\dat_files\\${dat_files[j]}_${i}.dat`);
+				let baseName = `${dat_files[j]}_mc.dat`;
+				let datFile = path.join('modfile', baseName);
+				files.copy(datFile, `MC\\input_variation\\dat_files\\${dat_files[j]}_${i}.dat`);
+				if (baseName.length > 12) {
+					/* The fortran program assumes file names are 12 characters max,
+					 * truncating all names that are longer.  So that it can find the inputs,
+					 * we provide a name in that format.
+					 * If such truncation renders names non-unique this strategy will fail.  RB
+					 */
+					let shortFile = path.join('modfile', baseName.substring(0, 13));
+					/* On windows the links seem to behave like hardlinks, and so they must be
+					refreshed each time.  RB
+					*/
+					if (fs.existsSync(shortFile)) {
+						fs.unlinkSync(shortFile);
+                    }
+					fs.linkSync(datFile, shortFile);
+                }
 			}
 
 			for (let j = 0; j < inp_files.length; j++) {

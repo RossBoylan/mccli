@@ -24,10 +24,16 @@ Usage: mc <command> [options]
 
 Commands:
   init                   initialize Montecarlo files
-  run-sims [iterations]  run Montecarlo simulations
+
+  run-sims [iterations] [start] [seed]      run MC simulations
+                                                       [aliases: run, r]
 
 Options:
-  -h, --help  Show help                                                [boolean]
+  --python, --py     python interpreter to use   [string] [default: py probably only works on MS-Windows]
+  --help          Show help  
+
+
+Use mc run --help for fuller meaning of arguments
 
 
 Usage: frmtToData.py

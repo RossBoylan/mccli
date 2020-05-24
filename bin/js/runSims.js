@@ -100,7 +100,7 @@ module.exports = (argv) => {
 					 * we provide a name in that format.
 					 * If such truncation renders names non-unique this strategy will fail.  RB
 					 */
-					let shortFile = path.join('modfile', baseName.substring(0, 13));
+					let shortFile = path.join('modfile', baseName.substring(0, 12));
 					/* On windows the links seem to behave like hardlinks, and so they must be
 					refreshed each time.  RB
 					*/

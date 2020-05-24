@@ -25,7 +25,7 @@ def main():
 
 	dat_files = input_data['dat_files']
 	for datfiledata in dat_files:
-		datfile = DatFile(datfiledata)
+		datfile = DatFile(datfiledata, RG)
 		if not args.zero_run:
 			datfile.vary()
 			datfile.save_raw_data()
@@ -153,11 +153,11 @@ class DatFile(VFile):
 		sdfile: SDFile object containing standard deviation information
 	"""
 
-	def __init__(self,file_data):
+	def __init__(self,file_data, random_generator):
 		self.file_data = file_data
 		self.fpath = os.path.join('modfile',file_data['filename'] + '.dat')
 		VFile.__init__(self,self.fpath)
-		self.sdfile = SDFile(file_data,self.lines)
+		self.sdfile = SDFile(file_data,self.lines, random_generator)
 		self.frmt_str = ''
 		self.lead_spaces = 0
 		self.set_format()
@@ -165,7 +165,7 @@ class DatFile(VFile):
 
 	def save_raw_data(self):
 		with open('MC/input_variation/dat_files/' + self.file_data['filename'] + '.csv', 'a',newline='') as totals_file:
-			print(self.data_vec)
+			#print(self.data_vec)
 			writer = csv.writer(totals_file)
 			writer.writerow(self.data_vec)
 
@@ -176,7 +176,7 @@ class DatFile(VFile):
 			if 'sumToOne' in self.file_data and self.file_data['sumToOne']:
 				varied[:] = [v / sum(varied) for v in varied]
 
-			self.data_vec += varied
+			self.data_vec.append(varied)
 			formatted = self.format_line(varied)
 			self.replace_line(formatted,line_num)
 

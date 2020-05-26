@@ -60,11 +60,15 @@ To ensure setup, you should
 `npm install -g colors fs fs-extra inquirer path progress shelljs single-line-log yargs` 
 if you are on a new machine.  If you have a previous `mccli` installation they should all be present.
 
-Then do
+If you are not in a python virtual environment, which is recommended,
+and you do not have administrative rights, you should add the `--user` option at the end of the 
+pip commands given next.
 `py -m pip install numpy matplotlib randomgen`
 If you already had an install,
 `py -m pip install randomgen`
-should suffice.
+should suffice.  This code requires recent versions of numpy and randomgen, and so even if you have
+them installed you should
+`py -m pip install numpy randomgen --upgrade`
 
 You need either a current `randomgen` (1.18+) or an older one
 (possibly 1.14).  A required function was dropped from the library in

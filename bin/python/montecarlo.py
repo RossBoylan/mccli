@@ -165,7 +165,7 @@ class DatFile(VFile):
 
 	def save_raw_data(self):
 		with open('MC/input_variation/dat_files/' + self.file_data['filename'] + '.csv', 'a',newline='') as totals_file:
-			#print(self.data_vec)
+			print(self.data_vec)
 			writer = csv.writer(totals_file)
 			writer.writerow(self.data_vec)
 

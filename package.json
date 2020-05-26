@@ -13,7 +13,9 @@
     "frmtReport": "bin/python/frmtReport.py"
   },
   "author": "",
-  "contributors": ["Ross Boylan <ross.boylan@ucsf.edu>"],
+  "contributors": [
+    "Ross Boylan <ross.boylan@ucsf.edu>"
+  ],
   "license": "ISC",
   "dependencies": {
     "colors": "^1.1.2",

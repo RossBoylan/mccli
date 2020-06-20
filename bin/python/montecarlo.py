@@ -6,6 +6,7 @@ import csv
 import collections
 import json
 import numpy as np
+from scipy import stats
 import os.path
 import re
 import sys
@@ -165,7 +166,7 @@ class DatFile(VFile):
 
 	def save_raw_data(self):
 		with open('MC/input_variation/dat_files/' + self.file_data['filename'] + '.csv', 'a',newline='') as totals_file:
-			print(self.data_vec)
+			#print(self.data_vec)
 			writer = csv.writer(totals_file)
 			writer.writerow(self.data_vec)
 
@@ -342,17 +343,24 @@ class SDFile(object):
 		Formulae for translation from
 		https://en.wikipedia.org/wiki/Log-normal_distribution#Alternative_parameterizations
 		"""
+		# convert from lists, which don't support math
+		means = np.array(means)
+		sds = np.array(means)
 		f = 1.0 + np.power(sds/means, 2)
 		mu = np.log(means/np.sqrt(f))
 		sigma = np.sqrt(np.log(f))
-		res = empty_like(means)
+		res = np.empty_like(means)
 		mask = (sigma>0.0)
 		# scipy docs say if log(Y) has mean mu and sd sigma then
 		# use s = sigma and scale = exp(mu)
 		if q is None:
 			res[mask] = self.RG.lognormal(mu[mask], sigma[mask])
 		else:
-			res[mask] = stats.lognorm.ppf(q[mask], s = sigma[mask], scale = np.exp(mu[mask]))
+			q0 = np.array(q, copy=False)  # q might be a single number
+			if q0.size > 1:
+				res[mask] = stats.lognorm.ppf(q[mask], s = sigma[mask], scale = np.exp(mu[mask]))
+			else:
+				res[mask] = stats.lognorm.ppf(np.full(sum(mask), q), s = sigma[mask], scale = np.exp(mu[mask]))
 		# It seems ~x is same as np.logical_not(x) but I can't find that documented anywhere.
 		mask = np.logical_not(mask)
 		# if sd=0 use original mean

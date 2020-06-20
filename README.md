@@ -130,7 +130,7 @@ where `input_data.json` contains the initial data for montecarlo simulation.
 
 #### Modfile setup
 1. Copy files for simulation to corresponding montecarlo files using the naming convention `{name}_mc0.dat` (or `{name}_mc0.inp`) where *name* is the file name specified when chossing .dat/.inp files during `mc init`.
-2. Add _mc.dat files to corresponding .lst files and change lines in _mc0.inp file to choose the apporopriate line from the .lst file.
+2. Add _mc.dat files to corresponding .lst files and change lines in _mc0.inp file to choose the appropriate line from the .lst file.
 3. Create files with the same format as original model files but with standard deviations instead of means. These files use a similar naming convention: `{name}_sd.dat` (not for .inp files)
 
 #### .inp file setup.
@@ -261,3 +261,133 @@ Directory `input_variation` contains varied model inputs. These can be used to v
 
 1. File `inp.txt` shows the ultimate value used to replace corresponding values in the *.inp* file (regardless if it's actually used). In addition, at the top it includes counts of the number of places in each *.inp* file the label is found.
 2. Directory `dat_files` contains copies of the modified dat files (from modfile) for each run. Naming convention: `{name}_{simulation #}.dat`
+
+
+## To Do
+
+3 and 4 below are  critical; the others can wait.
+
+Some of these are design issues (what should the program do) rather than bugs (e.g., 5 and 8).
+More accurately, some bugs raise design issues.
+
+6 is a documenation issue; 7 a feature request (which calls for some design and a new program).
+
+2 is solved (that's what the * just after the number means).
+
+1 is an adminstrative issue.
+
+1. Find out if it possible to create issues on a fork: https://github.community/t/create-issues-for-forks/118975
+
+2. *Resolve failure to run for me.
+    I had the order of arguments to mc run reversed, and so was attempting to run iteration 1 without having run iteration 0.
+    Iteration 0 creates essential files.  See 5a for one of the issues this raises.  Another might be whether it should be so 
+    easy to make such a mistake.
+
+3. Fix unsupported operand error when using lognormal distribution.
+    Clearly the results of mixing different data types.
+    *THIS IS THE CRITICAL PROBLEM*
+    ```
+    C:\Users\rdboylan\Documents\KBD2\mod91_test-MC-costs_ARG>node ..\mccli\bin\mc run 0 2 33
+    ERR montecarlo.py run failed
+    Traceback (most recent call last):
+      File "C:\Users\rdboylan\Documents\KBD2\mccli\bin\js/../python/montecarlo.py", line 687, in <module>
+        main()
+      File "C:\Users\rdboylan\Documents\KBD2\mccli\bin\js/../python/montecarlo.py", line 31, in main
+        datfile.save_raw_data()
+      File "C:\Users\rdboylan\Documents\KBD2\mccli\bin\js/../python/montecarlo.py", line 167, in save_raw_data
+        with open('MC/input_variation/dat_files/' + self.file_data['filename'] + '.csv', 'a',newline='') as totals_file:
+    FileNotFoundError: [Errno 2] No such file or directory: 'MC/input_variation/dat_files/b.csv'
+
+    C:\Users\rdboylan\Documents\KBD2\mod91_test-MC-costs_ARG>node ..\mccli\bin\mc run
+    ERR montecarlo.py run failed
+    Traceback (most recent call last):
+      File "C:\Users\rdboylan\Documents\KBD2\mccli\bin\js/../python/montecarlo.py", line 687, in <module>
+        main()
+      File "C:\Users\rdboylan\Documents\KBD2\mccli\bin\js/../python/montecarlo.py", line 30, in main
+        datfile.vary()
+      File "C:\Users\rdboylan\Documents\KBD2\mccli\bin\js/../python/montecarlo.py", line 136, in vary
+        self.vary_line(line_num)
+      File "C:\Users\rdboylan\Documents\KBD2\mccli\bin\js/../python/montecarlo.py", line 175, in vary_line
+        varied = self.sdfile.get_variation(line_num)
+      File "C:\Users\rdboylan\Documents\KBD2\mccli\bin\js/../python/montecarlo.py", line 404, in get_variation
+        return self._do_line(line_num)
+      File "C:\Users\rdboylan\Documents\KBD2\mccli\bin\js/../python/montecarlo.py", line 419, in vary_by_row
+        return self._do_dist(rnd, means, sds)
+      File "C:\Users\rdboylan\Documents\KBD2\mccli\bin\js/../python/montecarlo.py", line 345, in _correlated_lognormal
+        f = 1.0 + np.power(sds/means, 2)
+    TypeError: unsupported operand type(s) for /: 'list' and 'list'
+
+4. Check if current parameterization of lognormal is working.
+    The previous version produced means that roughly match the simulation inputs.  This is not what should 
+    have happened if the old parameters were the mean and sd of the associated normal distribution.
+    Joanne says the old "sd" parameter was a coefficient of variation, which is sort of what you would expect from that parameterization.
+    So if something was transforming the mean before, that same something is likely to imply my inputs do not yield the expected
+    and desired distribution.
+    *ALSO CRITICAL*
+
+5.  How should the program behave on a partial run?
+    A partial run is anything other than the traditional run that covers all iterations,
+    starting with 0, at one go.  Any of the following fit the description: rerunning a single failed iteration; running 
+    multiple simultaneous jobs/threads to do different simulations (e.g., 0-99 in one, 100-199 in another); resuming a run
+    after it died or you shut the computer down; running a simulation via a sequence of chunks.
+    There are at least 2 issues:
+        a) If iteration 0 is not run first, everything else fails.
+        b) If a run starts after some other runs have finished (or possibly before), it currently asks whether to 
+        save previous work.  If you say yes, everything, including the previous iteration 0 files, is moved to a directory under
+        MC/saved_runs.  This yields problem 5a.  If you so no, it is unclear if there is a problem; it seems quite possible at least
+        some output files will be overwritten, wiping out the results of previous chunks.
+
+    The whole previous framework seems based on the assumption that different runs represent different things: different parameters,
+    different code, or something similar.  However, all my changes in repeatable are designed to allow partial runs that are 
+    all part of the same set of simulations.  These 2 perspectives are at odds.
+
+    The question about saving previous results is also problematic if the simulation is being run automatically, e.g., by a script
+    that distributes the calculations, since it is interactive.
+
+    So what is the desired behavior?
+
+    At the moment, the "Do you want to save the previous results" seems to be triggered by the presence of a non-empty
+    MC/results/cumulative/directory/.  At least, that's my guess about what the following code means:
+    ```{javascript}
+    if (fs.existsSync(resultsDir) && fs.readdirSync(path.join(resultsDir,'cumulative')).length !== 0) {
+    ```
+
+6. The documentation above, and the program output (messages to the user--not the files it produces),
+    are insufficient for a non-expert to figure out what the format of input files are.  If you can understand
+    the instructions, you probably don't need to read them in the first place!  Some examples:
+
+        a) When `mc init` finishes it says
+        ```
+        Next steps:
+            1) make standard deviation files for the dat files you wish to vary using the same format as their corresponding mean file
+            2) add an inp_distribution.txt file to MC/inputs if you want to vary .inp files (follow instructions from link)
+
+        More in depth instructions can be found at https://github.com/ecfairle/mccli
+        ```
+        However, you don't need `inp_distribution.txt` even if you are varying inputs.
+        How should the sd file be named?
+        BTW, the URL is ultimately a reference to this file (if not this version of the file).
+
+        b) Instructions above advise one "should break down the .inp file variation into sections by keyword".
+        What keywords are legal?  What do they mean?  Where are they defined?
+        What do the entries that follow the keyword mean?
+
+        c) etc, etc, etc
+
+7. The same documentation implies a person must make a bunch of tedious and error-prone steps.   Automate them.
+
+8. The current options for handling correlation are limited.
+
+    a) Correlation is either 0 or the maximum possible (perfect for normal).
+    Allow partial correlations.
+
+    b) Some correlations that were thought to be present are absent.
+    Specifically, in `row` correlation different columns in the same line *are* correlated.
+    But it mean and women are on 2 adjacent lines, there is no correlation between the men and the women.
+    Such correlation is desired.
+    Note this is *not* a problem for `block` correlation in which each age group is on its own line.
+
+    c) It would be good to have, as earlier versions of this system did have, an ability to correlate larger
+    groups of variables, e.g., all cost variables.  Mehanically, the same machinery that fixes b) will likely work
+    for this as well.
+

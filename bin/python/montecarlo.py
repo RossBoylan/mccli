@@ -345,7 +345,7 @@ class SDFile(object):
 		"""
 		# convert from lists, which don't support math
 		means = np.array(means)
-		sds = np.array(means)
+		sds = np.array(sds)
 		f = 1.0 + np.power(sds/means, 2)
 		mu = np.log(means/np.sqrt(f))
 		sigma = np.sqrt(np.log(f))

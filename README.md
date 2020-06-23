@@ -63,19 +63,25 @@ if you are on a new machine.  If you have a previous `mccli` installation they s
 If you are not in a python virtual environment, which is recommended,
 and you do not have administrative rights, you should add the `--user` option at the end of the 
 pip commands given next.
-`py -m pip install numpy matplotlib randomgen`
+`py -m pip install numpy scipy matplotlib pandas pySide2 randomgen`
+`pandas` and `pySide2`, both of which are large, are only needed if you want to use the `frmtReport.py`
+graphical tool.  Neither the main monte-carlo simulation nor `frmtToData.py` use them.
+
 If you already had an install,
-`py -m pip install randomgen`
+`py -m pip install scipy randomgen`
 should suffice.  This code requires recent versions of numpy and randomgen, and so even if you have
 them installed you should
-`py -m pip install numpy randomgen --upgrade`
+`py -m pip install numpy scipy randomgen --upgrade`
 
-You need either a current `randomgen` (1.18+) or an older one
-(possibly 1.14).  A required function was dropped from the library in
-between.  1.16 will not work.  Also note that `randomgen` is being
-incorporated into `NumPy` 1.17+.  Likely there will be future
-adjustments required, and `randomgen` may become unnecessary.  See
-https://pypi.org/project/randomgen/ and https://github.com/bashtage/randomgen.
+You need likely need a current `randomgen` (1.18+).  Older ones, possibly 1.14,
+might work, and definitely worked with older versions of this code.
+A required function was dropped from the library in between.  
+1.16 will not work.
+
+Also note that `randomgen` is being incorporated into `NumPy` 1.17+.
+Likely there will be future adjustments required, and `randomgen` may
+become unnecessary.  See https://pypi.org/project/randomgen/ and
+https://github.com/bashtage/randomgen.
 
 Then, assuming you have this package in `Documents\mccli`, model file in `Documents\mymodel`, and you are in the latter directory, type
 `node ..\mccli\bin\mc init`

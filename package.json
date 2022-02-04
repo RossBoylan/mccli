@@ -1,6 +1,6 @@
 {
   "name": "@ecfairle/mccli",
-  "version": "3.0.0",
+  "version": "3.0.1",
   "description": "cli for CVD Policy Model Montecarlo simulation",
   "main": "index.js",
   "scripts": {
@@ -32,7 +32,7 @@
     {
       "name": "ecfairle",
       "email": "ecfairley@ucdavis.edu"
-    }
+    },
     {
       "name": "Ross Boylan",
       "email": "ross.boylan@ucsf.edu"

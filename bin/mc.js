@@ -14,6 +14,8 @@ let argv = yargs
     command: 'run-sims [iterations] [start] [seed]',
     aliases: ['run', 'r'],
     desc: 'run MC simulations',
+    // yargs >= 17.0.0 allows positional at root level
+    // so it might be possible to lift some of these calls URLSearchParams.
     builder: (yargs) => yargs.positional('iterations', {
         describe: 'Number of simulations to perform',
         type: 'number',

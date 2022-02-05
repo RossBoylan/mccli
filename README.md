@@ -56,9 +56,11 @@ and because of that the conventional installation with npm install may not work,
 I recommend putting a copy of this package on your local hard drive, e.g., `Documents\mccli`.  You can clone it from github and switch to the `repeatable` branch,
 or get it from an archive file.
 
-To ensure setup, you should
-`npm install -g colors fs fs-extra inquirer path progress shelljs single-line-log yargs` 
-if you are on a new machine.  If you have a previous `mccli` installation they should all be present.
+To ensure setup, you should change to the top project directory, if you are not already there, and execute
+`npm install colors fs fs-extra inquirer path progress shelljs single-line-log yargs` 
+if you are on a new machine.  Simply using `npm install` should have the same effect, since it gets dependencies from `packages.json`. If you have a previous `mccli` installation they should all be present.
+
+Do not use the `-g` option to npm, since the package does not load packages from the global environment (!).
 
 If you are not in a python virtual environment, which is recommended,
 and you do not have administrative rights, you should add the `--user` option at the end of the 

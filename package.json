@@ -18,15 +18,15 @@
   ],
   "license": "ISC",
   "dependencies": {
-    "colors": "^1.1.2",
-    "fs": "0.0.1-security",
-    "fs-extra": "^0.30.0",
-    "inquirer": "^1.1.3",
-    "path": "^0.12.7",
-    "progress": "^1.1.8",
-    "shelljs": "^0.7.4",
-    "single-line-log": "^1.1.1",
-    "yargs": "^11.1.1"
+    "colors": ">=1.4.0",
+    "fs": ">=0.0.1-security",
+    "fs-extra": ">=0.30.0",
+    "inquirer": ">=1.2.3",
+    "path": ">=0.12.7",
+    "progress": ">=1.1.8",
+    "shelljs": ">=0.7.8",
+    "single-line-log": ">=1.1.2",
+    "yargs": ">=11.1.1"
   },
   "maintainers": [
     {
@@ -37,5 +37,11 @@
       "name": "Ross Boylan",
       "email": "ross.boylan@ucsf.edu"
     }
+  ],
+  "keywords": [
+    "monte-carlo",
+    "CVD",
+    "health policy",
+    "python"
   ]
 }

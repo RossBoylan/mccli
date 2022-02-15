@@ -95,10 +95,19 @@ module.exports = (argv) => {
 				let datFile = path.join('modfile', baseName);
 				files.copy(datFile, `MC\\input_variation\\dat_files\\${dat_files[j]}_${i}.dat`);
 				if (baseName.length > 12) {
-					/* The fortran program assumes file names are 12 characters max,
-					 * truncating all names that are longer.  So that it can find the inputs,
-					 * we provide a name in that format.
-					 * If such truncation renders names non-unique this strategy will fail.  RB
+					/* Fortran has not had a 12 character limit on filenames for a long time 
+					 * (since Fortran-66, says Larry).  Larry says our program allows very long
+					 * filenames, but the version I see imposes the limit both in defining the lengths
+					 * of filename variables and in input formats (e.g., Subs.f90).  So filenames
+					 * are effectively truncated at 12 characters. We provide a name in that format so
+					 * the Fortran model can find the inputs.
+					 * 
+					 * If such truncation renders names non-unique this strategy will fail.  
+					 * 
+					 * When the Fortran model completely supports long filenames AND we are not 
+					 * interested in running simulations with older models, remove this whole if block.
+					 * 
+					 * --Ross Boylan
 					 */
 					let shortFile = path.join('modfile', baseName.substring(0, 12));
 					/* On windows the links seem to behave like hardlinks, and so they must be

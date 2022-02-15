@@ -1,13 +1,14 @@
 'use strict'
-const shell = require("shelljs"),
-			yargs = require("yargs"),
-			colors = require('colors'),
-			inquirer = require('inquirer'),
-			fs = require('fs'),
-			fsx = require('fs-extra'),
-			path = require('path'),
-			ProgressBar = require('progress'),
-			files = require('./files');
+const	shell = require("shelljs"),
+		{PythonShell} = require("python-shell"),
+		yargs = require("yargs"),
+		colors = require('colors'),
+		inquirer = require('inquirer'),
+		fs = require('fs'),
+		fsx = require('fs-extra'),
+		path = require('path'),
+		ProgressBar = require('progress'),
+		files = require('./files');
 
 let INPUTS_FILENAME = path.join('MC','inputs','input_data.json');
 
@@ -42,7 +43,11 @@ module.exports = (argv) => {
 			var ITERATIONS = inputsData['default_iterations'];
 		}
 
-        let py = argv.py
+		let pyoptions  = {
+			mode: "text",
+			pythonPath: "J:\\Programs\Python39\python.exe",  //argv.py,
+			scriptPath:  `${__dirname}/../python/`
+		}
 		let dat_files = inputsData['dat_files'].map((datfile) => datfile.filename)
 
 		let inp_files = inputsData['inp_files'];
@@ -64,16 +69,38 @@ module.exports = (argv) => {
         let res = null;
         let i0 = argv.start
         let i1 = ITERATIONS+i0-1
+		console.log('Message sent via console.log()')
 		for (let i = i0; i <= i1; i++){
 
 			let startIter = new Date();
 			let lastTime = 0;
 
 			if(i == 0) {
-				res = shell.exec(py+` ${__dirname}/../python/montecarlo.py -z -s`,{silent:true});
-				if (res.code !== 0) {
-					error("montecarlo.py run failed",res.stdout);
-				}
+				console.log('Start handling iteration 0.  Using opttions')
+				pyoptions.args = [`-z`, `-s`]
+				console.log(pyoptions)
+				let x = PythonShell.run(`montecarlo.py`, pyoptions, function(err, results) {
+					if (err) throw err;
+					console.log('results: %j', results)
+				})
+				x.on('stderr', function(line){
+					console.log('err: '+line)})
+				x.on('message', function(line){
+					console.log('msg: '+line)
+				})
+				x.on('error', function(){
+					console.log('error from python-shell.  Could not spawn?')
+				})
+				x.on('pythonerror', function(){
+					console.log('pythonerror: process terminated with non-0 exit code')
+				})
+				x.end(function(err, code, signal){
+					console.log('The exit code was '+code)
+					console.log('The exist signal was '+signal)
+					if (err) throw err;
+				})
+				delete pyoptions.args
+				console.log('done handling iteration 0')
 			}
 			else {
 				let str = String(i + ' '.repeat(16));
@@ -81,13 +108,11 @@ module.exports = (argv) => {
 				if (fs.existsSync(INP_OUTPUT_FILE)) {
 					fs.appendFileSync(INP_OUTPUT_FILE, str.substring(0,16) + '  ')
                 }
-                let cmd = py + ` ${__dirname}/../python/montecarlo.py -s -i ${i}`
+				pyoptions.args = [`-s`, `-i`, `${i}`]
                 if (argv.seed)
-                    cmd += ` --seed ${argv.seed}`
-				res = shell.exec(cmd,{silent:true});
-				if (res.code !== 0) {
-					error("montecarlo.py run failed",res.stderr);
-				}
+                    pyoptions.args.push(`--seed`, `${argv.seed}`)
+				PythonShell.run(`montecarlo.py`, pyoptions);
+				delete pyoptions.args
 			}
 
 			for (let j = 0; j < dat_files.length; j++){
@@ -135,10 +160,9 @@ module.exports = (argv) => {
 					error("Model run failed",res.stderr);
 				}
 
-				res = shell.exec(py+` ${__dirname}/../python/format.py ${outfile}`,{silent:true});
-				if (res.code !== 0) {
-					error("format.py run failed",res.stdout);
-				}
+				pyoptions.args = [`${outfile}`]
+				PythonShell.run(`format.py`, pyoptions)
+				delete pyoptions.args
 
 				let formattedFile = `${outfile}.frmt`;
 				let formattedSaveFile = path.join('MC/results/breakdown',`${inp_files[j]}_${i}.frmt`);
@@ -160,10 +184,7 @@ module.exports = (argv) => {
 		}
 
 		console.log('sum results')
-		res = shell.exec(py+` ${__dirname}/../python/sum_results.py`,{silent:true});
-		if (res.code !== 0) {
-			error("sum_results.py run failed",res.stderr);
-		}
+		PythonShell.run(`sum_results.py`)
 		console.log('done')
 
 		let end = new Date();

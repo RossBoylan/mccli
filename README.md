@@ -50,53 +50,96 @@ The purpose here is to produce summaries for variables that the basic monte-carl
 ### TESTING!
 This code is under development, may not work properly, and might seize your firstborn.
 
+### Get Source
+
 This code is the `repeatable` branch of RossBoylan/mccli on github.com.  Despite that, it is still identified as "@ecfairle/mccli",
 and because of that the conventional installation with npm install may not work, especially if you have already installed the earlier version.
 
 I recommend putting a copy of this package on your local hard drive, e.g., `Documents\mccli`.  You can clone it from github and switch to the `repeatable` branch,
 or get it from an archive file.
 
+### Node Setup
+
+If you have not done so, install [Node](https://nodejs.org/); we recommend the LTS version.  If you have already installed it, check that it is up to date; `Node` notoriously suffers security bugs.  `node --version` gives the version installed.
+
 To ensure setup, you should change to the top project directory, if you are not already there, and execute
-`npm install colors fs fs-extra inquirer path progress shelljs single-line-log yargs` 
-if you are on a new machine.  Simply using `npm install` should have the same effect, since it gets dependencies from `packages.json`. If you have a previous `mccli` installation they should all be present.
 
-Do not use the `-g` option to npm, since the package does not load packages from the global environment (!).
+   `npm install colors fs fs-extra inquirer path progress shelljs single-line-log yargs` 
 
-If you are not in a python virtual environment, which is recommended,
-and you do not have administrative rights, you should add the `--user` option at the end of the 
-pip commands given next.
-`py -m pip install numpy scipy matplotlib pandas pySide2 randomgen`
-`pandas` and `pySide2`, both of which are large, are only needed if you want to use the `frmtReport.py`
-graphical tool.  Neither the main monte-carlo simulation nor `frmtToData.py` use them.
+*Danger!* Simply using `npm install` will also install the packages, since it gets dependencies from `packages.json`, and the latter was used to create `requirements.txt`. But it also updates the system, including the shortcuts `mc` to invoke the program, and possibly some libraries:
+   * If you have the old version installed running `npm install` with the new version will likely trash the old installation.
+   * The shorcuts established by the installation are almost certainly ignorant of the python virtual environment which we recommend creating below.
 
-If you already had an install,
-`py -m pip install scipy randomgen`
-should suffice.  This code requires recent versions of numpy and randomgen, and so even if you have
-them installed you should
-`py -m pip install numpy scipy randomgen --upgrade`
+Do not use the `-g` option to npm, since the package, as part of the general behavior of `Node`, does not load packages from the global environment (!).
 
-You need likely need a current `randomgen` (1.18+).  Older ones, possibly 1.14,
-might work, and definitely worked with older versions of this code.
-A required function was dropped from the library in between.  
-1.16 will not work.
+### Python Setup
+If you don't already have Python3 on your system, install [python](https://www.python.org/downloads/).  If you install it system-wide, which requires administrative rights, and add python to your PATH, life will be easier later.
 
-Also note that `randomgen` is being incorporated into `NumPy` 1.17+.
-Likely there will be future adjustments required, and `randomgen` may
-become unnecessary.  See https://pypi.org/project/randomgen/ and
-https://github.com/bashtage/randomgen.
+Although using a [Python virtual environment](https://docs.python.org/3/library/venv.html) takes a little more setup, it separates this project more cleanly from others.  In particular, it reduces the chances you will break unrelated programs.  So that's what we describe here; you can skip the virtual environment steps if you're feeling lucky.  So there's one question you've got to ask yourself: "Do I feeling lucky?" Well, do you, punk?
 
-Then, assuming you have this package in `Documents\mccli`, model file in `Documents\mymodel`, and you are in the latter directory, type
+The careful reader will have noticed the word *reduces* in "reduces the chances you will break unrelated programs".  It did not say it *eliminates* the risk.  If you install a python module, like PySide2, that depends on non-python libraries like `Qt`, they may still end up being installed system-wide and cause trouble.
+
+From the project root (you should already be there) create a virtual environment with
+```shell
+py -m venv pyenv   # Windows
+python3 -m venv pyenv  # most others
+python -m venv pyenv   # some others--do python --version first to check it is python3
+```
+Note that the environment does not need to be called `pyenv` and it can be anywhere you like.  `pyenv` is already in `.gitignore`.
+
+Once you create the environment you must activate it.  When the environment is active the prompt will change, with the environment name appearing first, e.g., `(pyenv)`, and you will get the version of python specific to that environment when you type `python` (using `py` on Windows is not as reliable a way to detect the virtual environment).  When you install packages, as we are about to do, they go in the environment and are only visible from their.
+
+The exact command to activate the environment varies with the operating system and choice of shell (a table toward the end of the [Creating virtual environments](https://docs.python.org/3/library/venv.html#creating-virtual-environments) section has them all).  Assuming you are in the project root (above pyenv), the 3 most common choices
+```shell
+pyenv\Scripts\activate.bat   # Windows command prompt
+pyenv\Scripts\Activate.ps1   # Windows powershell
+# remember the source command below
+source pyenv/bin/activate    # *nix bash/zsh
+```
+
+Each time you login, in fact each time you start a new terminal, you will need to activate the environment.  No matter how you started, `deactivate` will disable the environment,
+
+Finally, it's time to install the Python packages that mccli requires.  These are documented in `requirements.txt` in the root folder of the project; the file includes comments that you may wish to review.  You may be able to skip some of the packages listed there; to skip them simply comment out or delete the lines with the packages and save the file.  Then 
+```shell
+python -m pip -r requirements.txt  # or
+python -m pip -r requirements.txt  --user   # if you are not in a virtual environment
+```
+should install all necessary packages.
+
+If now or later, specifically when running frmtReport.py, you get errors related to the graphics system, one possible cause is that you need to install the `Qt` libraries (written in C++, not Python).  You can get them through the green [Download the Qt Online Installer](https://www.qt.io/download-open-source) button at the bottom of the page.
+
+`randomgen` and `numpy` are both current requirements, and are version-sensitive, in several ways.
+   * `randomgen` is being incorporated gradually into `numpy`, starting in `numpy` 1.17. So particular versions of `numpy` may work only with particular versions of `randomgen` and vice-versa.  See https://pypi.org/project/randomgen/ and https://github.com/bashtage/randomgen.
+   * The python code is written against particular versions of the libraries, and may require adjustments to work with other versions.
+   * `requirements.txt` includes constraints to keep things working, but since they allow more recent versions there could still be trouble.
+   * In particular, the current release of `randomgen`, 1.19, deprecates some of the interfaces the current mccli code uses.  This means there will be deprecation warnings if using that version, and the interface may go away completely in a future version.  Presumably the functionality has moved to `numpy`.
+   * `randomgen` 1.16 is known not to work since a key function was removed.  Older versions, possibly 1.14 had that function (as do the newer versions) and so might work.  The requirements file does not allow anything before 1.18.
+
+### Node Virtual Environment
+
+`Node` has something very like the Python virtual environments.  Just as the `pyenv` directory created above holds a bunch of Python packages and related materials that are specific to this particular project, the `node_modules` directory holds the complete set of node modules used for this project.  Both directories are in the project's `.gitignore`, so you don't get overwhelmed by huge lists of files when you are working with `git` (version control system).
+
+### First run
+
+Then, assuming you have activated the Python virtual environment, this package is in `Documents\mccli`, the model files are in `Documents\mymodel`, and you are in the latter directory, type
 `node ..\mccli\bin\mc init`
-to set it up and
-`node ..\mccli\bin\mc run <nsims> <first index> <seed>`
-e.g., `node ..\mccli\bin\mc run 5 0 8093218` to run 5 simulations starting at 0.  Index 0 is special because it uses the original parameters.
+to set it up.  There are actually a lot of supporting files required to specify the model, discussed later.
+
+Once that's done, 
+```shell
+node ..\mccli\bin\mc run <nsims> <first index> <seed> --python ..\mccli\pyenv\Scripts\python.exe  # Windows
+node ../mccli/bin/mc run <nsims> <first index> <seed> --python ../mccli/pyenv/bin/python   # *nix
+node ..\mccli\bin\mc run 5 0 8093218 --python ..\mccli\pyenv\Scripts\python.exe # e.g., to run 5 simulations starting at 0.  Index 0 is special because it uses the original parameters.
+```
 
 `node ..\mccli\bin\mc --help` for more information, and
 `node ..\mccli\bin\mc run --help` for even more information on the `run` command.
 
-If you're curious, the reason for using `node <path to main file>` instead of just `mc` is that `mc` only works because it was registered as a global
+If you're curious, the reason for using `node <path to main file>` instead of just `mc` is that `mc` only works when it was registered as a global
 shortcut by `npm install`, which these instructions deliberately avoid using.  To be sure of getting the right version we invoke `node` directly and give it the location of the file
 to execute.
+
+On Windows things might work ok without the `--python` argument; if it is not specified the default `py` is used to invoke python. `py` will probably be able to launch python, but the one it launches may not be using the virtual environment.  The simpler form `--python python` has a better chance of picking up the virtual environment.  For `*nix` systems the default `py` to invoke python will not work; again using python or python3 without a path might work, and explicitly specifying it, as shown above, is safest of all.
 
 The regular instructions appear below here.
 

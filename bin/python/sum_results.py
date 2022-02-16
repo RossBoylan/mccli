@@ -4,7 +4,7 @@ from collections import defaultdict
 import csv
 import json
 import matplotlib.pyplot as plt
-import ntpath
+import ntpath	# Not sure why ntpath instead of os.path --RB
 import numpy as np
 import re
 

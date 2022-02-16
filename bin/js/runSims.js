@@ -45,7 +45,7 @@ module.exports = (argv) => {
 
 		let pyoptions  = {
 			mode: "text",
-			pythonPath: "J:\\Programs\Python39\python.exe",  //argv.py,
+			pythonPath: "J:\\Programs\\Python39\\python.exe",  //argv.py,
 			scriptPath:  `${__dirname}/../python/`
 		}
 		let dat_files = inputsData['dat_files'].map((datfile) => datfile.filename)

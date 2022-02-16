@@ -17,10 +17,6 @@ scipy
 matplotlib  # used in plot.py and sum_results.py
 pandas  # used in frmtReport.py and plot.py
 
-#Next is only needed for frmtToData.py
-sqlite3
-
-
 # Next is only used by frmtReport.py
 # pyside2 requires that the non-python Qt libraries be installed.
 # If you have trouble, trying installing them separately.

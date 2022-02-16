@@ -101,12 +101,19 @@ Each time you login, in fact each time you start a new terminal, you will need t
 
 Finally, it's time to install the Python packages that mccli requires.  These are documented in `requirements.txt` in the root folder of the project; the file includes comments that you may wish to review.  You may be able to skip some of the packages listed there; to skip them simply comment out or delete the lines with the packages and save the file.  Then 
 ```shell
-python -m pip -r requirements.txt  # or
-python -m pip -r requirements.txt  --user   # if you are not in a virtual environment
+python -m pip install -r requirements.txt  # or
+python -m pip install -r requirements.txt  --user   # if you are not in a virtual environment
 ```
 should install all necessary packages.
 
 If now or later, specifically when running frmtReport.py, you get errors related to the graphics system, one possible cause is that you need to install the `Qt` libraries (written in C++, not Python).  You can get them through the green [Download the Qt Online Installer](https://www.qt.io/download-open-source) button at the bottom of the page.
+
+Later on you can keep your packages up to date with
+```shell
+python -m pip list --outdated  # shows which packages are old
+python -m pip install --upgrade -r requirements.txt # actually upgrades the packages
+python -m pip install --upgrade randomgen numpy   # like this to upgrade specific packages
+```
 
 `randomgen` and `numpy` are both current requirements, and are version-sensitive, in several ways.
    * `randomgen` is being incorporated gradually into `numpy`, starting in `numpy` 1.17. So particular versions of `numpy` may work only with particular versions of `randomgen` and vice-versa.  See https://pypi.org/project/randomgen/ and https://github.com/bashtage/randomgen.

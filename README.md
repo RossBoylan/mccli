@@ -4,13 +4,16 @@ WARNING: v 3.0 changes the meaning of inputs for the lognormal distribution.
 The mean and standard deviation now refer to the mean and the sd of the random
 variable being generated.  This is the same as for every other distribution.
 
-Recall that Y has a log-normal distribution if X = log(Y) has a normal distribution.
-The old interpretation was that the mean and sd referred to X; under the new scheme they
-refer to Y. If a and b are the mean and sd of the normal, and m and s are the mean and sd
+Recall that $Y$ has a log-normal distribution if $X = \log(Y)$ has a normal distribution.
+The old interpretation was that the mean and sd referred to $X$; under the new scheme they
+refer to $Y$. If $a$ and $b$ are the mean and sd of the normal, and $m$ and $s$ are the mean and sd
 of the log-normal, they are related by
-    m = exp(a+b^2/2)
-    s^2 = (exp(b^2)-1)exp(2a+b^2).
-So, if you're being mechanical, the old a and b must be changed to the new m and s.
+
+$m = \exp(a+b^2/2)$
+
+$s^2 = (\exp(b^2)-1)\exp(2a+b^2)$.
+
+So, if you're being mechanical, the old $a$ and $b$ must be changed to the new $m$ and $s$.
 However, that exercise might reveal that the old values weren't sensible, in which 
 case a rethink would be in order.
 
@@ -154,7 +157,7 @@ The regular instructions appear below here.
 ### Installation
 1. If it is not installed, download and install [Node.js](https://nodejs.org/) (known to  work with v6.5, but try the latest stable release)
 2. If it is not installed, download and install [Python](https://www.python.org/downloads/) (known to work with v3.5.2, but try the the latest stable version)
-3. In the command line, install the montecarlo CLI by running `npm install -g @ecfairle/mccli` (this same command can be used to update to the latest version)
+3. ~~In the command line, install the montecarlo CLI by running `npm install -g @ecfairle/mccli` (this same command can be used to update to the latest version)~~
 4. This should have installed some python libraries.  However, pySide2 has many non-python dependencies.  If it is not set up properly, you should follow the instructions there.
    Currently they involve installing Qt5, which in turn has some requirements.  The clang components it needs are available for download from the Qt5 site and do not seem to be
    easily available from elsewhere.
@@ -187,11 +190,12 @@ MC
 where `input_data.json` contains the initial data for montecarlo simulation.
 
 #### Modfile setup
-1. Copy files for simulation to corresponding montecarlo files using the naming convention `{name}_mc0.dat` (or `{name}_mc0.inp`) where *name* is the file name specified when chossing .dat/.inp files during `mc init`.
-2. Add _mc.dat files to corresponding .lst files and change lines in _mc0.inp file to choose the appropriate line from the .lst file.
-3. Create files with the same format as original model files but with standard deviations instead of means. These files use a similar naming convention: `{name}_sd.dat` (not for .inp files)
+1. Copy files for simulation to corresponding montecarlo files using the naming convention `{name}_mc0.dat` (or `{name}_mc0.inp`) where *name* is the file name specified when choosing .dat/.inp files during `mc init`.
+2. Add `_mc.dat` files to corresponding `.lst` files and increase the count of alternatives on the first line of the `.lst` file.
+3. Change lines in `_mc0.inp` file to choose the appropriate line from the `.lst` file.
+4. Create files with the same format as original model files but with standard deviations instead of means. These files use a similar naming convention: `{name}_sd.dat` (not for .inp files)
 
-#### .inp file setup.
+#### `.inp` file setup.
 
 Then create `inp_distribution.txt` in directory `MC/inputs`, which should break down the .inp file variation into sections by keyword (indicating the lines to vary), e.g.:
 ```
@@ -319,3 +323,21 @@ Directory `input_variation` contains varied model inputs. These can be used to v
 
 1. File `inp.txt` shows the ultimate value used to replace corresponding values in the *.inp* file (regardless if it's actually used). In addition, at the top it includes counts of the number of places in each *.inp* file the label is found.
 2. Directory `dat_files` contains copies of the modified dat files (from modfile) for each run. Naming convention: `{name}_{simulation #}.dat`
+
+# Notes on Internal Use of Files
+`montecarlo.py` reads an input file (or is it a dat file?) from `_mc0.<ext>` and writes to `_mc.<ext>`.  The javascript code copies the _mc to a numbered version, but that is strictly for archival purposes; the Fortran model will use the _mc file.
+
+The input files `${inp_files[j]}_mc.inp` are not renamed; they are specified as inputs to the fortran model on the command line via shell redirect.
+These input files are manually modified at the start to select xx_mc.dat files for the appropriate parameters.  The input file just has a number selecting an entry in a .lst file.  The .lst file is also modified manually.  See the instructions above in the "Modfile setup" subsection for this.
+
+It looks as if the varied files are written to the same spot as the inputs, i.e., _mc are written next to the _mc0 files.  *So the python code also has the embedded assumption that just one simulation is happening at once.*
+
+`Modary.f90` line 157 begins definition of files for b (`filename(7)`) and `'copy input\b'//rfn//rfk//'.dat modfile\b.def'`. I guess `rfn` and `rfk` (defined in `main.f90` @151; `rfn` is set either to `6` in `Modarray.f90` or, I think, in a weird write statement in `addrfs.f90`@159 `WRITE(rfn,'(i1)') irft`) indicate what type of riskfactors were chosen.  Example source files are `B6SBD.DAT` and `B8SPKpool.DAT`.
+
+`Modary.f90` @441 resets `filename(7)` with the selected entry in the list, if you have said you want to modify it.
+
+`Subs.f90`@1070 `picfile()` allows user to select from list retrieved from an inputlst file in `modfile\`.  That's `b.lst` in this case. *If* the file has more than one alternative, ask user which to pick.  The name of the selected file is set in the `filname` argument, known as `tmpfile` in the caller.  Then copy `modfile\<selected name>` to a temp file `utils\zzzCHDedit.tmp`. *This is another move that will fail with parallel runs.*  Resets the name in `filename(7)`. User gets chance to edit it and I think it ends up with the regular name.  `Modary.f90`@460 calls `initial` with `b` the first argument.
+
+`init.f90` defines that subroutine at the top.  It reads in the b coefficients from `modfile\` starting at line 426.  Writes the input matrix as text to `input\inputchk\b.def` as a way to allow a check by a person that the input was read OK.
+
+The `b` array is defined in `module modelarrays`.  Although `initial()` does not use the module, using function arguments instead.  Fortran is generally call by reference.

@@ -90,7 +90,7 @@ python -m venv pyenv   # some others--do python --version first to check it is p
 ```
 Note that the environment does not need to be called `pyenv` and it can be anywhere you like.  `pyenv` is already in `.gitignore`.
 
-Once you create the environment you must activate it.  When the environment is active the prompt will change, with the environment name appearing first, e.g., `(pyenv)`, and you will get the version of python specific to that environment when you type `python` (using `py` on Windows is not as reliable a way to detect the virtual environment).  When you install packages, as we are about to do, they go in the environment and are only visible from their.
+Once you create the environment you must activate it.  When the environment is active the prompt will change, with the environment name appearing first, e.g., `(pyenv)`, and you will get the version of python specific to that environment when you type `python` (using `py` on Windows is not as reliable a way to detect the virtual environment).  When you install packages, as we are about to do, they go in the environment and are only visible from there.
 
 The exact command to activate the environment varies with the operating system and choice of shell (a table toward the end of the [Creating virtual environments](https://docs.python.org/3/library/venv.html#creating-virtual-environments) section has them all).  Assuming you are in the project root (above pyenv), the 3 most common choices
 ```shell

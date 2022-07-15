@@ -67,13 +67,15 @@ If you have not done so, install [Node](https://nodejs.org/); we recommend the L
 
 To ensure setup, you should change to the top project directory, if you are not already there, and execute
 
-   `npm install colors fs fs-extra inquirer path progress shelljs single-line-log yargs` 
+   `npm install colors fs fs-extra inquirer@^8.0.0 path progress shelljs single-line-log yargs` 
 
 *Danger!* Simply using `npm install` will also install the packages, since it gets dependencies from `packages.json`, and the latter was used to create `requirements.txt`. But it also updates the system, including the shortcuts `mc` to invoke the program, and possibly some libraries:
    * If you have the old version installed running `npm install` with the new version will likely trash the old installation.
    * The shorcuts established by the installation are almost certainly ignorant of the python virtual environment which we recommend creating below.
 
-Do not use the `-g` option to npm, since the package, as part of the general behavior of `Node`, does not load packages from the global environment (!).
+*Do not use the `-g` option to npm,* since the package, as part of the general behavior of `Node`, does not load packages from the global environment (!).
+
+You *must pin the version of `inquirer` at 8*; version 9 and later do not work with this code, and it would require potentially wide-ranging changes to get it to work.  Version 9 of `inquirer` switched to an `ESM` package instead of a `CommonJS` package.  But our program, and most of the modules it uses, are `CommonJS`.  If you're curious see [different ways](https://gist.github.com/sindresorhus/a39789f98801d908bbc7ff3ecc99d99c) to solve the problem.   Still curious? [Read more](https://redfin.engineering/node-modules-at-war-why-commonjs-and-es-modules-cant-get-along-9617135eeca1) about the problems using both systems at once, and marvel at what a big mess it is.
 
 ### Python Setup
 If you don't already have Python3 on your system, install [python](https://www.python.org/downloads/).  If you install it system-wide, which requires administrative rights, and add python to your PATH, life will be easier later.
@@ -148,6 +150,12 @@ node ..\mccli\bin\mc run 5 0 8093218 --python ..\mccli\pyenv\Scripts\python.exe 
 If you're curious, the reason for using `node <path to main file>` instead of just `mc` is that `mc` only works when it was registered as a global
 shortcut by `npm install`, which these instructions deliberately avoid using.  To be sure of getting the right version we invoke `node` directly and give it the location of the file
 to execute.
+
+### Later Runs
+
+If you want to execute a variation of the original simulation, rename the `MC` folder to something indicating what it contains and rerun `mc init`. If you are varying the risk factor intervention input you will then need to create  `MC\inputs\inp_distribution.txt`, described below.
+
+If your first run is part of the total run, e.g., repetitions 0-499, and you want to run the remainder, 500-1000, it may not automatically combine results. Instead at the start of the run the program will ask `do you want to save these results (otherwise they will be written over)`.  We should  probably fix that.
 
 On Windows things might work ok without the `--python` argument; if it is not specified the default `py` is used to invoke python. `py` will probably be able to launch python, but the one it launches may not be using the virtual environment.  The simpler form `--python python` has a better chance of picking up the virtual environment.  For `*nix` systems the default `py` to invoke python will not work; again using python or python3 without a path might work, and explicitly specifying it, as shown above, is safest of all.
 

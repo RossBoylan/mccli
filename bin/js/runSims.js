@@ -206,7 +206,7 @@ module.exports = (argv) => {
 		inquirer.prompt({
 			type: 'confirm',
 	    name: 'saveResults',
-	    message: 'do you want to save these results? (otherwise they will be written over)',
+	    message: 'There are previous results.  Do you want to save them? (otherwise they will be written over)',
 	    default: true
 		}).then( (answers) => {
 			if (answers.saveResults) {

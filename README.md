@@ -65,7 +65,7 @@ or get it from an archive file.
 
 If you have not done so, install [Node](https://nodejs.org/); we recommend the LTS version.  If you have already installed it, check that it is up to date; `Node` notoriously suffers security bugs.  `node --version` gives the version installed.
 
-To ensure setup, you should change to the top project directory, if you are not already there, and execute
+To ensure setup, you should change to the top project directory for your analysis, e.g. `Documents\MyStudy\`, if you are not already there, and execute
 
    `npm install colors fs fs-extra inquirer@^8.0.0 path progress shelljs single-line-log yargs` 
 
@@ -102,16 +102,16 @@ pyenv\Scripts\Activate.ps1   # Windows powershell
 source pyenv/bin/activate    # *nix bash/zsh
 ```
 
-Each time you login, in fact each time you start a new terminal, you will need to activate the environment.  No matter how you started, `deactivate` will disable the environment,
+Each time you login, in fact each time you start a new terminal, you will need to activate the environment.  No matter how you started, `deactivate` will disable the environment.
 
-Finally, it's time to install the Python packages that mccli requires.  These are documented in `requirements.txt` in the root folder of the project; the file includes comments that you may wish to review.  You may be able to skip some of the packages listed there; to skip them simply comment out or delete the lines with the packages and save the file.  Then 
+Now install the `Python` packages that mccli requires.  These are documented in `requirements.txt` in the root folder of `mccli`.  Copy that file from there--it will be in `Documents\mccli\requirements.txt` if you followed the suggestions above--into the project directory you now occupy, e.g., `Documents\MyProject\`. You may want to skip some of the packages listed in `requirements.txt`; to do so review the comments in the copy and comment out or delete any packages you don't want. Save the file.  Then 
 ```shell
 python -m pip install -r requirements.txt  # or
 python -m pip install -r requirements.txt  --user   # if you are not in a virtual environment
 ```
 should install all necessary packages.
 
-If now or later, specifically when running frmtReport.py, you get errors related to the graphics system, one possible cause is that you need to install the `Qt` libraries (written in C++, not Python).  You can get them through the green [Download the Qt Online Installer](https://www.qt.io/download-open-source) button at the bottom of the page.
+If now or later, specifically when running `frmtReport.py`, you get errors related to the graphics system, one possible cause is that you need to install the `Qt` libraries (written in C++, not Python).  You can get them through the green [Download the Qt Online Installer](https://www.qt.io/download-open-source) button at the bottom of the page.
 
 Later on you can keep your packages up to date with
 ```shell

@@ -65,11 +65,11 @@ or get it from an archive file.
 
 If you have not done so, install [Node](https://nodejs.org/); we recommend the LTS version.  If you have already installed it, check that it is up to date; `Node` notoriously suffers security bugs.  `node --version` gives the version installed.
 
-To ensure setup, you should change to the top project directory for your analysis, e.g. `Documents\MyStudy\`, if you are not already there, and execute
+To ensure setup, you should change to the top directory for `mccli`, e.g. `Documents\mccli\`, if you are not already there, and use a terminal (e.g., type command prompt in MS Windows) to execute
 
    `npm install colors fs fs-extra inquirer@^8.0.0 path progress shelljs single-line-log yargs` 
 
-*Danger!* Simply using `npm install` will also install the packages, since it gets dependencies from `packages.json`, and the latter was used to create `requirements.txt`. But it also updates the system, including the shortcuts `mc` to invoke the program, and possibly some libraries:
+*Danger!* Simply using `npm install` will also install the packages. But it also updates the system, including the shortcuts `mc` to invoke the program, and possibly some libraries:
    * If you have the old version installed running `npm install` with the new version will likely trash the old installation.
    * The shorcuts established by the installation are almost certainly ignorant of the python virtual environment which we recommend creating below.
 
@@ -84,7 +84,7 @@ Although using a [Python virtual environment](https://docs.python.org/3/library/
 
 The careful reader will have noticed the word *reduces* in "reduces the chances you will break unrelated programs".  It did not say it *eliminates* the risk.  If you install a python module, like PySide2, that depends on non-python libraries like `Qt`, they may still end up being installed system-wide and cause trouble.
 
-From the project root (you should already be there) create a virtual environment with
+From the `mccli` root (you should already be there) create a virtual environment with
 ```shell
 py -m venv pyenv   # Windows
 python3 -m venv pyenv  # most others
@@ -94,7 +94,7 @@ Note that the environment does not need to be called `pyenv` and it can be anywh
 
 Once you create the environment you must activate it.  When the environment is active the prompt will change, with the environment name appearing first, e.g., `(pyenv)`, and you will get the version of python specific to that environment when you type `python` (using `py` on Windows is not as reliable a way to detect the virtual environment).  When you install packages, as we are about to do, they go in the environment and are only visible from there.
 
-The exact command to activate the environment varies with the operating system and choice of shell (a table toward the end of the [Creating virtual environments](https://docs.python.org/3/library/venv.html#creating-virtual-environments) section has them all).  Assuming you are in the project root (above pyenv), the 3 most common choices
+The exact command to activate the environment varies with the operating system and choice of shell (a table toward the end of the [Creating virtual environments](https://docs.python.org/3/library/venv.html#creating-virtual-environments) section has them all).  Assuming you are in the `mccli` root directory, the 3 most common choices
 ```shell
 pyenv\Scripts\activate.bat   # Windows command prompt
 pyenv\Scripts\Activate.ps1   # Windows powershell
@@ -102,9 +102,11 @@ pyenv\Scripts\Activate.ps1   # Windows powershell
 source pyenv/bin/activate    # *nix bash/zsh
 ```
 
+You are more likely to be in a directory holding your analysis later, in which case you will need a more elaborate path to refer to `pyenv`.
+
 Each time you login, in fact each time you start a new terminal, you will need to activate the environment.  No matter how you started, `deactivate` will disable the environment.
 
-Now install the `Python` packages that mccli requires.  These are documented in `requirements.txt` in the root folder of `mccli`.  Copy that file from there--it will be in `Documents\mccli\requirements.txt` if you followed the suggestions above--into the project directory you now occupy, e.g., `Documents\MyProject\`. You may want to skip some of the packages listed in `requirements.txt`; to do so review the comments in the copy and comment out or delete any packages you don't want. Save the file.  Then 
+Now install the `Python` packages that mccli requires.  These are documented in `requirements.txt` in the root folder of `mccli`.   You may want to skip some of the packages listed in `requirements.txt`, in particular the heavy graphics of `pyside2` are only needed for some post-analysis.  You can review the comments in `requirements.txt` and comment out or delete any packages you don't want. Save the file.  Then 
 ```shell
 python -m pip install -r requirements.txt  # or
 python -m pip install -r requirements.txt  --user   # if you are not in a virtual environment

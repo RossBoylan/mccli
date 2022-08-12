@@ -383,7 +383,7 @@ class SDFile(object):
 		Each individual element has mean and sd as given in input vectors.
 		q must either be the same size as those vectors or a single number.
 		"""
-		res = empty_like(means)
+		res = np.empty_like(means)
 		# mean of 0 should imply sd of 0
 		mask = (means == 0.0) | (sds <= 0.0)
 		res[mask] = means[mask]

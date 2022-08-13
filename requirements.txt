@@ -3,15 +3,9 @@
 # PySide2, which has large and potentially tricky dependencies, is only 
 # required if you want to run frmtReport.py.
 # The monte-carlo run executes montecarlo.py, format.py, and sum_results.py.
-# At a minimum, those require the following
+# At a minimum, those require
 
-numpy
-
-# randomgen is being gradually incorporated into numpy
-# and so may be unnecessary in the future.
-# But some code changes will be necessary to support it.
-randomgen >=1.18 # 1.16 will not work. older ones might work, e.g., 1.14
-    # randomgen 1.19 deprecates some of the classes I use b/c they moved to numpy
+numpy >= 1.17
     
 scipy
 matplotlib  # used in plot.py and sum_results.py

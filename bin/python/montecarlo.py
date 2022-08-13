@@ -10,17 +10,25 @@ from scipy import stats
 import os.path
 import re
 import sys
-from randomgen import Generator, PCG64
-
 
 def main():
 	global RG  # the random generator
 	args = parse_args()
 	seed = args.seed
 	if seed:
-		RG = Generator(PCG64(seed, args.iteration, mode="sequence"))
+		# https://github.com/numpy/numpy/issues/22119#issuecomment-1213579174
+		# recommends the following strategy
+		RG = np.random.default_rng([args.iteration, seed])
 	else:
-		RG = Generator(PCG64(mode="sequence"))
+		# While I do have the iteration, if I use it for a seed it will block
+		# use of system randomness, which is probably greater.
+		# However, this may hang up if there is not enough entropy
+		# available from the system.
+		# Possible alternative: combine iteration with a fixed but complex seed.
+		RG = np.random.default_rng()
+
+	# default_rng is PCG64 in NumPy 1.23.  Might consider using PCG64DXSM for even
+	# more robust parallel independence.
 
 	input_data = get_input_data()
 
@@ -383,7 +391,7 @@ class SDFile(object):
 		Each individual element has mean and sd as given in input vectors.
 		q must either be the same size as those vectors or a single number.
 		"""
-		res = empty_like(means)
+		res = np.empty_like(means)
 		# mean of 0 should imply sd of 0
 		mask = (means == 0.0) | (sds <= 0.0)
 		res[mask] = means[mask]

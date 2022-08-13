@@ -28,8 +28,8 @@ let argv = yargs
         })
         .positional('seed', {
             describe: 'seed for random number generator.  Will be combined with simulation number.  ' +
-                'If omitted random numbers will not be reproducible, and may not be sufficiently independent' +
-                ' across simulations.',
+                'If omitted random numbers will not be reproducible, may not be sufficiently independent' +
+                ' across simulations, and may stall the simulation and other processes by exhausting system entropy.',
             type: 'number'
         })
         .epilog("All numbers should be unsigned integers."),

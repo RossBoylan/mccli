@@ -122,12 +122,6 @@ python -m pip install --upgrade -r requirements.txt # actually upgrades the pack
 python -m pip install --upgrade randomgen numpy   # like this to upgrade specific packages
 ```
 
-`randomgen` and `numpy` are both current requirements, and are version-sensitive, in several ways.
-   * `randomgen` is being incorporated gradually into `numpy`, starting in `numpy` 1.17. So particular versions of `numpy` may work only with particular versions of `randomgen` and vice-versa.  See https://pypi.org/project/randomgen/ and https://github.com/bashtage/randomgen.
-   * The python code is written against particular versions of the libraries, and may require adjustments to work with other versions.
-   * `requirements.txt` includes constraints to keep things working, but since they allow more recent versions there could still be trouble.
-   * In particular, the current release of `randomgen`, 1.19, deprecates some of the interfaces the current mccli code uses.  This means there will be deprecation warnings if using that version, and the interface may go away completely in a future version.  Presumably the functionality has moved to `numpy`.
-   * `randomgen` 1.16 is known not to work since a key function was removed.  Older versions, possibly 1.14 had that function (as do the newer versions) and so might work.  The requirements file does not allow anything before 1.18.
 
 ### Node Virtual Environment
 

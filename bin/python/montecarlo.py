@@ -461,7 +461,7 @@ class InpFile(VFile):
 	def __init__(self,fname):
 		VFile.__init__(self,fname + '.inp')
 		self.effects = Effects()
-		self.frmt_str = '{:<8.6f}'
+		self.frmt_str = '{:<10.8f}'
 		self.lead_spaces = 0
 		self.fileprefix = fname
 

@@ -1,4 +1,7 @@
 Change Log for `mccli`
+3.2.0 2022-09=12 ross.boylan@ucsf.edu
+    * Use 8 digits after decimal for quantities varies in .inp files.  Was 6.  Closes #19.
+    * Update a help message and requirements to match current situation.
 
 3.1.0 2022-08-13 ross.boylan@ucsf.edu
     * Rely entirely on new features of `NumPy` for parallel random number generation.

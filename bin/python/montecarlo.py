@@ -222,7 +222,7 @@ class SDFile(object):
 	This can produce random variables that are correlated by block or row.
 	If the correlation is by block, the correlation is actually across
 	lines aka rows that are members of the same block.  The values in different 
-	columns, returned by _do_lines, are uncorrelated with eah other within a row.
+	columns, returned by _do_lines, are uncorrelated with each other within a row.
 	In this scenario, different rows usually correspond to different ages.  There may
 	be 2 such groups for male and female; in those cases the men and women are also correlated.
 

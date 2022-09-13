@@ -6,6 +6,14 @@
     "version": "0.2.0",
     "configurations": [
         {
+            "name": "Python: Current File",
+            "type": "python",
+            "request": "launch",
+            "program": "${file}",
+            "console": "integratedTerminal",
+            "justMyCode": true
+        },
+        {
             "type": "node",
             "request": "launch",
             "name": "Launch Program",
@@ -13,8 +21,13 @@
                 "<node_internals>/**"
             ],
             "program": "${file}",
-            "args" : ["run", "3", "0", "899"],
-            "console" : "integratedTerminal",
+            "args": [
+                "run",
+                "3",
+                "0",
+                "899"
+            ],
+            "console": "integratedTerminal",
             "cwd": "J:\\source\\repos\\mccli\\Mod92_MC-setup_Working-example"
         }
     ]

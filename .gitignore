@@ -3,6 +3,7 @@ pyenv
 MC
 *.DS_Store
 .vs
+__pycache__
 obj/
 mccli.njsproj
 mod92_YLMC_07112022

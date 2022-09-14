@@ -13,6 +13,8 @@ Command line from runSims.js usually has `-s` (save outputs), `-i` and `--seed` 
 It reads from an `_mc0.EXT` file and writes to `_mc.EXT`.
 
 `DatFile` includes an `SDFile` but `InpFile` includes `Effects`.
+    `DatFile(file_data, random_generator)` where `file_data` is a `JSON` structure
+    that include 'filename' -> `modfile/FILENAME.dat` as primary input (for `VFILE`).
 
 `InpFile(fname)` calls `VCFile(fname+'.inp')` and then creates
     `Effects` which has no arguments.
@@ -20,8 +22,11 @@ It reads from an `_mc0.EXT` file and writes to `_mc.EXT`.
 `Effects` reads from `MC/inputs/inp_distribution.txt`.
     Writes to `MC\input_variation\inp.txt`.
     Uses `Component` in a transitory way to wrap some lines.
-    `Component` actually generates the random number and interprets 
+`Component` actually generates the random number and interprets 
     parameters.  It would probably be better to generate them once and retain them.
+    Although `Component` instances are temporary, there is persistent state held in a class variables.  This is the state of the random number generator for each group.
+
+Note that montecarlo.py is only used to generate a single simulation.  Because of the state-keeping in `Component` it would actually generate the same numbers if called again.
 
 An effect may be made of several components that are summed or added to the mean.
 

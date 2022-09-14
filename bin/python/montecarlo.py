@@ -6,6 +6,7 @@ import csv
 import collections
 import json
 import numpy as np
+from pathlib import Path
 from scipy import stats
 import os.path
 import re
@@ -86,7 +87,24 @@ def get_input_data():
 		print('Error: could not find inputs file at {}'.format(fname))
 		sys.exit(1)
 
-def read_lines(fname):
+def read_lines(fname=None, fin=None):
+	""" Read lines from a file given by name or file-like object
+	Ordinarily called read_lines('myfile'), in which case the argument is assigned
+	to fname.  fname can be any pathlike object.
+	Alternately called with
+	read_lines(fin=myfile) where myfile is any readable stream
+		the call will close fin at the end.
+
+	fin may not have a file name and so we do not catch errors in it.
+	fname is ignored if fin is present.
+
+	Returns list of strings with each line of the file.
+	"""
+	if fin:
+		lines = fin.read().splitlines()
+		fin.close()
+		return lines
+	# fname handling below here
 	try:
 		with open(fname,'r') as f:
 			return f.read().splitlines()
@@ -122,10 +140,39 @@ class VFile(object):
 		save: Boolean flag - if True save variation info
 	"""
 
-	def __init__(self,fname):
-		pref,ext = fname.split('.')
-		self.mc_file = open(pref + '_mc.' + ext,'w')
-		self.lines = read_lines(pref + '_mc0.' + ext)
+	def __init__(self, fname=None, ifname=None, ifile=None, ofname=None, ofile=None):
+		"""
+		Standard Call: VFile(f) where f is a string representing the base path
+			E.g., "b.dat" which implies "b_mc0.dat" has inputs and "b_mc.dat" gets results
+
+		Alternatives: VFile(ifname="b_mc0.dat", ofname="b_mc.dat")
+		    You explicitly name the input and output files.
+			ifname and ofname, but not fname, can be any pathlike object,
+			and may specify a full or relative path, not just a filename. 
+
+		VFile(ifile=if, ofile=of)
+			Where if and of are stream or filelike objects for input and output.
+
+		Options can be mixed and matched, file arguments are preferred, then i/ofnames, 
+			and finally fname.
+		"""
+		if fname:
+			pref,ext = fname.split('.')
+			if ifname is None:
+				ifname = pref + '_mc0.' + ext
+			if ofname is None:
+				ofname = pref + '_mc.' + ext
+		self.ifname = ifname
+		self.ofname = ofname
+		if ifile:
+			self.ifile = ifile
+		elif ifname:
+			self.ifile = open(self.ifname, "rt")
+		if ofile:
+			self.mc_file = ofile
+		elif ofname:
+			self.mc_file = open(ofname,'w')
+		self.lines = read_lines(self.ifname, fin=self.ifile)
 		self.frmt_str = ''
 
 	def num_lines(self):
@@ -458,9 +505,22 @@ class InpFile(VFile):
 		effects: Effects object containing variation data
 	"""
 
-	def __init__(self,fname):
-		VFile.__init__(self,fname + '.inp')
-		self.effects = Effects()
+	def __init__(self, fname=None, ifname=None, ifile=None, ofname=None, ofile=None, effects=None):
+		"""
+		fname, if used, should have no suffix or _mc.
+		See VFile for the other file arguments
+		effects provides a way to create Effects based on custom inputs or outputs
+		"""
+		if fname:
+			fname += '.inp'
+		VFile.__init__(self, fname, ifname, ifile, ofname, ofile)
+		if effects:
+			self.effects = effects
+		else:
+			# Do NOT make this a default argument
+			# Because that would share the Effects instances between
+			# InpFiles.
+			self.effects = Effects()
 		self.frmt_str = '{:<10.8f}'
 		self.lead_spaces = 0
 		self.fileprefix = fname
@@ -499,12 +559,28 @@ class Effects(object):
 			key_result_pairs[key][0]' replaces the value on the current line
 			and 'key_result_pairs[key][1]' indicates whether to add the mean
 			on the current line
-		lines: Raw lines of inp_distribution.txt
+		lines: Raw lines of ifile or ifname
 	"""
 
-	save_file_name = 'MC\input_variation\inp.txt'
+	def __init__(self, 
+				ifname=Path("MC") / "inputs" / "inp_distribution.txt",
+				ifile=None,
+				ofname=Path("MC") / "input_variation" / "inp.txt",
+				ofile=None):
+		"""
+		Typically this is called without arguments to get it to operate on
+		the default inputs (ifname) and outputs (ofname).  Those arguments, though 
+		typically strings, can be any pathlike object.
 
-	def __init__(self):
+		Alternatively, one can directly provide a filelike object (or streamlike)
+		as input (ifile) our output (ofile).  If present, those will be used in
+		preference to ifname and ofname, though we recommend providing strings for them 
+		to help understand error messages.
+		"""
+		self.save_file_name = ofname
+		self.save_file = ofile
+		self.in_file_name = ifname
+		self.in_file = ifile
 		self.key_result_pairs = collections.OrderedDict()
 		self.lines = []
 		self._read_lines()
@@ -523,14 +599,17 @@ class Effects(object):
 			self.save_write(format_str.format('simulation #',*labels) + '\n')
 
 	def save_write(self,string):
-		with open(self.save_file_name,'a') as f:
-			f.write(string)
+		if self.save_file:
+			self.save_file.write(string)
+			# not sure if I should close it
+			# the else branch does, but it's easy for it
+			# to reopen the file
+		else:
+			with open(self.save_file_name,'a') as f:
+				f.write(string)
 
 	def _read_lines(self):
-		fname = 'MC/inputs/inp_distribution.txt'
-		file_lines = []
-		if os.path.isfile(fname):
-			file_lines = read_lines(fname)
+		file_lines = read_lines(self.in_file_name, fin=self.in_file)
 		for line in file_lines:
 			data = line.split('#')[0].strip()
 			if len(data) != 0:
@@ -595,7 +674,45 @@ class Effects(object):
 
 
 class Component(object):
+	"""
+	Component is a single distribution, which may have an associated group.
+	Several components are summed to produce a final value.
 
+	WARNING: This is designed for a single monte-carlo iteration.  Calling it 
+	multiple times will simply reproduce the original numbers because of the 
+	cached state, described below.
+
+	CAUTION: Distributions have optional max and min values; if the basic distribution produces
+	values outside of the bounds, they are recoded to the bounds.  It would likely
+	be better to draw from, or produce, a truncated distribution.  Currently bounds produced
+	censored, not truncated, distributions.
+
+	group_state, a class variable, holds the group-specific state of the random number
+	generator, and does so persistently across different instantiations
+	of Component.  set_group() sets the initial state.
+
+	Why?  The inp_distribution file may have multiple rows
+	with the same group (g=NN).  We want those rows to be strongly
+	correlated, perfectly if possible.  So we reset the random number
+	state each time we encounter such a group.  If the two rows have
+	different distributions the correlation may be imperfect.
+
+	CAUTION: It is not guaranteed that the same initial state will produce perfect correlation 
+	between random numbers of the same type, e.g., N(2.2, 0.5) and N(10.1, 4.3).  Even less
+	guaranteed are results for 2 different distribution families.  That is why
+	I took a different approach for the dat files and matched quantiles; it should probably be 
+	imitated here.  For now we stick with what we have.
+
+	If we have several .inp files we are considering, this also assures
+	the rows are correlated across those input files.  In this case the behavior
+	described in the WARNING above is a desired feature.
+
+	On the other hand, we assume that different groups are completely
+	uncorrelated, and so each group has its own state.  
+	
+	Note that one must actually call the random number generator between groups for
+	the state to advance.
+	"""
 	group_state = {}
 
 	def __init__(self,data_line):
@@ -628,15 +745,15 @@ class Component(object):
 		return self.fn == RG.randn
 
 	def set_group(self,group_str):
-		"""Sets group for component, returns True if successful"""
-		# here I get state from new RG.  Motivation for using it remains
-		# obscure.
+		"""Sets group for component, returns True if successful.
+		Also sets the group-specific state of the random number
+		generator.
+		"""
 		match = re.search(r'g=(.+)',group_str)
 		if match is not None:
 			self.group = match.group(1).strip()
 			if not self.group in self.group_state:
 				self.group_state[self.group] = RG.state
-				# RB: Why isn't this the same for every group?
 			return True
 		return False
 

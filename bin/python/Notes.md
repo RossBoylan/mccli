@@ -47,6 +47,10 @@ Further testing of `Effects` revealed 2 different ways the code was inconsistent
   2. `randn` is obsolescent (it is still available, but not through the old interface).
 Fixed both.
 
+2022-09-14
+----------
+Modified test code to write out iteration number.
+
 To Do
 =====
 
@@ -58,7 +62,7 @@ To Do
   - [x] Write first tests, including setup of test framework in `VSCode`.
   - [x] Fix breakage from interface changes in `numpy` for the code in `Component`.
   - [x] Identify why there is no simulation number on outputs from first tests of `Effects`.
-  - [ ] Test needs to write out iteration number to `Effects` output file
+  - [x] Test writes out iteration number to `Effects` output file
   - [ ] Find out if the way I'm saving and restoring state is effective.  In particular, should I be doing a deep or shallow copy?
   - [ ] Make argument and instance variable naming more consistent across the module (maybe)
   - [ ] Make handling of file closing more consistent and correct.  Sometimes I do, and sometimes I don't.  Inconsistent and confusing.  This has 2 dimensions: handling of filelike vs pathlike arguments, and handling across different classes and methods.

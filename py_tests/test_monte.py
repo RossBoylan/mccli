@@ -40,7 +40,9 @@ def test_effects():
     eff = Effects(ifname=r"J:\source\repos\mccli\Mod92_MC-setup_Working-example\inp_distribution_25mmHg.txt",
     ofname="test_effect.out")
     eff.print_labels()
-    ## TODO: write iter in format used by runSims.js without a line end
+    # Ordinarily runSims.js writes the iteration number to the file
+    # I think this achieves the same format.
+    eff.save_write("{:<18d}".format(iter))
     eff.print_data()
 
 # if run under debugger

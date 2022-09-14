@@ -22,6 +22,15 @@ It reads from an `_mc0.EXT` file and writes to `_mc.EXT`.
 `Effects` reads from `MC/inputs/inp_distribution.txt`.
     Writes to `MC\input_variation\inp.txt`.
     Uses `Component` in a transitory way to wrap some lines.
+    This javascript code in `runSims.js` actually fills in the iteration number which is the first field on the data lines:
+
+   ```javascript
+        let str = String(i + ' '.repeat(16));
+        let INP_OUTPUT_FILE = './MC/input_variation/inp.txt';
+        if (fs.existsSync(INP_OUTPUT_FILE)) {
+            fs.appendFileSync(INP_OUTPUT_FILE, str.substring(0,16) + '  ')
+   ```
+
 `Component` actually generates the random number and interprets 
     parameters.  It would probably be better to generate them once and retain them.
     Although `Component` instances are temporary, there is persistent state held in a class variables.  This is the state of the random number generator for each group.

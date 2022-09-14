@@ -732,7 +732,7 @@ class Component(object):
 			params = parts[1:]
 
 		if self.name == 'NORMAL' and params[0].upper() == 'MEAN':
-			self.fn = RG.randn
+			self.fn = RG.standard_normal
 			self.params = float(params[1])
 		else:
 			self.params = [float(p) for p in params[:self.num_params]]
@@ -742,7 +742,7 @@ class Component(object):
 		self.upper_bound = self.get_upper(bounds)
 
 	def depends_on_mean_line(self):
-		return self.fn == RG.randn
+		return self.fn == RG.standard_normal
 
 	def set_group(self,group_str):
 		"""Sets group for component, returns True if successful.
@@ -753,7 +753,7 @@ class Component(object):
 		if match is not None:
 			self.group = match.group(1).strip()
 			if not self.group in self.group_state:
-				self.group_state[self.group] = RG.state
+				self.group_state[self.group] = RG.bit_generator.state
 			return True
 		return False
 
@@ -798,9 +798,9 @@ class Component(object):
 
 	def sample(self):
 		if self.group:
-			RG.state = self.group_state[self.group]
+			RG.bit_generator.state = self.group_state[self.group]
 
-		if self.fn == RG.randn:
+		if self.fn == RG.standard_normal:
 			val = self.fn() * self.params
 		else:
 			val = self.fn(*self.params)

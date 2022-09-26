@@ -1,0 +1,16 @@
+# BARBER2 study inputs for 25 mmHg decrease
+# keyword,n   (n= number of components of the cost or qaly to be varied)
+
+   
+SAEQALY25,1
+   g=1,0.0004150, 0.0000474, 0.0 
+ 
+YR1COST25,3
+   g=2, 52.23, 5.33, 0.0           # $4 generic medications
+   g=3, 519.00, 52.96, 0.0         # pharmacist cost in year 1
+   g=4, 49.99, 5.71, 0.0           # SAE cost for 15mmHg decrease
+
+YR2COST25,3
+   g=2, 52.23, 5.33, 0.0           # $4 generic medications
+   g=3, 294.75, 30.08, 0.0         # pharmacist cost in year 2
+   g=4, 49.99, 5.71, 0.0            # SAE cost for 15mmHg decrease

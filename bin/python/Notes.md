@@ -63,7 +63,7 @@ To Do
   - [x] Fix breakage from interface changes in `numpy` for the code in `Component`.
   - [x] Identify why there is no simulation number on outputs from first tests of `Effects`.
   - [x] Test writes out iteration number to `Effects` output file
-  - [ ] Find out if the way I'm saving and restoring state is effective.  In particular, should I be doing a deep or shallow copy?
+  - [ ] Find out if the way I'm saving and restoring state is effective.  In particular, should I be doing a deep or shallow copy?  https://github.com/numpy/numpy/issues/22337 created 2022-09-25.  Answer: it's already a copy.  Current code OK.  But maybe add a test for it.
   - [ ] Make argument and instance variable naming more consistent across the module (maybe)
   - [ ] Make handling of file closing more consistent and correct.  Sometimes I do, and sometimes I don't.  Inconsistent and confusing.  This has 2 dimensions: handling of filelike vs pathlike arguments, and handling across different classes and methods.
   - [ ] Move all test input files into project source tree under `py_tests`.

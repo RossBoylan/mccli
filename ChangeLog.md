@@ -1,5 +1,19 @@
 Change Log for `mccli`
-3.2.0 2022-09=12 ross.boylan@ucsf.edu
+3.3.0 2022-09-27 ross.boylan@ucsf.edu
+    * .inp file distribution parameters now interpreted as mean and std dev of the generated
+    variable.  This was supposed to have been true already, but it wasn't.  
+    Partially addresses [RossBoylan/mccli#4](https://github.com/RossBoylan/mccli/issues/4) but
+    note it affects *all* non-Normal distributions.
+    * Add a python test harness using pytest in the py_tests directory.  It is not hooked into
+    javascript testing, which remains non-existent.  Partially addresses [RossBoylan/mccli#12](https://github.com/RossBoylan/mccli/issues/12).
+    * Internal changes:
+       + Allow overriding the default files assumed many places in montecarlo.py. 
+       This was done to permit the white-box tests I wrote, but could in principle be
+       exposed to the user.
+       + Notes.md has various notes, currently focused on montecarlo.py, how it works,
+       and what needs to be done.
+  
+3.2.0 2022-09-12 ross.boylan@ucsf.edu
     * Use 8 digits after decimal for quantities varies in .inp files.  Was 6.  Closes #19.
     * Update a help message and requirements to match current situation.
 

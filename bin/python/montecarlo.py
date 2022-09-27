@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 from __future__ import print_function
-from operator import add
+
 import argparse
 import csv
 import collections
@@ -129,6 +129,95 @@ def is_number(s):
 	except ValueError:
 		return False
 
+def mean_to_native(dist:str, means, sds, check=True):
+	"""
+	Get the native distribution parameters implied by indicated means and 
+	standard deviations.
+
+	Returns a 2 element tuple of np.array with the first and second parameters, even
+	if means and sds are single numbers.
+
+	means and sds may be single numbers or any iterables of the same
+	length.  The returned np.array's will have the same length.
+
+	If return value is (p1, p2) then p1[i], p2[i] are the parameters 
+	implied by means[i], sds[i].
+
+	May raise a ValueError for unknown distributions or illegal parameters.
+	Set check=False to skip sanity checks on input parameters.
+
+	Recommendation: Always call this function, not the functions it calls,
+	even if you know what the distribution is.
+	"""
+	means = np.asarray(means)
+	sds = np.asarray(sds)
+	if check:
+		if sds.min() < 0:
+			raise ValueError("Negative standard deviation")
+		if means.size != sds.size:
+			raise ValueError("means and sds must be same length")
+	dist = dist.lower()
+	if dist == "normal":
+		return [means, sds]
+	if dist == "beta":
+		return beta_native(means, sds, check)
+	if dist == "lognormal":
+		return lognormal_native(means, sds, check)
+	if dist == "gamma":
+		return gamma_native(means, sds, check)
+	raise ValueError("Unknow distribution type {}".format(dist))
+
+def lognormal_native(means:np.array, sds:np.array, check=True):
+		"""
+		The input means and sds refer to the lognormal variable, not to
+		the related normal variable.  This function derives appropriate
+		parameters for the lognormal parameterized in terms of mu and
+		sigma, which do refer to the related normal variable.
+
+		Formulae for translation from
+		https://en.wikipedia.org/wiki/Log-normal_distribution#Alternative_parameterizations
+		"""
+		if check and means.min() < 0.0:
+			raise ValueError("Mean of LogNormal < 0")
+		f = 1.0 + np.power(sds/means, 2)
+		mu = np.log(means/np.sqrt(f))
+		sigma = np.sqrt(np.log(f))
+		return (mu, sigma)
+
+def beta_native(means:np.array, sds:np.array, check=True):
+	"""
+	Return alpha and beta that give means and sds.
+	E.g., https://en.wikipedia.org/wiki/Beta_distribution#Mean_and_variance,
+	though the formulae here are slightly transformed.
+	"""
+	if check:
+		if means.max()>1.0:
+			raise ValueError("mean of Beta > 1")
+		if means.min()<0.0:
+			raise ValueError("means of Beta < 0")
+		if sds**2 > means*(1-means):
+			raise ValueError("Var Beta > mu(1-mu)")
+	alpha = ((1 - means) / sds ** 2 - (1 / means)) * means ** 2
+	beta = alpha * (1 / means - 1)
+	return (alpha, beta)
+
+def gamma_native(means:np.array, sds:np.array, check=True):
+	"""
+	Return parameters of Gamma distribution that
+	give requested means and sds.
+	https://numpy.org/doc/stable/reference/random/generated/numpy.random.Generator.gamma.html
+	indicates parameterization use shape and scale (k and theta)
+	https://en.wikipedia.org/wiki/Gamma_distribution gives
+	mean = k theta
+	var = k theta^2
+	From which we derive the following
+	"""
+	if check and means.min() <= 0.0:
+		raise ValueError("Gamma with mean <= 0")
+	v = sds**2
+	theta = v/means
+	k = means**2/v
+	return (k, theta)
 
 class VFile(object):
 	"""Base class for files to be varied
@@ -394,16 +483,11 @@ class SDFile(object):
 		the related normal variable.  This function derives appropriate
 		parameters for the lognormal parameterized in terms of mu and
 		sigma, which do refer to the related normal variable.
-
-		Formulae for translation from
-		https://en.wikipedia.org/wiki/Log-normal_distribution#Alternative_parameterizations
 		"""
 		# convert from lists, which don't support math
 		means = np.array(means)
 		sds = np.array(sds)
-		f = 1.0 + np.power(sds/means, 2)
-		mu = np.log(means/np.sqrt(f))
-		sigma = np.sqrt(np.log(f))
+		mu, sigma = mean_to_native("lognormal", means, sds)
 		res = np.empty_like(means)
 		mask = (sigma>0.0)
 		# scipy docs say if log(Y) has mean mu and sd sigma then
@@ -448,8 +532,7 @@ class SDFile(object):
 		# to avoid division by zero must remove masked elements
 		ms = means[mask]
 		ss = sds[mask]
-		alpha = ((1 - ms) / ss ** 2 - (1 / ms)) * ms ** 2
-		beta = alpha * (1 / ms - 1)
+		alpha, beta = mean_to_native("beta", ms, ss)
 		if q is None:
 			res[mask] = self.RG.beta(alpha, beta)
 		else:

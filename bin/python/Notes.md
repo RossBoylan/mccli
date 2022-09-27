@@ -47,6 +47,31 @@ Further testing of `Effects` revealed 2 different ways the code was inconsistent
   2. `randn` is obsolescent (it is still available, but not through the old interface).
 Fixed both.
 
+Sampling for .inp and .dat Files
+================================
+
+The code handling random number generation for .inp files, in `InpFile`, `Effects` and `Component` is almost completely separate from that for .dat files in `DatFile` and `SDFile`.  This results in numerous differences, some intentional and some not (e.g., interpretation of parameters for the same distribution differs between .inp and .dat.)
+
+Our current code for the .dat file simulations does not handle Gamma (or possibly treats it as Normal).
+
+Since it would be good to put the code for each distribution in one place, it would be good to resolve this inconsistency, even though there are currently no gamma parameters in the .dat files.
+
+Other notable differences between .dat distributions and .inp distributions
+1.	The user never specifies the type of distribution for .dat files; it is wired in to the definition of the variables in the code.  For .inp files the user does set the distribution (often by omission, which means normal).
+2.	The .dat distribution is set per parameter in bin\input_data.json and none are gamma.
+3.	Likewise, the .dat correlation structure is defined with the variable and may be block or row.  User doesn’t set it.  
+4.	The .inp correlation structure differs from that for .dat, and is user-defined by groups.
+5.	.dat defines the mean and sd in 2 separate files. .inp defines the distribution parameters in one file.
+6.	For .inp, but not .dat, one can specify max or min values for the generated samples.
+7.	.inp allows “MEAN” to be given as the mean, in which case the second parameter is taken to be a coefficient of variation around the original mean (I think?).  I don’t think that’s an option for .dat.
+8.	The .dat file has a bunch of special rules to handle “illegal” values of the beta parameters.  Negative means flip the sign  of the result from the corresponding positive mean, and sd <= 0 result in always drawing the mean value.  .inp files get no such rules.
+9.	.inp files allow you to specify multiple components, all of which are summed to give the parameter of interest. .dat files don’t.
+10.	.inp files attempt to achieve random number correlation by matching seeds; .dat files do so by matching quantiles.
+
+
+Log
+===
+
 2022-09-14
 ----------
 Modified test code to write out iteration number.

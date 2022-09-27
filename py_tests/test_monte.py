@@ -61,9 +61,12 @@ def test_component():
     # omitting the distn should give the normal
     #dists = [None, "LogNormal", "Beta", "Gamma"]
     dists = [None, "Gamma"]
+    mu = 20
+    sigma = 4.3
     # comments already stripped out by time input line gets to Component
-    params = "20, 4.3"  # mean, sd
+    params = f"{mu}, {sigma}"
     nrep = 800
+    # So far I use matrix v one column at a time, i.e., unnecessary
     v = np.zeros((nrep, len(dists)))
     distj = 0  # index of distributions
 
@@ -76,13 +79,15 @@ def test_component():
         for i in range(nrep):
             v[i, distj] = comp.sample()
         m_samp = v[:, distj].mean()
-        assert sqrt(nrep)*abs(m_samp - 20)/(4.3) < 2.5 , \
-            f"{d} sample mean {m_samp} is too far from true value of 20"
+        # next test fails at the outer
+        assert sqrt(nrep)*abs(m_samp - mu)/sigma < 2.5 , \
+            f"{d} sample mean {m_samp} is too far from true value of {mu}"
         # get quantile for sd
-        var_samp = v[:, distj].var()/(4.3*4.3) # normalized variance
+        var_samp = v[:, distj].var()/(sigma*sigma) # normalized variance
         var_q = chi2.cdf((nrep-1)*var_samp, nrep-1)
+        # following test fails at the outer 1.4% of the distribution
         assert abs(var_q - 0.5) < 0.493, \
-            f"{d} sample sd {v[:, distj].std()} too far from true 4.3. p={var_q}"
+            f"{d} sample sd {v[:, distj].std()} too far from true {sigma}. p={var_q}"
         # that should also catch the degenerate case in which var=0
         # because same seed is being reused
         del comp

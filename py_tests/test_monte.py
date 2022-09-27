@@ -59,27 +59,26 @@ def test_component():
     i = 0
     montecarlo.RG = np.random.default_rng([i, 89723509814])
     # omitting the distn should give the normal
-    #dists = [None, "LogNormal", "Beta", "Gamma"]
-    dists = [None, "Gamma"]
-    mu = 20
-    sigma = 4.3
-    # comments already stripped out by time input line gets to Component
-    params = f"{mu}, {sigma}"
+    dists = [None, "LogNormal", "Beta", "Gamma"]
+    params = [(20, 4.3), (20, 4.3), (0.3, 0.05), (20, 4.3)]
+    #dists = [None, "Gamma"]
     nrep = 800
     # So far I use matrix v one column at a time, i.e., unnecessary
     v = np.zeros((nrep, len(dists)))
     distj = 0  # index of distributions
-
-    for d in dists:
+    for d, ps in zip(dists, params):
+        mu, sigma = ps
+        # comments already stripped out by time input line gets to Component
+        fakeline = f"{mu}, {sigma}"
         if d:
-            comp = Component(f"{d}, {params}")
+            comp = Component(f"{d}, {fakeline}")
         else:
-            comp = Component(params)
+            comp = Component(fakeline)
             d = "Normal (implicit)"
+
         for i in range(nrep):
             v[i, distj] = comp.sample()
         m_samp = v[:, distj].mean()
-        # next test fails at the outer
         assert sqrt(nrep)*abs(m_samp - mu)/sigma < 2.5 , \
             f"{d} sample mean {m_samp} is too far from true value of {mu}"
         # get quantile for sd

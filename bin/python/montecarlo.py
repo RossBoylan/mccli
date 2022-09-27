@@ -134,8 +134,9 @@ def mean_to_native(dist:str, means, sds, check=True):
 	Get the native distribution parameters implied by indicated means and 
 	standard deviations.
 
-	Returns a 2 element tuple of np.array with the first and second parameters, even
-	if means and sds are single numbers.
+	Returns a 2 element tuple of the first and second parameters.
+	If each parameter has a single value, each element of the return value
+	will be a float; otherwise each will be an np.array.
 
 	means and sds may be single numbers or any iterables of the same
 	length.  The returned np.array's will have the same length.
@@ -158,14 +159,22 @@ def mean_to_native(dist:str, means, sds, check=True):
 			raise ValueError("means and sds must be same length")
 	dist = dist.lower()
 	if dist == "normal":
-		return [means, sds]
-	if dist == "beta":
-		return beta_native(means, sds, check)
-	if dist == "lognormal":
-		return lognormal_native(means, sds, check)
-	if dist == "gamma":
-		return gamma_native(means, sds, check)
-	raise ValueError("Unknow distribution type {}".format(dist))
+		r = (means, sds)
+	elif dist == "beta":
+		r = beta_native(means, sds, check)
+	elif dist == "lognormal":
+		r = lognormal_native(means, sds, check)
+	elif dist == "gamma":
+		r = gamma_native(means, sds, check)
+	else:
+		raise ValueError("Unknow distribution type {}".format(dist))
+	if r[0].size == 1:
+		# In this case each component is an np.array with 0
+		# dimensions.  It can not be addressed by x[0], so
+		# there seems no point in treating it as np.array
+		return (float(r[0]), float(r[1]))
+	else:
+		return r
 
 def lognormal_native(means:np.array, sds:np.array, check=True):
 		"""
@@ -194,7 +203,7 @@ def beta_native(means:np.array, sds:np.array, check=True):
 		if means.max()>1.0:
 			raise ValueError("mean of Beta > 1")
 		if means.min()<0.0:
-			raise ValueError("means of Beta < 0")
+			raise ValueError("mean of Beta < 0")
 		if sds**2 > means*(1-means):
 			raise ValueError("Var Beta > mu(1-mu)")
 	alpha = ((1 - means) / sds ** 2 - (1 / means)) * means ** 2
@@ -819,6 +828,7 @@ class Component(object):
 			self.params = float(params[1])
 		else:
 			self.params = [float(p) for p in params[:self.num_params]]
+			self.params = mean_to_native(self.name, *self.params)
 
 		bounds = params[self.num_params:]
 		self.lower_bound = self.get_lower(bounds)

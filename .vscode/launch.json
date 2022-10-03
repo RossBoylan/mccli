@@ -16,19 +16,19 @@
         {
             "type": "node",
             "request": "launch",
-            "name": "Launch Program",
+            "name": "mc run",
             "skipFiles": [
                 "<node_internals>/**"
             ],
-            "program": "${file}",
+            "program": "J:\\source\\repos\\mccli\\bin\\mc.js",
             "args": [
                 "run",
                 "3",
                 "0",
-                "899"
+                "343"
             ],
             "console": "integratedTerminal",
-            "cwd": "J:\\source\\repos\\mccli\\Mod92_MC-setup_Working-example"
+            "cwd": "J:\\source\\repos\\mccli\\Mod92_YLMC_09292022"
         }
     ]
 }

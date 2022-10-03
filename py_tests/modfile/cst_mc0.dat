@@ -1,0 +1,158 @@
+            Please note; If the varibles are not singular the following format exits:  ** plan to use this as start base for making changes with new data sources
+  male 35-44  male 45-54  male 55-64  male 65-74  male 75-84  male 85-94
+  female 35-44 female 45-54 female 55-64 female 65-74 female 75-84 female 85-94.
+   If only 1 row exists no sex specific information is defined.
+   ********UPDATED TO 2019 USD on 7-13-2020 /// NIS data updates for both men and women 10-07-2020 ****************  
+
+   Cost of initial 30 days with angina - $     JL 6/25/13 / 7-21-2020 update men to 1/3rd NIS hospitalized angina + 2/3*visit code 99215/CW updated 10/05/2020
+   NOTE: Assumes 1/3 of new onset angina is hospitalized   
+    7784.00        8612.00        9774.00       10525.00       10252.00        7603.00
+    6889.00        7484.00        8435.00        9030.00        8540.00        6064.00
+
+   Cost of MI, survivors - $     JL 6/24/13  // 09-30-2020 updated to mean survived MI $ from NIS by CW
+
+   34340.00       36596.00       39226.00       39426.00       35662.00       24538.00
+
+   Cost of MI, fatalities - $     JL 6/24/13 -- changed to wgt ave with ARR 9/22/15 pgc  // 09-30-2020 CW updated to balance with in-hostpial arrest costs
+
+   44456.00       47229.00       48729.00       44508.00       36419.00       19409.00
+
+   Cost of arrest, pre-hospital fatalities - $     JL 6/24/13     // JP to 2019 USD 7-13-2020
+   
+   783.00
+
+   Cost of arrest, survivors - $     JL 6/25/13  // 09-30-2020 update to new NIS data by CW
+   
+   41878.00
+
+   Cost of arrest, hospital fatalities - $     JL 6/24/13    -- changed to wgt ave with AMI 9/22/15 pgc // 10/05/2020 CW updated to balance with in-hostpial MI
+   
+   44861.00
+ 
+   test adding CHF cost to women too; Cost of hospitalization for CHF - $     JL 6/25/13   // JP to 2019 USD 7-13-2020  // 09-30-2020 CW updated NO 30-day infator - MEN to NIS HF hospitalization data
+
+   20640.00       19449.00       20038.00       18391.00       15530.00       12878.00
+   18231.00       17302.00       18314.00       16792.00       14574.00       11944.00
+
+   Ratio of CHF admissions per old MI death, multiplied by fraction
+of CHF admissions attributable to CHD (2/3) - NHDS2000 pgc 4/19/05      
+   3.56
+
+   Cost in first year with CHD, if no revasc.- $ JL 6/25/13 CSTVAL..June25.xlsx Line55  // JP to 2019 USD 7-13-2020
+   NOTE: Assumes 1/3 of new onset angina is hospitalized
+
+   12000.00       12000.00       12000.00       18339.00       18339.00       18339.00
+   12000.00       12000.00       12000.00       18339.00       18339.00       18339.00
+
+   Cost in subsequent years with CHD, if no  revasc. - $     JL 6/24/13  // JP to 2019 USD 7-13-2020
+
+    2451.00        2451.00        2451.00        2451.00        2451.00        3853.00
+    2451.00        2451.00        2451.00        2451.00        2451.00        3853.00
+
+   Cost in first year post-revasc. - $     JL 6/24/13  // JP to 2019 USD 7-13-2020
+   NOTE: Assumes 1/3 of new onset angina is hospitalized
+   11748.00       11748.00       11748.00       14501.00       14501.00       14501.00
+   11748.00       11748.00       11748.00       14501.00       14501.00       14501.00
+
+   Cost in subsequent years post-revasc. - $     JL 6/24/13  // JP to 2019 USD 7-13-2020
+
+    2451.00        2451.00        2451.00        2451.00        2451.00        3853.00
+    2451.00        2451.00        2451.00        2451.00        2451.00        3853.00
+
+   Cost of CABG and Cath -  $ (30 day) combined at one admission     JL 6/24/13   // JP to 2019 USD 7-13-2020
+
+   65095.00       65095.00       65095.00       67291.00       67291.00       67291.00
+
+   Cost of PTCA and Cath - $ (30 day) combined at one admission     JL 6/24/13   // JP to 2019 USD 7-13-2020
+
+   23846.00       23846.00       23846.00       26202.00       26202.00       26202.00
+
+   Incremental cost of death with isolated revascularization     JL 6/24/13   // JP to 2019 USD 7-13-2020
+
+   49668.00
+
+   Proportion of old MI deaths occurring outside  of hospital -       
+   
+   0.74
+
+   Cost of MI, PTCA and catheterization (30 day) -  $ ALIVE JL 6/25/13 CSTVAL..June25.xlsx Line111   // JP 7-14-2020 men updated to MI survive NIS//10-05-2020 updated by CW
+
+   35723.00       37812.00       40579.00       40967.00       37729.00       26995.00
+   31127.00       33583.00       36244.00       36920.00       33291.00       22848.00
+
+   Cost of MI, CABG and catheterization (30 day) -  $ ALIVE JL 6/25/13 CSTVAL..June25.xlsx Line119    // JP 7-14-2020 men updated to MI survive NIS//10-05-2020 updated by CW
+        
+   35723.00       37812.00       40579.00       40967.00       37729.00       26995.00
+   31127.00       33583.00       36244.00       36920.00       33291.00       22848.00
+
+   Cost of MI, PTCA and catheterization (30 day) -  $ incremental cost of death     JL 6/24/13   // JP 7-14-2020 men updated to incremental cost for MI fatality NIS//10-05-2020 updated by CW
+
+   51639.00       37947.00       31017.00        24492.00      15890.00        2931.00
+   27029.00       34053.00       29337.00        21704.00      13738.00           0.00
+
+   XXXLINE127 Cost of MI, CABG and catheterization (30 day) -  $ incremental cost of death     JL 6/24/13   // JP 7-14-2020 men updated to incremental cost for MI fatality NIS//10-05-2020 updated by CW
+
+   51639.00       37947.00       31017.00        24492.00      15890.00        2931.00
+   27029.00       34053.00       29337.00        21704.00      13738.00           0.00
+
+   XXXLINE127 Cost Of stroke hospitalized fatal stroke - OSHPD 2008 inflated to 2010: pending nat'l adjustmts $ (cbrstrd)   // JP 7-15-2020 updated using NIS for men//10-05-2020 updated by CW
+ 
+   40931.00       37160.00       34058.00       29026.00       23893.00       17160.00
+   45845.00       37211.00       34758.00       28839.00       20648.00       13629.00
+ 
+   Cost Of stroke hospitalized nonfatal stroke - OSHPD 2008 inflated to 2010: pending nat'l adjustmts $ (cbrstrs)    // JP 7-15-2020 updated using NIS for men//10-05-2020 updated by CW
+ 
+   29209.00       23967.00       20996.00       18058.00       16623.00       15042.00
+   31237.00       27231.00       22478.00       18832.00       16488.00       14145.00
+ 
+   Cost Of stroke hospitalized fatal stroke - OSHPD 2008 inflated to 2010: pending nat'l adjustmts $ (cbrhstrd)   // JP 7-15-2020 updated using NIS for men//10-05-2020 updated by CW
+ 
+   40931.00       37160.00       34058.00       29026.00       23893.00       17160.00
+   45845.00       37211.00       34758.00       28839.00       20648.00       13629.00
+ 
+   Cost Of stroke hospitalized nonfatal stroke - OSHPD 2008 inflated to 2010: pending nat'l adjustmts $ (cbrhstrs)   // JP 7-15-2020 updated using NIS for men//10-05-2020 updated by CW
+ 
+   29209.00       23967.00       20996.00       18058.00       16623.00       15042.00
+   31237.00       27231.00       22478.00       18832.00       16488.00       14145.00
+
+   Rest of year one, chronic stroke - MEPS 1998-2008 inflated to 2010  $ (c1stroke)     JL 6/24/13 -- JP note that this is lower than what was used in PCSK9i - see AEM worksheets  // JP to 2019 USD 7-13-2020
+ 
+   18569.00       18569.00       18569.00       18569.00       18569.00       18569.00
+   18569.00       18569.00       18569.00       18569.00       18569.00       18569.00
+ 
+   Subsequent years, chronic stroke - MEPS 1998-2008 inflated to 2010  $ (cxstroke)     JL 6/24/13  // JP to 2019 USD 7-13-2020
+ 
+    5160.00        5160.00        5160.00        5160.00        5160.00        5160.00
+    5160.00        5160.00        5160.00        5160.00        5160.00        5160.00
+ 
+   Rest of year one, post hemorrhagic stroke - currently same as all stroke  $ (c1hstroke)   // JP to 2019 USD 7-13-2020//10-05-2020 updated by CW
+ 
+   18569.00       18569.00       18569.00       18569.00       18569.00       18569.00
+   18569.00       18569.00       18569.00       18569.00       18569.00       18569.00
+
+
+
+
+
+
+
+
+
+ 
+
+
+
+
+
+
+
+
+
+
+
+
+
+ 
+
+
+

@@ -1,0 +1,52 @@
+                                   TABLE STROKE BETA --- CVD risk replaces BMI;  pysical activity replace CKD, SE from pooled cohorts updated 7-8-2022
+                                         MALES
+                 TOTAL/ISCHEMIC STROKE in persons with no CVD (U.S. Betas)
+         AGE      SBP       LDL           SMOK       HDL       CVD risk      Diabetes   Meds         Pysical
+
+          1      .0028      0.0011       .0032       0.0030    0.0        0.1412       0.0          .0000
+          2      .0020      0.0011       .0032       0.0030    0.0        0.0997       0.0          .0000
+          3      .0016      0.0011       .0032       0.0030    0.0        0.0813       0.0          .0000
+          4      .0020      0.0011       .0032       0.0030    0.0        0.0997       0.0          .0000
+          5      .0028      0.0011       .0032       0.0030    0.0        0.1412       0.0          .0000
+          6      .0038      0.0011       .0032       0.0030    0.0        0.1913       0.0          .0000
+
+                    HEMORRHAGIC STROKE in persons with no CVD (U.S. Betas)         
+         AGE      SBP       LDL           SMOK       HDL       CVD risk      Diabetes   Meds         Pysical
+          1      .0067      0.0025       .0076       0.0000    0.0        0.0000       0.0          .0000
+          2      .0049      0.0025       .0076       0.0000    0.0        0.0000       0.0          .0000
+          3      .0041      0.0025       .0076       0.0000    0.0        0.0000       0.0          .0000
+          4      .0049      0.0025       .0076       0.0000    0.0        0.0000       0.0          .0000
+          5      .0067      0.0025       .0076       0.0000    0.0        0.0000       0.0          .0000
+          6      .0089      0.0025       .0076       0.0000    0.0        0.0000       0.0          .0000
+                                        FEMALES
+                   TOTAL/ISCHEMIC STROKE in persons with no CVD (U.S. Betas)  
+         AGE      SBP       LDL           SMOK       HDL       CVD risk      Diabetes   Meds         Pysical
+          1      .0026      0.0009       .0039       0.0022    0.0        0.1356       0.0          .0000
+          2      .0018      0.0009       .0039       0.0022    0.0        0.0931       0.0          .0000
+          3      .0014      0.0009       .0039       0.0022    0.0        0.0737       0.0          .0000
+          4      .0018      0.0009       .0039       0.0022    0.0        0.0931       0.0          .0000
+          5      .0026      0.0009       .0039       0.0022    0.0        0.1356       0.0          .0000
+          6      .0035      0.0009       .0039       0.0022    0.0        0.1860       0.0          .0000
+
+                    HEMORRHAGIC STROKE in persons with no CVD (U.S. Betas)   * JP set highest age SBP to zero         
+         AGE      SBP       LDL           SMOK       HDL       CVD risk      Diabetes   Meds         Pysical
+          1      .0044      0.0019       .0073       0.0000    0.0        0.0000       0.0          .0000
+          2      .0033      0.0019       .0073       0.0000    0.0        0.0000       0.0          .0000
+          3      .0026      0.0019       .0073       0.0000    0.0        0.0000       0.0          .0000
+          4      .0033      0.0019       .0073       0.0000    0.0        0.0000       0.0          .0000
+          5      .0044      0.0019       .0073       0.0000    0.0        0.0000       0.0          .0000
+          6      .0058      0.0019       .0073       0.0000    0.0        0.0000       0.0          .0000
+
+
+
+
+
+
+
+
+
+
+
+
+
+

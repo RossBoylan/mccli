@@ -1,0 +1,56 @@
+{
+    "default_iterations": 1001,
+    "model": "CVDIntel9.2",
+    "inp_files": [
+        "ALC",
+        "bl",
+        "dash",
+        "FV",
+        "i129",
+        "PA",
+        "sodi",
+        "WT"
+    ],
+    "dat_files": [
+        {
+            "filename": "b",
+            "format": {
+                "leading_spaces": 14,
+                "mid_spaces": 3,
+                "num_format": "9.6f"
+            },
+            "correlation": "block",
+            "blocksPerGroup": 2
+        },
+        {
+            "filename": "bstk",
+            "format": {
+                "leading_spaces": 14,
+                "mid_spaces": 3,
+                "num_format": "9.6f"
+            },
+            "correlation": "block",
+            "blocksPerGroup": 2
+        },
+        {
+            "filename": "cst",
+            "format": {
+                "leading_spaces": 3,
+                "mid_spaces": 7,
+                "num_format": "8.2f"
+            },
+            "correlation": "row",
+            "rowLabels": false,
+            "distribution": "lognormal"
+        },
+        {
+            "filename": "rsk",
+            "format": {
+                "leading_spaces": 14,
+                "mid_spaces": 3,
+                "num_format": "8.4f"
+            },
+            "correlation": "none"
+        }
+    ]
+}

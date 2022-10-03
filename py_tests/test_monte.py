@@ -33,7 +33,8 @@ hazardous.  Also, runSims.js writes at least part of the line for one file, the 
 output file, usually MC/input_variation/inp.txt. 
 
 """
-
+def myRNG(iter):
+    return np.random.default_rng([iter, 89723509814])
 
 def test_inp():
     # currently mostly used to see if montecarlo module loaded
@@ -42,7 +43,7 @@ def test_inp():
 
 def test_effects():
     iter = 4
-    montecarlo.RG = np.random.default_rng([iter, 89723509814])
+    montecarlo.RG = myRNG(iter)
     eff = Effects(ifname=str(testDir / "inp_distribution_25mmHg.txt"),
     ofname=str(testDir / "test_effect.out"))
     eff.print_labels()
@@ -93,6 +94,18 @@ def test_component():
 
         distj += 1
 
+def test_dat():
+    "test DatFile and SDFile generation of random numbers"
+    RG = myRNG(4)
+    input_data = get_input_data(ifname = testDir / 'MC' / 'inputs' / 'input_data.json')
+    dat_files = input_data['dat_files']
+    for datfiledata in dat_files:
+        datfile = DatFile(datfiledata, RG, 
+            ifname = testDir / 'modfile' / (datfiledata['filename'] + '_mc0.dat'),
+            ofname = testDir / 'modfile' / (datfiledata['filename'] + '_mc.dat'),
+            sdifname = testDir / 'modfile' / (datfiledata['filename'] + '_sd.dat'))
+        datfile.vary()
+
          
 
 
@@ -100,3 +113,4 @@ def test_component():
 if __name__ == "__main__":
     #test_inp()
     test_component()
+

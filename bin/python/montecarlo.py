@@ -16,6 +16,7 @@ def main():
 	global RG  # the random generator
 	args = parse_args()
 	seed = args.seed
+	print(f"montecarlo.py {args.iteration} called.")
 	if seed:
 		# https://github.com/numpy/numpy/issues/22119#issuecomment-1213579174
 		# recommends the following strategy
@@ -56,6 +57,7 @@ def main():
 		if not args.zero_run:
 			inpfile.vary()
 		inpfile.print_mc()
+	print(f"montecarlo.py {args.iteration} finished.")
 
 
 def parse_args():
@@ -78,14 +80,18 @@ def parse_args():
 	return parser.parse_args()
 
 
-def get_input_data():
-	fname = 'MC/inputs/input_data.json'
-	if os.path.isfile(fname):
-		with open(fname) as data_file:
-			return json.load(data_file)
+def get_input_data(ifname=None, ifile=None):
+	if ifile is None:
+		if ifname is None:
+			ifname = 'MC/inputs/input_data.json'
+		if os.path.isfile(ifname):
+			with open(ifname) as data_file:
+				return json.load(data_file)
+		else:
+			print('Error: could not find inputs file at {}'.format(ifname))
+			sys.exit(1)
 	else:
-		print('Error: could not find inputs file at {}'.format(fname))
-		sys.exit(1)
+		return json.load(ifile)
 
 def read_lines(fname=None, fin=None):
 	""" Read lines from a file given by name or file-like object
@@ -253,6 +259,7 @@ class VFile(object):
 
 		Options can be mixed and matched, file arguments are preferred, then i/ofnames, 
 			and finally fname.
+		Note that if you do not use fname you must specify the _mc part yourself.
 		"""
 		if fname:
 			pref,ext = fname.split('.')
@@ -307,11 +314,39 @@ class DatFile(VFile):
 		sdfile: SDFile object containing standard deviation information
 	"""
 
-	def __init__(self,file_data, random_generator):
+	def __init__(self,file_data, random_generator, ifname=None, ifile=None,
+		ofname=None, ofile=None,
+		sdifname=None, sdifile=None):
+		"""
+		file_data  JSON object with specification for this variable
+		random_generator random generator to use
+
+		ifile optional input stream with the main .dat information
+		ifname optional path-like object with the main .dat information
+			Only used if ifile is None.
+			Ordinarily omitted and given program default
+
+		ofile
+		ofname
+			The output analogs of ifile, ifname
+
+		sdifile optional input stream in .dat format but with standard deviations
+		sdifname optional Path-like object with the location of the sd file
+			Only used if sdifile is None
+			Ordinarily omitted and given program default
+		"""
 		self.file_data = file_data
-		self.fpath = os.path.join('modfile',file_data['filename'] + '.dat')
-		VFile.__init__(self,self.fpath)
-		self.sdfile = SDFile(file_data,self.lines, random_generator)
+		if ifile is None:
+			if ifname is None:
+				ifname = os.path.join('modfile',file_data['filename'] + '_mc0.dat')
+		if ofile is None:
+			if ofname is None:
+				ofname = os.path.join('modfile',file_data['filename'] + '_mc0.dat')
+		self._ifname = ifname
+		self._ifile = ifile
+		VFile.__init__(self, ifname = ifname, ifile = ifile, ofname=ofname, ofile=ofile)
+
+		self.sdfile = SDFile(file_data,self.lines, random_generator, sdifname, sdifile)
 		self.frmt_str = ''
 		self.lead_spaces = 0
 		self.set_format()
@@ -382,12 +417,16 @@ class SDFile(object):
 	
 	"""
 
-	def __init__(self, file_data, mean_lines, random_generator):
+	def __init__(self, file_data, mean_lines, random_generator, ifname=None, ifile=None):
 		self.file_data = file_data
 		self.RG = random_generator
-		sdpath = os.path.join('modfile',file_data['filename'] + '_sd.dat')
+		if ifile is None:
+			if ifname is None:
+				ifname = os.path.join('modfile',file_data['filename'] + '_sd.dat')
+		self._ifname = ifname
+		self._ifile = ifile
 		self.mean_lines = mean_lines
-		self.lines = read_lines(sdpath)
+		self.lines = read_lines(ifname, ifile)
 		self.block_nums = [-1] * len(self.lines)
 		self.cols = self._count_cols()
 		self.row_offset = 1

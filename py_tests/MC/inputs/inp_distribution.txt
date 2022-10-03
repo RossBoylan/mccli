@@ -1,0 +1,24 @@
+# Young lifestyle Stage 1 study
+# keyword,n   (n= number of components of the cost or qaly to be varied)
+
+   
+WTEFFECT,1
+   g=1,4.78, 0.50                 # sustained weight loss
+
+DASHDIET,1
+   g=2,5.5, 0.94                  # DASH diet
+
+SODIEFFECT,1
+   g=3,4.18, 0.51                 # Reduce sodium
+
+FVEFFECT,1
+   g=4,2.8, 0.97                  # Fruit and veg intake
+
+SODIEFFECT,1
+   g=5,4.18, 0.51                 # Reduce sodium
+
+PAEFFECT, 1
+   g=6,3.84, 0.57                 # Aerobic physical activity
+
+ALCEFFECT, 1
+   g=7,3.13, 0.41                 # Alcohol intake

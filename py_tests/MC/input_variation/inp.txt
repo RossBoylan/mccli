@@ -1,0 +1,10 @@
+simulation #      WTEFFECT          DASHDIET          SODIEFFECT        FVEFFECT          PAEFFECT          ALCEFFECT         
+ALC.inp           0                 0                 0                 0                 0                 1                 
+bl.inp            0                 0                 0                 0                 0                 0                 
+dash.inp          0                 1                 0                 0                 0                 0                 
+FV.inp            0                 0                 0                 1                 0                 0                 
+i129.inp          0                 0                 0                 0                 0                 0                 
+PA.inp            0                 0                 0                 0                 1                 0                 
+sodi.inp          0                 0                 1                 0                 0                 0                 
+WT.inp            1                 0                 0                 0                 0                 0                 
+1                 

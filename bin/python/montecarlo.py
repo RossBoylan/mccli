@@ -350,7 +350,7 @@ class DatFile(VFile):
 				ifname = os.path.join('modfile',file_data['filename'] + '_mc0.dat')
 		if ofile is None:
 			if ofname is None:
-				ofname = os.path.join('modfile',file_data['filename'] + '_mc0.dat')
+				ofname = os.path.join('modfile',file_data['filename'] + '_mc.dat')
 		self._ifname = ifname
 		self._ifile = ifile
 		VFile.__init__(self, ifname = ifname, ifile = ifile, ofname=ofname, ofile=ofile)

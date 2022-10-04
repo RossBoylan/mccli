@@ -5,7 +5,7 @@
 # The monte-carlo run executes montecarlo.py, format.py, and sum_results.py.
 # At a minimum, those require
 
-numpy >= 1.17
+numpy >= 1.19
     
 scipy
 matplotlib  # used in plot.py and sum_results.py

@@ -93,7 +93,7 @@ To Do
         https://github.com/numpy/numpy/issues/22337 created 2022-09-25; the answers incorporated into this item.
   - [ ] Add a test for the  correct operation of save/restore state (maybe)
         Likely tied to implementation details, which I may be about to change.
-  - [ ] Make argument and instance variable naming more consistent across the module (maybe)
+  - [ ] Make argument and instance variable naming more consistent across the module for input and output files (maybe)
   - [ ] Make handling of file closing more consistent and correct.  
     Sometimes I do, and sometimes I don't.
     Inconsistent and confusing.

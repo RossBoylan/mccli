@@ -1,6 +1,6 @@
 Change Log for `mccli`
 
-3.3.1 2022-10-03 ross.boylan@ucsf.edu
+3.3.1 2022-10-04 ross.boylan@ucsf.edu
     * Fix errors in .dat file processing induced by new code in some circumstances.  In montecarlo.py:
             >   			res[mask] = stats.lognorm.ppf(np.full(sum(mask), q), s = sigma[mask], scale = np.exp(mu[mask]))
             E      TypeError: 'bool' object is not iterable

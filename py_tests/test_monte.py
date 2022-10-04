@@ -112,5 +112,5 @@ def test_dat():
 # if run under debugger
 if __name__ == "__main__":
     #test_inp()
-    test_component()
+    test_dat()
 

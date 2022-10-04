@@ -16,7 +16,7 @@ def main():
 	global RG  # the random generator
 	args = parse_args()
 	seed = args.seed
-	print(f"montecarlo.py {args.iteration} called.")
+	#print(f"montecarlo.py {args.iteration} called.")
 	if seed:
 		# https://github.com/numpy/numpy/issues/22119#issuecomment-1213579174
 		# recommends the following strategy
@@ -57,7 +57,7 @@ def main():
 		if not args.zero_run:
 			inpfile.vary()
 		inpfile.print_mc()
-	print(f"montecarlo.py {args.iteration} finished.")
+	#print(f"montecarlo.py {args.iteration} finished.")
 
 
 def parse_args():
@@ -174,7 +174,7 @@ def mean_to_native(dist:str, means, sds, check=True):
 		r = gamma_native(means, sds, check)
 	else:
 		raise ValueError("Unknow distribution type {}".format(dist))
-	if r[0].size == 1:
+	if r[0].ndim == 0:
 		# In this case each component is an np.array with 0
 		# dimensions.  It can not be addressed by x[0], so
 		# there seems no point in treating it as np.array
@@ -191,9 +191,18 @@ def lognormal_native(means:np.array, sds:np.array, check=True):
 
 		Formulae for translation from
 		https://en.wikipedia.org/wiki/Log-normal_distribution#Alternative_parameterizations
+
+		This only returns rows for sane values of the inputs.
+		A mean of 0 isn't really sane, but we allow it, assuming the sd will be <=0, i.e.,
+		the goal is to zero something out.
 		"""
 		if check and means.min() < 0.0:
 			raise ValueError("Mean of LogNormal < 0")
+		mask = (sds <= 0)
+		if np.any(mask):
+			# WARNING: next 2 lines require NumPy 1.19+
+			sds = np.delete(sds, mask)
+			means = np.delete(means, mask)
 		f = 1.0 + np.power(sds/means, 2)
 		mu = np.log(means/np.sqrt(f))
 		sigma = np.sqrt(np.log(f))
@@ -535,19 +544,21 @@ class SDFile(object):
 		# convert from lists, which don't support math
 		means = np.array(means)
 		sds = np.array(sds)
+		# mu and sigma may have fewer elements than means and sds
+		# since they are only returned for rows with valid means and sds
 		mu, sigma = mean_to_native("lognormal", means, sds)
 		res = np.empty_like(means)
-		mask = (sigma>0.0)
+		mask = (sds>0.0)  # must be sds, not sigma
 		# scipy docs say if log(Y) has mean mu and sd sigma then
 		# use s = sigma and scale = exp(mu)
 		if q is None:
-			res[mask] = self.RG.lognormal(mu[mask], sigma[mask])
+			res[mask] = self.RG.lognormal(mu, sigma)
 		else:
 			q0 = np.array(q, copy=False)  # q might be a single number
 			if q0.size > 1:
-				res[mask] = stats.lognorm.ppf(q[mask], s = sigma[mask], scale = np.exp(mu[mask]))
+				res[mask] = stats.lognorm.ppf(q[mask], s = sigma, scale = np.exp(mu))
 			else:
-				res[mask] = stats.lognorm.ppf(np.full(sum(mask), q), s = sigma[mask], scale = np.exp(mu[mask]))
+				res[mask] = stats.lognorm.ppf(np.full(sum(mask), q), s = sigma, scale = np.exp(mu))
 		# It seems ~x is same as np.logical_not(x) but I can't find that documented anywhere.
 		mask = np.logical_not(mask)
 		# if sd=0 use original mean

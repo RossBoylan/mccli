@@ -88,9 +88,9 @@ To Do
   - [x] Fix breakage from interface changes in `numpy` for the code in `Component`.
   - [x] Identify why there is no simulation number on outputs from first tests of `Effects`.
   - [x] Test writes out iteration number to `Effects` output file
-  - [x] Find out if the way I'm saving and restoring state is effective.  It is
-  In particular, should I be doing a deep or shallow copy? Neither is necessary; it's already a copy.
-  https://github.com/numpy/numpy/issues/22337 created 2022-09-25; the answers incorporated into this item.
+  - [x] Find out if the way I'm saving and restoring state is effective.  It is.
+        In particular, should I be doing a deep or shallow copy? Neither is necessary; it's already a copy.
+        https://github.com/numpy/numpy/issues/22337 created 2022-09-25; the answers incorporated into this item.
   - [ ] Add a test for the  correct operation of save/restore state (maybe)
         Likely tied to implementation details, which I may be about to change.
   - [ ] Make argument and instance variable naming more consistent across the module (maybe)
@@ -113,10 +113,17 @@ To Do
   - [x] Update package version and changelog
   - [x] Reintegrate with main `repeatable` branch
   - [x] Publish changes
-  - [ ] Extend flexible specification of inputs and outputs to `DatFile`, `SDFile` and other related classes and functions.  This might be good to do before publication, in case I broke something.
+  - [x] Extend flexible specification of inputs and outputs to `DatFile`, `SDFile` and other related classes and functions.  This might be good to do before publication, in case I broke something.
   - [ ] Centralize random number logic in one place.  Currently both `InpFile` and `DatFile` have independent code.  Unclear how feasible this is since they have different types of correlations they are trying to achieve, and different sets of special rules. (maybe)
     + [x] transform from mean and sd to distribution parameters now done centrally
     + [ ] see list above (Sampling for .inp and .dat Files) for differences
+    + [ ] handling of out of bound inputs
+      * [ ] check LogNormal
+            Modified to compute params from mean and sd only for legal values
+            and then use those legal parameters with an appropriate mask
+            Check that it all done properly in all places.
+      * [ ] Problematic because the current specification gives special handling to out of bounds values for only .dat or only .inp files in some cases, as noted in previous section.
+      * [ ] check handling of illegal values for other distns, including Normal, to see if it has a similar structure.
   - [ ] In particular, `InpFile` should use the new, percentile-based logic to achieve correlation, instead of unreliable use of internal random generator state.
   - [ ] Allow specification of log-normal parameters the old way (on the log scale) (maybe)
   - [ ] Allow specification of truncated distributions; current code does censoring, bringing extreme values in to the boundary. (maybe)

@@ -1,4 +1,19 @@
 Change Log for `mccli`
+
+3.3.1 2022-10-03 ross.boylan@ucsf.edu
+    * Fix errors in .dat file processing induced by new code in some circumstances.  In montecarlo.py:
+            >   			res[mask] = stats.lognorm.ppf(np.full(sum(mask), q), s = sigma[mask], scale = np.exp(mu[mask]))
+            E      TypeError: 'bool' object is not iterable
+        The cause was the return value conventions from the new `mean_to_native()` routine; singletons were no longer returned as arrays, violating expectations in the DatFile code.
+        The fix is to strip the array away more selectively, only if there are no dimensions.
+    * Fix errors in handling illegal parameter inputs (exposed when others are fixed)
+
+    Implementation Changes
+
+    * Modified `DatFile` and `SDFile` to facilitate testing by overriding their default inputs and outputs.
+    * Added test_dat() to test them
+    * Provided input test data
+
 3.3.0 2022-09-27 ross.boylan@ucsf.edu
     * .inp file distribution parameters now interpreted as mean and std dev of the generated
     variable.  This was supposed to have been true already, but it wasn't.  

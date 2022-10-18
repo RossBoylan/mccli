@@ -106,8 +106,12 @@ def test_dat():
             sdifname = testDir / 'modfile' / (datfiledata['filename'] + '_sd.dat'))
         datfile.vary()
 
-         
-
+def test_beta():
+    "test basic handling of beta distn"
+    ms = np.array([0.5, 0.2])
+    ss = np.array([0.4, 0.1])
+    # test vector inputs
+    alpha, beta = montecarlo.beta_native(ms, ss)
 
 # if run under debugger
 if __name__ == "__main__":

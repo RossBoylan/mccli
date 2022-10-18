@@ -124,6 +124,30 @@ To Do
             Check that it all done properly in all places.
       * [ ] Problematic because the current specification gives special handling to out of bounds values for only .dat or only .inp files in some cases, as noted in previous section.
       * [ ] check handling of illegal values for other distns, including Normal, to see if it has a similar structure.
+  - [ ] beta distn fails when it gets a vector
+      Monday, October 17, 2022 7:19:01 PM
+      ERR montecarlo.py run failed
+      Traceback (most recent call last):
+        File "J:\source\repos\mccli\bin\python\montecarlo.py", line 963, in <module>
+          main()
+        File "J:\source\repos\mccli\bin\python\montecarlo.py", line 41, in main
+          datfile.vary()
+        File "J:\source\repos\mccli\bin\python\montecarlo.py", line 306, in vary
+          self.vary_line(line_num)
+        File "J:\source\repos\mccli\bin\python\montecarlo.py", line 373, in vary_line
+          varied = self.sdfile.get_variation(line_num)
+        File "J:\source\repos\mccli\bin\python\montecarlo.py", line 609, in get_variation
+          return self._do_line(line_num)
+        File "J:\source\repos\mccli\bin\python\montecarlo.py", line 639, in vary_by_block
+          return self._do_dist(self._rnd[block_num,], means, sds)
+        File "J:\source\repos\mccli\bin\python\montecarlo.py", line 594, in _correlated_beta
+          alpha, beta = mean_to_native("beta", ms, ss)
+        File "J:\source\repos\mccli\bin\python\montecarlo.py", line 170, in mean_to_native
+          r = beta_native(means, sds, check)
+        File "J:\source\repos\mccli\bin\python\montecarlo.py", line 222, in beta_native
+          if sds**2 > means*(1-means):
+      ValueError: The truth value of an array with more than one element is ambiguous. Use a.any() or a.all()
+  - [ ] beta range test for sd is wrong direction
   - [ ] In particular, `InpFile` should use the new, percentile-based logic to achieve correlation, instead of unreliable use of internal random generator state.
   - [ ] Allow specification of log-normal parameters the old way (on the log scale) (maybe)
   - [ ] Allow specification of truncated distributions; current code does censoring, bringing extreme values in to the boundary. (maybe)

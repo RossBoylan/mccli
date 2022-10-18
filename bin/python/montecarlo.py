@@ -219,7 +219,7 @@ def beta_native(means:np.array, sds:np.array, check=True):
 			raise ValueError("mean of Beta > 1")
 		if means.min()<0.0:
 			raise ValueError("mean of Beta < 0")
-		if sds**2 > means*(1-means):
+		if np.any(sds**2 > means*(1-means)):
 			raise ValueError("Var Beta > mu(1-mu)")
 	alpha = ((1 - means) / sds ** 2 - (1 / means)) * means ** 2
 	beta = alpha * (1 / means - 1)

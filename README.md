@@ -1,12 +1,16 @@
 # Montecarlo CLI (Command Line Interface)
 
-WARNING: v 3.0 changes the meaning of inputs for the lognormal distribution.
-The mean and standard deviation now refer to the mean and the sd of the random
-variable being generated.  This is the same as for every other distribution.
+WARNING: v 3.0 changes the meaning of inputs for the lognormal, beta and gamma
+distributions.  The inputs now are the mean and standard deviation of the generated
+variables for *all* distributions.  For distributions related to interventions (`.inp` files) this wasn't the case until v 3.3.
 
-Recall that $Y$ has a log-normal distribution if $X = \log(Y)$ has a normal distribution.
+Only certain parameter values are legal, as was true before, e.g., standard deviations can not be negative.  Usually the restrictions are obvious: the mean must be in the domain of the corresponding distribution, i.e., $>0$ for lognormal and gamma, in $(0, 1)$ for beta.  The most subtle one is that $s$, the standard deviation of the beta, must satisfy $s^2 < m (1-m)$, with $m$ the mean.
+
+Previously, the input parameters were the "native" parameters of the distribution (not always a well-defined concept; operationally the parameters `NumPy` uses), which means that to use those old inputs with the new code you must translate them into the implied mean and standard deviation.  
+
+As an example of translating from the old to new parameterization, consider the lognormal.  Recall that $Y$ has a lognormal distribution if $X = \log(Y)$ has a normal distribution.
 The old interpretation was that the mean and sd referred to $X$; under the new scheme they
-refer to $Y$. If $a$ and $b$ are the mean and sd of the normal, and $m$ and $s$ are the mean and sd
+refer to $Y$. If $a$ and $b$ are the mean and sd of the normal ($X$), and $m$ and $s$ are the mean and sd
 of the log-normal, they are related by
 
 $m = \exp(a+b^2/2)$
@@ -19,7 +23,9 @@ case a rethink would be in order.
 
 There are other more subtle changes to the handling of correlated random numbers.  The old code was
 ineffective in inducing correlations for beta, and possibly log-normal, distributions.  The new
-code should generally induce higher correlations, though they will necessarily be imperfect.
+code should generally induce higher correlations, though they will necessarily be imperfect.  The correlations for interventions continue to be handled the old way, for now.
+
+The previous discussion was a slight simplification: the program actually will accept "impossible" inputs in some cases and reinterpret them as described below.
 
 ## Usage
 ```
@@ -235,22 +241,23 @@ The sections are further broken down by components, which each make up a part of
 A section can consist of a single component but multiple components allows you to separate data in ways that aren't considered by the model itself. 
 
 ##### Distributions
-The program will sample from distribution `dist_name` (normal if omitted) with parameters `param1,param2,...` and sum the results from each line. The sum will replace the value on the lines in which `keyword` is found. Supported distributions are:
+The program will sample from distribution `dist_name` (normal if omitted) with parameters `mean, standard deviation` and sum the results from each line. The sum will replace the value on the lines in which `keyword` is found. Supported distributions are:
 
-- **Normal** - `param1`: mean, `param2`: standard deviation (with exception of using [mean option](#mean-option))
-- **LogNormal** - `param1`: mean, `param2`: standard deviation 
-- **Beta** - `param1`: alpha, `param2`: beta
-- **Gamma** - `param1`: shape, `param2`: scale
+- **Normal** -  (with exception of using [mean option](#mean-option))
+- **LogNormal** 
+- **Beta**
+- **Gamma**
 
 ##### Correlated Components
 To indicate that samples should be correlated, give them the same group name (can be between labels). If a component shouldn't be correlated with any other component, either exclude the group argument or give it a unique group
 
 ##### Upper and Lower Bounds
-Lower and/or upper bounds can be included but will default to -inf, +inf respectively. To add upper bound w/o lower bound put nothing inside lower_bound commas e.g. `param1,param2,,upper_bound`
+Lower and/or upper bounds can be included but will default to -inf, +inf respectively. To add upper bound w/o lower bound put nothing inside lower_bound commas e.g. `mean,sd,,upper_bound`
+The bounds censor the data, recoding out-of-bounds values to the boundary, rather than truncating data, which would simply drop the values out of bounds.  The mean and standard deviation for the distributions refers to the values before censoring.  The resulting variable will not have the mean and standard deviation given in the input parameters.
 
 ##### MEAN option
 
-For normal distributions `param1` can simply be **'MEAN'**, indicating the mean of the distribution should be determined by the line in the **.inp** file. Here, `param2` must be a coefficient of variation. This option is used to simplify the case in which there are many lines with the same significance but different means (these will be assumed to be correlated and have the same coefficient of variation).
+For normal distributions the `mean` parameter can be the literal **'MEAN'**, indicating the mean of the distribution should be determined by the line in the **.inp** file. In this case the second parameter, normally interpreted as the standard deviation, is interpreted as a coefficient of variation. The standard deviation will be the coefficient of variation times the mean.  This option is used to simplify the case in which there are many lines with the same significance but different means (these will be assumed to be correlated and have the same coefficient of variation).
 
 
 ```
@@ -327,21 +334,3 @@ Directory `input_variation` contains varied model inputs. These can be used to v
 
 1. File `inp.txt` shows the ultimate value used to replace corresponding values in the *.inp* file (regardless if it's actually used). In addition, at the top it includes counts of the number of places in each *.inp* file the label is found.
 2. Directory `dat_files` contains copies of the modified dat files (from modfile) for each run. Naming convention: `{name}_{simulation #}.dat`
-
-# Notes on Internal Use of Files
-`montecarlo.py` reads an input file (or is it a dat file?) from `_mc0.<ext>` and writes to `_mc.<ext>`.  The javascript code copies the _mc to a numbered version, but that is strictly for archival purposes; the Fortran model will use the _mc file.
-
-The input files `${inp_files[j]}_mc.inp` are not renamed; they are specified as inputs to the fortran model on the command line via shell redirect.
-These input files are manually modified at the start to select xx_mc.dat files for the appropriate parameters.  The input file just has a number selecting an entry in a .lst file.  The .lst file is also modified manually.  See the instructions above in the "Modfile setup" subsection for this.
-
-It looks as if the varied files are written to the same spot as the inputs, i.e., _mc are written next to the _mc0 files.  *So the python code also has the embedded assumption that just one simulation is happening at once.*
-
-`Modary.f90` line 157 begins definition of files for b (`filename(7)`) and `'copy input\b'//rfn//rfk//'.dat modfile\b.def'`. I guess `rfn` and `rfk` (defined in `main.f90` @151; `rfn` is set either to `6` in `Modarray.f90` or, I think, in a weird write statement in `addrfs.f90`@159 `WRITE(rfn,'(i1)') irft`) indicate what type of riskfactors were chosen.  Example source files are `B6SBD.DAT` and `B8SPKpool.DAT`.
-
-`Modary.f90` @441 resets `filename(7)` with the selected entry in the list, if you have said you want to modify it.
-
-`Subs.f90`@1070 `picfile()` allows user to select from list retrieved from an inputlst file in `modfile\`.  That's `b.lst` in this case. *If* the file has more than one alternative, ask user which to pick.  The name of the selected file is set in the `filname` argument, known as `tmpfile` in the caller.  Then copy `modfile\<selected name>` to a temp file `utils\zzzCHDedit.tmp`. *This is another move that will fail with parallel runs.*  Resets the name in `filename(7)`. User gets chance to edit it and I think it ends up with the regular name.  `Modary.f90`@460 calls `initial` with `b` the first argument.
-
-`init.f90` defines that subroutine at the top.  It reads in the b coefficients from `modfile\` starting at line 426.  Writes the input matrix as text to `input\inputchk\b.def` as a way to allow a check by a person that the input was read OK.
-
-The `b` array is defined in `module modelarrays`.  Although `initial()` does not use the module, using function arguments instead.  Fortran is generally call by reference.

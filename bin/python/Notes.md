@@ -144,8 +144,7 @@ To Do
             Check that it all done properly in all places.
       * [ ] Problematic because the current specification gives special handling to out of bounds values for only .dat or only .inp files in some cases, as noted in previous section.
       * [ ] check handling of illegal values for other distns, including Normal, to see if it has a similar structure.
-  - [ ] beta distn fails when it gets a vector
-      I think it's fixed; it passes my test suite.  But not tried in practice.
+  - [x] beta distn fails when it gets a vector
       Monday, October 17, 2022 7:19:01 PM
       ERR montecarlo.py run failed
       Traceback (most recent call last):

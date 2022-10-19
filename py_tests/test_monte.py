@@ -1,5 +1,7 @@
 # test some of the python monte-carlo code
 # Using pytest
+import pytest
+
 from math import sqrt
 import numpy as np
 from pathlib import Path
@@ -112,6 +114,10 @@ def test_beta():
     ss = np.array([0.4, 0.1])
     # test vector inputs
     alpha, beta = montecarlo.beta_native(ms, ss)
+
+    with pytest.raises(ValueError):
+        ss[1] = 0.45
+        alpha, beta = montecarlo.beta_native(ms, ss)
 
 # if run under debugger
 if __name__ == "__main__":

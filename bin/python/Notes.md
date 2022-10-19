@@ -145,6 +145,7 @@ To Do
       * [ ] Problematic because the current specification gives special handling to out of bounds values for only .dat or only .inp files in some cases, as noted in previous section.
       * [ ] check handling of illegal values for other distns, including Normal, to see if it has a similar structure.
   - [ ] beta distn fails when it gets a vector
+      I think it's fixed; it passes my test suite.  But not tried in practice.
       Monday, October 17, 2022 7:19:01 PM
       ERR montecarlo.py run failed
       Traceback (most recent call last):
@@ -167,7 +168,6 @@ To Do
         File "J:\source\repos\mccli\bin\python\montecarlo.py", line 222, in beta_native
           if sds**2 > means*(1-means):
       ValueError: The truth value of an array with more than one element is ambiguous. Use a.any() or a.all()
-  - [ ] beta range test for sd is wrong direction
   - [ ] In particular, `InpFile` should use the new, percentile-based logic to achieve correlation, instead of unreliable use of internal random generator state.
   - [ ] Allow specification of log-normal parameters the old way (on the log scale) (maybe)
   - [ ] Allow specification of truncated distributions; current code does censoring, bringing extreme values in to the boundary. (maybe)

@@ -1,5 +1,19 @@
 Change Log for `mccli`
+3.3.2 2022-10-18 ross.boylan@ucsf.edu
+    * Fix: beta distribution can't handle vectors
+        File "J:\source\repos\mccli\bin\python\montecarlo.py", line 594, in _correlated_beta
+          alpha, beta = mean_to_native("beta", ms, ss)
+        File "J:\source\repos\mccli\bin\python\montecarlo.py", line 170, in mean_to_native
+          r = beta_native(means, sds, check)
+        File "J:\source\repos\mccli\bin\python\montecarlo.py", line 222, in beta_native
+          if sds**2 > means*(1-means):
+      ValueError: The truth value of an array with more than one element is ambiguous. Use a.any() or a.all()
+      
+    * Revise documentation to better match current behavior.
 
+    Implementation Changes
+    * add tests for beta distribution
+  
 3.3.1 2022-10-04 ross.boylan@ucsf.edu
     * Fix errors in .dat file processing induced by new code in some circumstances.  In montecarlo.py:
             >   			res[mask] = stats.lognorm.ppf(np.full(sum(mask), q), s = sigma[mask], scale = np.exp(mu[mask]))

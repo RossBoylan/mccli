@@ -191,7 +191,7 @@ module.exports = (argv) => {
             seed: argv.seed
 		};
 		fs.appendFileSync('MC/results/.run',JSON.stringify(runData, null, 4));
-		console.log(`  simulations completed in ${hours>0 ? hours + ' hours and ' : ''}${minutes} mintues!`.green)
+		console.log(`  simulations completed in ${hours>0 ? hours + ' hours and ' : ''}${minutes} minutes!`.green)
 		
 	}
 

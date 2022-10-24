@@ -9,7 +9,7 @@ These input files are manually modified at the start to select xx_mc.dat files f
 
 It looks as if the varied files are written to the same spot as the inputs, i.e., _mc are written next to the _mc0 files.  *So the python code also has the embedded assumption that just one simulation is happening at once.*
 
-`Modary.f90` line 157 begins definition of files for b (`filename(7)`) and `'copy input\b'//rfn//rfk//'.dat modfile\b.def'`. I guess `rfn` and `rfk` (defined in `main.f90` @151; `rfn` is set either to `6` in `Modarray.f90` or, I think, in a weird write statement in `addrfs.f90`@159 `WRITE(rfn,'(i1)') irft`) indicate what type of riskfactors were chosen.  Example source files are `B6SBD.DAT` and `B8SPKpool.DAT`.
+`Modary.f90` line 157 begins definition of files for b (`filename(7)`) and `copy input\b'//rfn//rfk//'.dat modfile\b.def`. I guess `rfn` and `rfk` (defined in `main.f90` @151; `rfn` is set either to `6` in `Modarray.f90` or, I think, in a weird write statement in `addrfs.f90`@159 `WRITE(rfn,'(i1)') irft`) indicate what type of riskfactors were chosen.  Example source files are `B6SBD.DAT` and `B8SPKpool.DAT`.
 
 `Modary.f90` @441 resets `filename(7)` with the selected entry in the list, if you have said you want to modify it.
 
@@ -18,6 +18,29 @@ It looks as if the varied files are written to the same spot as the inputs, i.e.
 `init.f90` defines that subroutine at the top.  It reads in the b coefficients from `modfile\` starting at line 426.  Writes the input matrix as text to `input\inputchk\b.def` as a way to allow a check by a person that the input was read OK.
 
 The `b` array is defined in `module modelarrays`.  Although `initial()` does not use the module, using function arguments instead.  Fortran is generally call by reference.
+
+Here's a list of the inputs and outputs mentioned explicitly in `runSims.js`.  It does *not* include all files the python programs or the Fortran model read and write.
+
+| Read                                        | Write                          |
+|---------------------------------------------|--------------------------------|
+| MC/inputs/input_data.json||
+| MC/results/cumulative (test for prior run) | MC/saved_runs/XXX (copy results and input_variation)|
+|                          | MC/results  (emptyDir)|
+|                          | MC/results/{breakdown,cumulative,summary}|
+|                          | MC/input_variation (last emptyDir)|
+| /usr/bin/python          ||
+| MC/input_variation/inp.txt (optional)|MC/input_variation/inp.txt (iteration number)|
+|operation of python program | happens here for dat files|
+| modfile/dat_file_mc.dat   | MC/input_variation/dat_files/dat_file_NN.dat (copy)|
+| (only if previous name > 12 chars)| modfile/truncated name (link)|
+| inp_file_mc{,0}.inp       | inp_file_mc.out (delete)|
+| CVDIntel9.2exe (with inp_file_mc.inp)| MOD_zerorun.txt (iteration 0 only)|
+| format.py  inp_file_mc.out  | inp_file_mc.frmt|
+| inp_file_mc.frmt          | MC/results/breakdown/inp_file_NN.frmt|
+| outfile.dat               | MC/results/cumulative/inp_file_NN.dat|
+| sum_results.py (when all done)||
+|                           |MC/results/.run (don't see it)|
+
 
 # Other Notes
 
@@ -55,7 +78,7 @@ It reads from an `_mc0.EXT` file and writes to `_mc.EXT`.
     parameters.  It would probably be better to generate them once and retain them.
     Although `Component` instances are temporary, there is persistent state held in a class variables.  This is the state of the random number generator for each group.
 
-Note that montecarlo.py is only used to generate a single simulation.  Because of the state-keeping in `Component` it would actually generate the same numbers if called again.
+Note that `montecarlo.py` is only used to generate a single simulation.  Because of the state-keeping in `Component` it would actually generate the same numbers if called again.
 
 An effect may be made of several components that are summed or added to the mean.
 
@@ -119,6 +142,7 @@ To Do
     Inconsistent and confusing.
     This has 2 dimensions: handling of filelike vs pathlike arguments, and handling across different classes and methods.
   - [ ] Move all test input files into project source tree under `py_tests`.
+  - [ ] Is it OK to publish the test data?
   - [ ] Complete tests for `Effects` as is.  In particular
     + [  ] test values are reasonable given mean and sd
     + [  ] values are in expected domain (maybe)
@@ -172,3 +196,4 @@ To Do
   - [ ] Allow specification of truncated distributions; current code does censoring, bringing extreme values in to the boundary. (maybe)
   - [ ] Incorporate my fuller understanding of correlations in `.inp` files into user documentation.  Currently quite a bit is in this file and in comments in `montecarlo.py` (low)
   - [ ] Incorporate relevant material from https://github.com/ecfairle/CHDMOD into this project (may already be in our `README.md`) and eliminate reference to it in documentation and code (e.g., `montecarlo.py` has a comment referring to it.) (low)
+  - [ ] Allow resuming after interrupted run from, e.g., system shutdown.  See issues #5, #2.

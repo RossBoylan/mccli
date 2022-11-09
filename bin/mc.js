@@ -42,5 +42,10 @@ let argv = yargs
     defaultDescription: 'py probably only works on MS-Windows',
     type: 'string'
 })
+.option('continue', {
+    describe: "continue interrupted run, using parameters from before, not from the command line.",
+    alias: ['resume', 'cont'],
+    boolean: true  /* RB: Docs unclear what the value does */
+})
 .help()
 .argv

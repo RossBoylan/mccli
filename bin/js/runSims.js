@@ -10,6 +10,8 @@ const shell = require("shelljs"),
 			files = require('./files');
 
 let INPUTS_FILENAME = path.join('MC','inputs','input_data.json');
+let PROGRESS_FILENAME = path.join('MC', '.progress')
+let SIM_FILENAME = path.join('MC', '.simStart')
 
 let error = (msg,stdout="") => {
 	process.stdout.clearLine();
@@ -26,8 +28,107 @@ let outFileName = (inp_file) => {
 	}
 };
 
+let startup_ordinary = (argv) => {
+	/* Handle startup in the usual case, rather than an interrupted run */
+
+	/* Check if there appears to be a previous run.  Note this function is only called
+	when the user did *not* specify --continue, i.e., they don't think there was an interrupted
+	run. So the only choices are to save the previous results or overwrite them. */
+	let saveFileDir = './MC/saved_runs';
+	let resultsDir = './MC/results';
+	if (fs.existsSync(resultsDir) && fs.readdirSync(path.join(resultsDir,'cumulative')).length !== 0) {
+		inquirer.prompt({
+			type: 'confirm',
+	    name: 'saveResults',
+	    message: 'There are previous results.  Do you want to save them? (otherwise they will be written over)',
+	    default: true
+		}).then( (answers) => {
+			if (answers.saveResults) {
+				inquirer.prompt({
+					type: 'input',
+			    name: 'saveDirectory',
+			    message: 'enter name for this set of results',
+			    default() {
+			    	return new Date().toISOString().slice(0, -5).replace(/:/g,';');
+			    }
+				}).then( (answers) => {
+						let runSaveDirectory = path.join(saveFileDir,answers.saveDirectory);
+						fsx.ensureDirSync(runSaveDirectory);
+						let resultsDirs = [
+							'results',
+							'input_variation'
+						];
+						for(let i = 0; i < resultsDirs.length; i++){
+							fsx.copySync(path.join('./MC',resultsDirs[i]), path.join(runSaveDirectory,resultsDirs[i]));
+
+						}
+						console.log(`  last run stored in ${runSaveDirectory}`);
+				}).catch(err => {
+						console.log(err)
+				});
+			}
+		});
+	}
+
+	/* Clear the output directories, creating the necessary subdirectories.
+	We always do this in this function. */
+	let outputDirs = [
+		'./MC/results',
+		'./MC/results/breakdown',
+		'./MC/results/cumulative',
+		'./MC/results/summary',
+		'./MC/input_variation'
+	];
+
+	for(let i = 0; i < outputDirs.length; i++){
+		fsx.emptyDirSync(outputDirs[i]);
+	}
+}
+
+let startup_resume = (argv) => {
+	/* A previous run was interrupted and we wish to continue.
+	The main difficulty is cleaning up stuff that may have been written
+	in the last, partial run. */
+
+	/* TODO
+	write stuff to PROGRESS_FILENAME elsewhere in code
+	check for existence of it and SIM_FILENAME
+	check integrity of PROGRESS_FILENAME.
+	figure out how to integrate the info into argv
+	any other info needs to go back in main routine?
+	main routine may need to bypass some setup processing, figuring i0, i1
+	check consistency inputsData in simSpec and one acquired normally?
+		could just use this info in place of the normal acquisition
+	stamp out remnants of potentially interrupted run
+	maybe --cautious would toss last n "good" results as well
+	check if command line options inconsistent with previous run? or check if they are present at all?
+	*/
+	var pfile = fs.readFileSync(PROGRESS_FILENAME, 'utf8');
+	var progress = JSON.parse(pfile, 'utf8');
+	var simFile = fs.readFileSync(SIM_FILENAME, 'utf8');
+	simSpec = JSON.parse(simFile);
+
+}
+
+let startup_check = (argv) => {
+	if ( !fs.existsSync(INPUTS_FILENAME)) {
+		error('cannot find inputs file','Run \'mc init\' to initialize Montecarlo files');
+	}
+	if (fs.existsSync(PROGRESS_FILENAME)){
+		if (!argv.continue) {
+			error(`Apparent interrupted run.  Either specify --continue or delete ${PROGRESS_FILENAME}.`);
+		return startup_resume(argv);
+		}
+	}
+	if (argv.continue){
+		error(`--continue specified but ${PROGRESS_FILENAME} not present. Aborting.`);
+	}
+	return startup_ordinary(argv);
+}
+
 module.exports = (argv) => {
 	let simRuns = () => {
+		startup_check(argv);
 		let inputsFile = fs.readFileSync(INPUTS_FILENAME, 'utf8');
 
 		let inputsData = JSON.parse(inputsFile);
@@ -48,22 +149,27 @@ module.exports = (argv) => {
 		let inp_files = inputsData['inp_files'];
 		inp_files = inp_files.filter( (file) => file.length > 0);
 
-		let outputDirs = [
-			'./MC/results',
-			'./MC/results/breakdown',
-			'./MC/results/cumulative',
-			'./MC/results/summary',
-			'./MC/input_variation'
-		];
-
-		for(let i = 0; i < outputDirs.length; i++){
-			fsx.emptyDirSync(outputDirs[i]);
-		}
 
 		let start = new Date();
         let res = null;
         let i0 = argv.start
         let i1 = ITERATIONS+i0-1
+
+		// in case job is interrupted
+		let runData = {
+			/* RB: Unsure why timeZone is wired in, but keeping it for consistency
+			with existing uses toward the bottom of this function. */
+			startTime: start.toLocaleString("en-US", {timeZone: "America/Los_Angeles"}),
+			status: "started",
+			i0: i0,
+			i1: i1,
+			argv: argv,
+			inputsData: inputsData
+		};
+
+		fs.writeFileSync(SIM_FILENAME, JSON.stringify(runData, null, 4));
+
+
 		for (let i = i0; i <= i1; i++){
 
 			let startIter = new Date();
@@ -179,7 +285,7 @@ module.exports = (argv) => {
 		let totalS = (end.getTime() - start.getTime())/1000;
 		let hours = Math.floor(totalS / (60 * 60));
 	  	let minutes = Math.floor(totalS / 60) % 60;
-	  	let runData = {
+	  	runData = {
 			startTime: start.toLocaleString("en-US", {timeZone: "America/Los_Angeles"}),
 			endTime: end.toLocaleString("en-US", {timeZone: "America/Los_Angeles"}),
 			iterations: ITERATIONS,
@@ -191,55 +297,11 @@ module.exports = (argv) => {
             seed: argv.seed
 		};
 		fs.appendFileSync('MC/results/.run',JSON.stringify(runData, null, 4));
+		fs.rmSync(SIM_FILENAME);
 		console.log(`  simulations completed in ${hours>0 ? hours + ' hours and ' : ''}${minutes} minutes!`.green)
 		
 	}
 
-	
-	if ( !fs.existsSync(INPUTS_FILENAME)) {
-		error('cannot find inputs file','Run \'mc init\' to initialize Montecarlo files');
-	}
+	simRuns();
 
-	let saveFileDir = './MC/saved_runs';
-	let resultsDir = './MC/results';
-	if (fs.existsSync(resultsDir) && fs.readdirSync(path.join(resultsDir,'cumulative')).length !== 0) {
-		inquirer.prompt({
-			type: 'confirm',
-	    name: 'saveResults',
-	    message: 'There are previous results.  Do you want to save them? (otherwise they will be written over)',
-	    default: true
-		}).then( (answers) => {
-			if (answers.saveResults) {
-				inquirer.prompt({
-					type: 'input',
-			    name: 'saveDirectory',
-			    message: 'enter name for this set of results',
-			    default() {
-			    	return new Date().toISOString().slice(0, -5).replace(/:/g,';');
-			    }
-				}).then( (answers) => {
-						let runSaveDirectory = path.join(saveFileDir,answers.saveDirectory);
-						fsx.ensureDirSync(runSaveDirectory);
-						let resultsDirs = [
-							'results',
-							'input_variation'
-						];
-						for(let i = 0; i < resultsDirs.length; i++){
-							fsx.copySync(path.join('./MC',resultsDirs[i]), path.join(runSaveDirectory,resultsDirs[i]));
-
-						}
-						console.log(`  last run stored in ${runSaveDirectory}`);
-						simRuns();
-				}).catch(err => {
-						console.log(err)
-				});
-			}
-			else {
-				simRuns();
-			}
-		});
-	}
-	else {
-		simRuns();
-	}
 }

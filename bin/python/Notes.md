@@ -39,7 +39,7 @@ Here's a list of the inputs and outputs mentioned explicitly in `runSims.js`.  I
 | inp_file_mc.frmt          | MC/results/breakdown/inp_file_NN.frmt|
 | outfile.dat               | MC/results/cumulative/inp_file_NN.dat|
 | sum_results.py (when all done)||
-|                           |MC/results/.run (don't see it)|
+|                           |MC/results/.run|
 
 
 # Other Notes

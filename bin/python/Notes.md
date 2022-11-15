@@ -1,5 +1,8 @@
-Notes on what files montecarlo.py uses.
+Notes on what files montecarlo.py uses.  Also files used by runSims.js and Fortran.
+So probably I should move this file to a different directory.
 This is to aid testing.
+
+Also includes info on tracking failures.
 
 # Notes on Internal Use of Files
 `montecarlo.py` reads an input file (or is it a dat file?) from `_mc0.<ext>` and writes to `_mc.<ext>`.  The javascript code copies the _mc to a numbered version, but that is strictly for archival purposes; the Fortran model will use the _mc file.
@@ -44,7 +47,9 @@ Here's a list of the inputs and outputs mentioned explicitly in `runSims.js`.  I
 
 # Other Notes
 
-Command line from runSims.js usually has `-s` (save outputs), `-i` and `--seed` but no file names or directories.
+Command line from runSims.js usually has `-s` (save outputs), `-i` and `--seed` but no file names or directories.  Looking through the code, it seems `-s` only matters for outputs of the zero run.
+
+I don't know where, but something seems to clear out `inp.txt` at the start of a run.  I ran after having done a preliminary run that produced `inp.txt` with headers and an initial line.  After the run started there was no sign of duplication.
 
 `MC/inputs/input_data.json` read to find what to vary.  Use lists in 2 sections, 'dat_files' and 'inp_files'.  For 'dat_files' the zero run (`-z`) does nothing except write the data out.  For 'inp_files' the zero run writes out labels.  Both execute `vary()` on the file object and then `print_mc()`.
 
@@ -111,6 +116,13 @@ Other notable differences between .dat distributions and .inp distributions
 9.	.inp files allow you to specify multiple components, all of which are summed to give the parameter of interest. .dat files don’t.
 10.	.inp files attempt to achieve random number correlation by matching seeds; .dat files do so by matching quantiles.
 
+Getting Error Info from Python
+==============================
+When `montecarlo.py`, invoked from `runSims.js`, fails, very little information gets back, just a message "montecarlo.py run failed".  This is unhelpful.  Neither the exact call used to invoke the python program nor the traceback for the error or console output (if any) is available.
+
+Some of this stems from the use of `{silent:true}` option, which is the default, for the invocation of `shelljs` (which is the module name, even though aliased to `shell`).  Apparently the return value for a syncronous call is a `ShellString`.  See https://github.com/RossBoylan/mccli/issues/20#issue-1443014991 for more.
+
+The `python-shell` module advertises much better error reporting, but I've never been able to get it to do anything.  My latest attempts apparently couldn't even get it to run anything.  I have *2* different branches experimenting with the package, *both* named `python-shell`.  The primary archive in `J:\source\repos\mccli` has that branch with work from Feb 2022.  The archive in `C:\Users\rdboylan\Documents\KBD\mccli-release`, intended for production runs, has some *different* work from Nov 2022.  It is not based on the earlier branch.
 
 Log
 ===

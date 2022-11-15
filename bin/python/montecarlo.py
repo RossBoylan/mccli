@@ -62,20 +62,15 @@ def main():
 
 def parse_args():
 	parser = argparse.ArgumentParser()
-	inpgroup = parser.add_argument_group('.inp files, -r is default')
+	inpgroup = parser.add_argument_group('primary operation')
 	mut_group = inpgroup.add_mutually_exclusive_group()
-	mut_group.add_argument('--list','-l',dest='prefixes', nargs='+', type=str,
-							help='list of .inp file prefixes')
-	mut_group.add_argument('--readfile','-r',dest='prefix_file',
-							action='store_const', const='MC/inputs/inp_files.txt',
-							help='determine .inp files to be varied from listings in '
-							'MC/inputs/inp_files.txt',default='MC/inputs/inp_files.txt (default)')
-	options_group = parser.add_argument_group('options')
+	mut_group.add_argument('--iteration', '-i', type=int, help='Simulate this iteration.')
+	mut_group.add_argument('--clean-after', type=int, help='remove possibly corrupt output after this iteration.')
+	options_group = parser.add_argument_group('options for --iteration')
 	options_group.add_argument('--zero_run','-z',help='test simulation '
 							   'with no variation',action='store_true')
 	options_group.add_argument('--save','-s',help='save montecarlo results to modfile',
 							action='store_true')
-	options_group.add_argument('--iteration', '-i', type=int, help='Which simulation this is.')
 	options_group.add_argument('--seed', type=int, help="This seed and the iteration number pick a random number stream")
 	return parser.parse_args()
 

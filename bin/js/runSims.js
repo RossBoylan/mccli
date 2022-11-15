@@ -176,9 +176,10 @@ module.exports = (argv) => {
 			let lastTime = 0;
 
 			if(i == 0) {
-				res = shell.exec(py+` ${__dirname}/../python/montecarlo.py -z -s`,{silent:true});
+				let cmd = py+` ${__dirname}/../python/montecarlo.py -z -s`;
+				res = shell.exec(cmd, {silent:true});
 				if (res.code !== 0) {
-					error("montecarlo.py run failed",res.stdout);
+					error(`montecarlo.py run failed: ${cmd}`,res.stdout);
 				}
 			}
 			else {
@@ -192,7 +193,7 @@ module.exports = (argv) => {
                     cmd += ` --seed ${argv.seed}`
 				res = shell.exec(cmd,{silent:true});
 				if (res.code !== 0) {
-					error("montecarlo.py run failed",res.stderr);
+					error(`montecarlo.py run failed: ${cmd}`,res.stderr);
 				}
 			}
 

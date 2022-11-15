@@ -64,8 +64,8 @@ def parse_args():
 	parser = argparse.ArgumentParser()
 	inpgroup = parser.add_argument_group('primary operation')
 	mut_group = inpgroup.add_mutually_exclusive_group()
-	mut_group.add_argument('--iteration', '-i', type=int, help='Simulate this iteration.')
-	mut_group.add_argument('--clean-after', type=int, help='remove possibly corrupt output after this iteration.')
+	mut_group.add_argument('--iteration', '-i', type=int, help='Simulate iteration ITER.', metavar='ITER')
+	mut_group.add_argument('--zap-after', type=int, help='remove possibly corrupt output after iteration ITER.', metavar='ITER')
 	options_group = parser.add_argument_group('options for --iteration')
 	options_group.add_argument('--zero_run','-z',help='test simulation '
 							   'with no variation',action='store_true')

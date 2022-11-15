@@ -2,9 +2,9 @@
 from __future__ import print_function
 
 import argparse
-import sys
 import os.path
 import re
+import sys
 
 #for debug
 #import os, ptvsd
@@ -167,7 +167,7 @@ class TrackedSection(object):
 		cur_year = base_year + self.year_offset
 		self.year_offset = self.year_offset + 1
 		if len(num_list) != self.num_nums:
-		    num_list = [0] * self.num_nums
+			num_list = [0] * self.num_nums
 		return format_str.format(cur_year,*num_list)
 
 	def write_header(self,category_line):

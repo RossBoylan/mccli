@@ -239,21 +239,29 @@ module.exports = (argv) => {
 				}
 
 				let modelName = inputsData['model'];
+				let cmd = `${modelName}<${mcFile}> `
 
 				if ( i == 0 ) {
-					res = shell.exec(`${modelName}<${mcFile}> MOD_zerorun.txt`,{silent:true});
+					cmd += `MOD_zerorun.txt`;
+					res = shell.exec(cmd,{silent:true});
 				}
 				else {
-					res = shell.exec(`${modelName}<${mcFile}> nul`,{silent:true});
+					/* The use of nul below may be MS-Windows specific.
+					Unix uses /dev/null.  But shelljs may translate.
+					Ross Boylan
+					*/
+					cmd += `nul`;
+					res = shell.exec(cmd ,{silent:true});
 				}
 				
 				if (res.code !== 0) {
-					error("Model run failed",res.stderr);
+					error(`Model run failed: ${cmd}`, res.stderr);
 				}
 
-				res = shell.exec(py+` ${__dirname}/../python/format.py ${outfile}`,{silent:true});
+				cmd = py+` ${__dirname}/../python/format.py ${outfile}`;
+				res = shell.exec(cmd,{silent:true});
 				if (res.code !== 0) {
-					error("format.py run failed",res.stdout);
+					error(`${cmd} run failed`, res.stdout);
 				}
 
 				let formattedFile = `${outfile}.frmt`;
@@ -276,9 +284,10 @@ module.exports = (argv) => {
 		}
 
 		console.log('sum results')
-		res = shell.exec(py+` ${__dirname}/../python/sum_results.py`,{silent:true});
+		let cmd = py+` ${__dirname}/../python/sum_results.py`;
+		res = shell.exec(cmd, {silent:true});
 		if (res.code !== 0) {
-			error("sum_results.py run failed",res.stderr);
+			error(`${cmd} run failed`,res.stderr);
 		}
 		console.log('done')
 

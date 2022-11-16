@@ -121,25 +121,46 @@ def zap(lastGood:int):
 	The current assumption is that files holding individual iteration results will simply
 	be overwritten, and so they are just left as is.
 
-	Implementation Note: instantiating the Dat or InpFile objects has 2 drawbacks:
-	1. It probably results in unnecessary work, reading in the existing files.
-	2. It may fail because the files are not present.
-	But it has the advantage that all the logic of constructing file names and
-	related objects like the SDFile has a chance to fire, and be used.
+	zapping is done by static methods to avoid the overhead of instantiating and reading
+	all the instance files, as well as the risk that will fail because things are in a bad state.
+	Also, for InpFile there is a single cumulative file shared by all instances,
+	and so it would be awkard to manage it by instantiating the instances.
 	"""
 	input_data = get_input_data()
 
 	dat_files = input_data['dat_files']
-	RG = None
 	for datfiledata in dat_files:
-		datfile = DatFile(datfiledata, RG)
-		datfile.zap(lastGood)
+		DatFile.zap(lastGood, datfiledata)
 
 	inp_files = input_data['inp_files']
-	for fname in inp_files:
-		inpfile = InpFile(fname)
-		inpfile.zap(lastGood)
+	InpFile.zap(lastGood, inp_files)
+
 	## anything else?
+
+def zapFile(file: Path, lastGood:int):
+	"""
+	purge questionable lines from a file
+
+	file is a text-oriented file
+	lastGood is the last good line in it.  The first line is line 1, not 0.
+
+	Let F be the text value in the file argument.
+	Renames F to F.bak, replacing any existing F.bak.
+	Then copy the first lastGood lines to a reconstructed F.
+	"""
+	# append .bak to filename rather than replacing original suffix with .bak
+	bak = file.with_suffix(file.suffix + '.bak')
+	file.replace(bak)
+	with bak.open('rt') as fback, file.open('wt') as fgood:
+		nLine = 0
+		for line in fback:
+			fgood.write(line)
+			nLine += 1
+			if nLine >= lastGood:
+				break
+	# we should never get here
+	print(f"Error: {str(file)} has only {nLine} lines.  At least {lastGood} expected.")
+	sys.exit(1)
 
 def is_data_line(line):
 	return len(line) > 0 and str.isdigit(line[0][0])
@@ -390,20 +411,17 @@ class DatFile(VFile):
 			writer = csv.writer(totals_file)
 			writer.writerow(self.data_vec)
 
-	def zap(self, lastGood:int):
-		"remove entries after lastGood in cumulative file"
-		totals_path = Path('MC') / 'input_variation' / 'dat_files' / self.file_data['filename'] + '.csv'
-		totals_bak = totals_path.with_suffix(totals_path.suffix + '.bak')
-		totals_path.replace(totals_bak)
-		with totals_bak.open('rt') as fback, totals_path.open('wt') as fgood:
-			# the csv file has no header and starts with iteration 1, I think
-			# the iteration number does not appear in the file
-			nLine = 0
-			for line in fback:
-				fgood.write(line)
-				nLine += 1
-				if nLine >= lastGood:
-					break
+	@staticmethod
+	def zap(lastGood:int, file_data):
+		"""remove entries after lastGood in cumulative file
+		file_data is same structure used to initialize DatFile instance
+		
+		The csv file has no header and starts with iteration 1, I think
+		the iteration number does not appear in the file
+		"""
+		totals_path = Path('MC') / 'input_variation' / 'dat_files' / file_data['filename'] + '.csv'
+		zapFile(totals_path, lastGood)
+
 
 	def vary_line(self,line_num):
 		means = self.lines[line_num].split()
@@ -727,6 +745,17 @@ class InpFile(VFile):
 		if len(counts) > 0:
 			self.effects.save_write(format_str.format(self.fileprefix,*counts) + '\n')
 
+	@staticmethod
+	def zap(lastGood:int, inp_files):
+		"""
+		Clear out all cumulative info after iteration lastGood in the shared files.
+		There is only one, which we delegate to the class that creates it.
+
+		inp_files is the relevant section of the JSON file.
+		"""
+		if inp_files:
+			Effects.zap(lastGood, inp_files)
+
 
 
 class Effects(object):
@@ -787,6 +816,14 @@ class Effects(object):
 		else:
 			with open(self.save_file_name,'a') as f:
 				f.write(string)
+
+	@staticmethod
+	def zap(lastGood:int, inp_files):
+		"clear out the cumulative output"
+		nInp = len(inp_files)
+		# accept header labels and then one line per inp file
+		# before the data we accumulate
+		zapFile(Path("MC") / "input_variation" / "inp.txt", 1+nInp+lastGood)
 
 	def _read_lines(self):
 		file_lines = read_lines(self.in_file_name, fin=self.in_file)

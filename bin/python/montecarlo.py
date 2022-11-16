@@ -15,6 +15,8 @@ import sys
 def main():
 	global RG  # the random generator
 	args = parse_args()
+	if args.zap_after:
+		return zap(args.zap_after)
 	seed = args.seed
 	#print(f"montecarlo.py {args.iteration} called.")
 	if seed:
@@ -112,6 +114,32 @@ def read_lines(fname=None, fin=None):
 	except IOError:
 		print('Cannot find file: {}'.format(fname))
 		sys.exit(1)
+
+def zap(lastGood:int):
+	"""
+	Results after iteration lastGood are suspect.  Clear them from all cumulative files.
+	The current assumption is that files holding individual iteration results will simply
+	be overwritten, and so they are just left as is.
+
+	Implementation Note: instantiating the Dat or InpFile objects has 2 drawbacks:
+	1. It probably results in unnecessary work, reading in the existing files.
+	2. It may fail because the files are not present.
+	But it has the advantage that all the logic of constructing file names and
+	related objects like the SDFile has a chance to fire, and be used.
+	"""
+	input_data = get_input_data()
+
+	dat_files = input_data['dat_files']
+	RG = None
+	for datfiledata in dat_files:
+		datfile = DatFile(datfiledata, RG)
+		datfile.zap(lastGood)
+
+	inp_files = input_data['inp_files']
+	for fname in inp_files:
+		inpfile = InpFile(fname)
+		inpfile.zap(lastGood)
+	## anything else?
 
 def is_data_line(line):
 	return len(line) > 0 and str.isdigit(line[0][0])
@@ -361,6 +389,21 @@ class DatFile(VFile):
 			#print(self.data_vec)
 			writer = csv.writer(totals_file)
 			writer.writerow(self.data_vec)
+
+	def zap(self, lastGood:int):
+		"remove entries after lastGood in cumulative file"
+		totals_path = Path('MC') / 'input_variation' / 'dat_files' / self.file_data['filename'] + '.csv'
+		totals_bak = totals_path.with_suffix(totals_path.suffix + '.bak')
+		totals_path.replace(totals_bak)
+		with totals_bak.open('rt') as fback, totals_path.open('wt') as fgood:
+			# the csv file has no header and starts with iteration 1, I think
+			# the iteration number does not appear in the file
+			nLine = 0
+			for line in fback:
+				fgood.write(line)
+				nLine += 1
+				if nLine >= lastGood:
+					break
 
 	def vary_line(self,line_num):
 		means = self.lines[line_num].split()

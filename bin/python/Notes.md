@@ -53,24 +53,26 @@ I don't know where, but something seems to clear out `inp.txt` at the start of a
 
 `MC/inputs/input_data.json` read to find what to vary.  Use lists in 2 sections, 'dat_files' and 'inp_files'.  For 'dat_files' the zero run (`-z`) does nothing except write the data out.  For 'inp_files' the zero run writes out labels.  Both execute `vary()` on the file object and then `print_mc()`.
 
-`VFile(fname)`
-    `pref,ext = fname.split('.')`
+```python
+  VFile(fname)
+    pref,ext = fname.split('.')
     input: pref+'_mc0.'+ext
     output: pref+'_mc.'+ext
+```
 
 It reads from an `_mc0.EXT` file and writes to `_mc.EXT`.
 
 `DatFile` includes an `SDFile` but `InpFile` includes `Effects`.
-    `DatFile(file_data, random_generator)` where `file_data` is a `JSON` structure
-    that include 'filename' -> `modfile/FILENAME.dat` as primary input (for `VFILE`).
+  *  `DatFile(file_data, random_generator)` where `file_data` is a `JSON` structure
+    that includes 'filename' -> `modfile/FILENAME.dat` as primary input (for `VFILE`).
 
 `InpFile(fname)` calls `VCFile(fname+'.inp')` and then creates
-    `Effects` which has no arguments.
+  *  `Effects` which has no arguments.
 
 `Effects` reads from `MC/inputs/inp_distribution.txt`.
-    Writes to `MC\input_variation\inp.txt`.
-    Uses `Component` in a transitory way to wrap some lines.
-    This javascript code in `runSims.js` actually fills in the iteration number which is the first field on the data lines:
+  *  Writes to `MC\input_variation\inp.txt`.
+  *  Uses `Component` in a transitory way to wrap some lines.
+  *  This javascript code in `runSims.js` actually fills in the iteration number which is the first field on the data lines:
 
    ```javascript
         let str = String(i + ' '.repeat(16));

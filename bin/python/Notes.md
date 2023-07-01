@@ -44,6 +44,28 @@ Here's a list of the inputs and outputs mentioned explicitly in `runSims.js`.  I
 | sum_results.py (when all done)||
 |                           |MC/results/.run|
 
+See `Processing.dia` or its pdf export for a graphical representation of the data flow. The old Fortran model generated `outfile.dat` as its primary output, with summary measures for ~18 key variables.  These were accumulated in `MC/results/cumulative/{inp_file}_{NN}.dat` and then analysed by `sum_results.py`.  It also provided richer information on those variables, e.g., breakdowns by simulation year, and reports on many other variables in `{inp_file}_mc.out`.  Both these files and `outfile.dat` are formatted as tables for human consumption.  The `.dat` files are further processed by `format.py` which pulls selected categories (explicitly named in the code) to `{inp_file}_mc.frmt` (also human readable), saved as `{inp_file}_{NN}.frmt` for monte carlo runs.  While the individual files can be read by humans, there were no tools to summarize them, i.e., get mean and sd across simulations.  So we created `frmtToData.py` which dumps all the information into a computer friendly single-file database, customarily `allData.db`.  Then the GUI program `frmtReport.py` generates summaries for select variables.
+
+# Heart Failure
+
+The Heart Failure model adds a lot more states and variables to the model.  Rather than extend the previous outputs, which would require coding pretty-printing for the new variables, it simply dumps the variables into csv files, either `totresults.csv`, `targets_output.csv` (for target variables we want to calibrate the model to, but that are also relevant to the main analysis), or `calib.csv` (for results that are only of interest during calibration).  Each variable appears in only one of the 3 files, and many variables that are reported in `outfile.dat` or `{inp_file}_mc.out` are also reported in one of the .csv files.  The .csv files have 468 variables, including many that were not in the previous outputs, because they were not in the old model.  
+
+As of 2023-06-30 here is a thought to be complete list of variables that do *not* appear in the csv files: *only* in `outfile.dat`: DIS_DEINTERV$, DIS_DHINTERV$, DIS_DHCHD$, DIS_DHSTR$, DISC_NCVD$, DISC_TOT$,  DISC_LYRS, 95PLUS_LYRS, and DISC_QALY; *only* in `{inp_file}_mc.out`: n95dh and totcost.
+
+
+Each line of the csv files gives results for a particular demographic group in a particular simulation year.  It uses the following codes:
+agerange:
+1=35-44,
+2=45-54,
+3=55-64,
+4=65-74,
+5=75-84,
+6=85-94.
+
+sex:
+1=male,
+2=female
+
 
 # Other Notes
 
@@ -211,3 +233,29 @@ To Do
   - [ ] Incorporate my fuller understanding of correlations in `.inp` files into user documentation.  Currently quite a bit is in this file and in comments in `montecarlo.py` (low)
   - [ ] Incorporate relevant material from https://github.com/ecfairle/CHDMOD into this project (may already be in our `README.md`) and eliminate reference to it in documentation and code (e.g., `montecarlo.py` has a comment referring to it.) (low)
   - [ ] Allow resuming after interrupted run from, e.g., system shutdown.  See issues #5, #2.
+  - [ ] Update to handle Heart Failure model (Sue)
+    - [ ] if possible keep single code base
+    - [ ] identify differences between current production version on c: and interruptible version on j:
+    - [ ] add new dat files. done on j: input.json, HF branch
+    - [ ] create program to gather new output files and put results in db
+      - [ ] note we have less information about labels, and may not have the category info expected
+      - [ ] possibly make this selective: only some variables
+          ```
+          The variables that I need for the hypertension cascade paper will be:
+
+          From Targets_output.csv
+          •	pnchd
+          •	astrokde
+          •	ahstrokde
+          •	hfinc
+          From totresults.csv
+          •	ntreatde, 
+          •	nchdi, 
+          •	nchditot,
+          •	intstrok,
+          •	inthstrok, 
+          •	inthfinc
+          ```
+      - [ ] possibly make it a long running process across simulations
+    - [ ] maybe create command line program to extract results from db
+    - [ ] maybe add option to skip generating the format files

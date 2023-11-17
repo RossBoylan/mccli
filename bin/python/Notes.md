@@ -50,7 +50,7 @@ See `Processing.dia` or its pdf export for a graphical representation of the dat
 
 The Heart Failure model adds a lot more states and variables to the model.  Rather than extend the previous outputs, which would require coding pretty-printing for the new variables, it simply dumps the variables into csv files, either `totresults.csv`, `targets_output.csv` (for target variables we want to calibrate the model to, but that are also relevant to the main analysis), or `calib.csv` (for results that are only of interest during calibration).  Each variable appears in only one of the 3 files, and many variables that are reported in `outfile.dat` or `{inp_file}_mc.out` are also reported in one of the .csv files.  The .csv files have 468 variables, including many that were not in the previous outputs, because they were not in the old model.  
 
-As of 2023-06-30 here is a thought to be complete list of variables that do *not* appear in the csv files: *only* in `outfile.dat`: DIS_DEINTERV$, DIS_DHINTERV$, DIS_DHCHD$, DIS_DHSTR$, DISC_NCVD$, DISC_TOT$,  DISC_LYRS, 95PLUS_LYRS, and DISC_QALY; *only* in `{inp_file}_mc.out`: n95dh and totcost.
+As of 2023-06-30 here is a thought to be complete list of variables that do *not* appear in the csv files: *only* in `outfile.dat`: `DIS_DEINTERV$`, `DIS_DHINTERV$`, `DIS_DHCHD$`, `DIS_DHSTR$`, `DISC_NCVD$`, `DISC_TOT$`,  `DISC_LYRS`, `95PLUS_LYRS`, and `DISC_QALY`; *only* in `{inp_file}_mc.out`: `n95dh` and `totcost`.
 
 
 Each line of the csv files gives results for a particular demographic group in a particular simulation year.  It uses the following codes:
@@ -105,7 +105,7 @@ It reads from an `_mc0.EXT` file and writes to `_mc.EXT`.
 
 `Component` actually generates the random number and interprets 
     parameters.  It would probably be better to generate them once and retain them.
-    Although `Component` instances are temporary, there is persistent state held in a class variables.  This is the state of the random number generator for each group.
+    Although `Component` instances are temporary, there is persistent state held in the class variable [check it's not actually in some other class].  This is the state of the random number generator for each group.
 
 Note that `montecarlo.py` is only used to generate a single simulation.  Because of the state-keeping in `Component` it would actually generate the same numbers if called again.
 

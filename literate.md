@@ -50,13 +50,23 @@ The markup seems a bit cumbersome; in particular I need `@{` not `{`, though may
 
 ## [Literate](https://zyedidia.github.io/literate/)
 
-This seems to be widely available, including on Windows.  Input format is markdown and output is html.  Requires supplementary tools to pretty format the source code.  Written in `D`.  Provides line number syncing back to source doc, it says; not sure how that can be done in a language independent way.
+Binaries available for man *nix, but not MS-Windows. Someone uploaded a [Windows version](https://github.com/zyedidia/Literate/issues/49);  it isn't current or secure.  Input format is markdown and output is html.  Requires supplementary tools to pretty format the source code.  Written in `D`.  Provides line number syncing back to source doc, it says; not sure how that can be done in a language independent way.
+
+There is a `Makefile` that is entirely Unix oriented, i.e. it assumes a `bash` or similar shell and utilities.  The [compiler](https://dlang.org/) is available as a Windows installer, though that doesn't solve how to make it.  Approaches to deal with this:
+   1. manually interpret the `Makefile` and type the resulting commands.
+   2. Translate the requirements to `CMake` and hope VSCode can deal with it better.
+   3. Build and use under *nix or equivalent: cygwin or WSL.
+   4. Use `MINGW64` variant of `MSYS2` to do the building.  The result is a native Windows executable.
+
+`VSCode` has an extension for `D`, `webfreak.code-d`.
 
 ## [literate extension for `VSCode`](https://marketplace.visualstudio.com/items?itemName=jesterking.literate)
 
 No obvious relation to the previous entry, though like it uses markdown input and (I think) html output.  Supports any language known to markdown; does the language need to be specified in each fragment? Tab-preserving.  Shows the human document as you go; must execute command to generate programs.  It supports multiple `.literate` input files; unclear if one input can generate multiple outputs.  No indexing capability.
 
 Looks beta-ish; no activity for a year.
+
+Tried it and couldn't get it to work.
 
 ## [fweb](https://w3.pppl.gov/~krommes/fweb.html)
 
@@ -70,6 +80,8 @@ Could it be used with JavaScript or Python?  There are several routes:
 
 fweb uses hand-tuned parsers for the languages it understands; in the past, I found those sometimes ran into trouble.
 
+Examined fweb source on my home machine, including weaving `fweave` and `prod`.  Only confirms that modification would be hard.
+
 ## [FunnelWeb](http://www.ross.net/funnelweb/)
 
 Works with any language; output in $\TeX$ or html; platform agnostic.  Binaries available for most platforms, though Windows 95/NT is latest for Windows.  Seriously documented.  *Doesn't handle tabs in source file well*, or 8 bit characters at all.
@@ -80,6 +92,30 @@ Has a noweb extension, which says it depends on other things that aren't present
 
 This route does not look promising.
 
+## Cygwin
+
+One possible route to get stuff available on Unix but not MS-Windows is `cygwin`.  None of the literate processors discussed above are pre-packaged in cygwin (`LyX` is, presumably, but it's available directly for Windows).
+
+It might be easier to build from source in this environment, but it doesn't offer any quick solutions.
+
 ## many others
 
 https://github.com/justinmeiners/srcweave/ is a descendant of literate, done in a lispy language with a few changes.
+
+## Only on Linux
+
+I could only run the literate programming tools on Linux, using them to generate the program source files (`.js`, `.py`), committing the files, and then running them on Windows.
+
+Probably too cumbersome to be practical since each debug, edit code cycle would need to make this trip across systems.
+
+## Punt
+
+User documentation should not be in literate programming form anyway, and can be done in plain text, markdown, or something more elaborate.
+
+Design notes can go in a separate document with similar format options.
+
+Detailed comments on the code can go in comments.
+
+One of my original reasons for wanting a literate tool was to be  able to consider different classes or code sections separately.  They can go in separate files.
+
+A weakness of anything that is not in the code file is that it tends to get out sync with the code.

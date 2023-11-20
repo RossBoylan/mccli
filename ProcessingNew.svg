@@ -1,0 +1,163 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!DOCTYPE svg PUBLIC "-//W3C//DTD SVG 1.0//EN" "http://www.w3.org/TR/2001/PR-SVG-20010719/DTD/svg10.dtd">
+<svg width="49cm" height="37cm" viewBox="84 8 979 730" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
+  <g>
+    <path style="fill: #ffffff" d="M 102.25 34 L 195.75,34 L 195.75,68.2857 C 177.05,62.5714 167.7,62.5714 149,68.2857 C 130.3,74 120.95,74 102.25,68.2857 L 102.25,34z"/>
+    <path style="fill: none; fill-opacity:0; stroke-width: 2; stroke: #000000" d="M 102.25 34 L 195.75,34 L 195.75,68.2857 C 177.05,62.5714 167.7,62.5714 149,68.2857 C 130.3,74 120.95,74 102.25,68.2857 L 102.25,34"/>
+    <text font-size="12.8" style="fill: #000000;text-anchor:middle;font-family:sans-serif;font-style:normal;font-weight:normal" x="149" y="53.0857">
+      <tspan x="149" y="53.0857">dat_file_mc.dat</tspan>
+    </text>
+  </g>
+  <g>
+    <path style="fill: #ffffff" d="M 85.15 123.4 L 176.85,123.4 L 176.85,169 C 158.51,161.4 149.34,161.4 131,169 C 112.66,176.6 103.49,176.6 85.15,169 L 85.15,123.4z"/>
+    <path style="fill: none; fill-opacity:0; stroke-width: 2; stroke: #000000" d="M 85.15 123.4 L 176.85,123.4 L 176.85,169 C 158.51,161.4 149.34,161.4 131,169 C 112.66,176.6 103.49,176.6 85.15,169 L 85.15,123.4"/>
+    <text font-size="12.8" style="fill: #000000;text-anchor:middle;font-family:sans-serif;font-style:normal;font-weight:normal" x="131" y="147.2">
+      <tspan x="131" y="147.2">inp_file_mc.inp</tspan>
+    </text>
+  </g>
+  <g>
+    <rect style="fill: #ffffff" x="256" y="59" width="124" height="43"/>
+    <rect style="fill: none; fill-opacity:0; stroke-width: 2; stroke: #000000" x="256" y="59" width="124" height="43"/>
+    <text font-size="12.8" style="fill: #000000;text-anchor:middle;font-family:sans-serif;font-style:normal;font-weight:normal" x="318" y="85.3">
+      <tspan x="318" y="85.3">Fortran Model</tspan>
+    </text>
+  </g>
+  <g>
+    <line style="fill: none; fill-opacity:0; stroke-width: 2; stroke: #000000" x1="195.75" y1="51.1429" x2="247.248" y2="76.2354"/>
+    <polygon style="fill: #000000" points="253.99,79.5205 242.81,79.6351 247.248,76.2354 247.19,70.6455 "/>
+    <polygon style="fill: none; fill-opacity:0; stroke-width: 2; stroke: #000000" points="253.99,79.5205 242.81,79.6351 247.248,76.2354 247.19,70.6455 "/>
+  </g>
+  <g>
+    <line style="fill: none; fill-opacity:0; stroke-width: 2; stroke: #000000" x1="176.85" y1="146.2" x2="248.509" y2="86.7184"/>
+    <polygon style="fill: #000000" points="254.279,81.9282 249.778,92.1625 248.509,86.7184 243.391,84.4679 "/>
+    <polygon style="fill: none; fill-opacity:0; stroke-width: 2; stroke: #000000" points="254.279,81.9282 249.778,92.1625 248.509,86.7184 243.391,84.4679 "/>
+  </g>
+  <g>
+    <path style="fill: #ffffff" d="M 791.45 354.333 C 804.07,348.833 810.38,347 823,347 C 835.62,347 841.93,348.833 854.55,354.333 L 854.55,383.667 C 841.93,389.167 835.62,391 823,391 C 810.38,391 804.07,389.167 791.45,383.667 L 791.45,354.333z"/>
+    <path style="fill: none; fill-opacity:0; stroke-width: 2; stroke: #000000" d="M 791.45 354.333 C 804.07,348.833 810.38,347 823,347 C 835.62,347 841.93,348.833 854.55,354.333 L 854.55,383.667 C 841.93,389.167 835.62,391 823,391 C 810.38,391 804.07,389.167 791.45,383.667 L 791.45,354.333"/>
+    <path style="fill: none; fill-opacity:0; stroke-width: 2; stroke: #000000" d="M 791.45 354.333 C 804.07,359.833 810.38,361.667 823,361.667 C 835.62,361.667 841.93,359.833 854.55,354.333"/>
+    <text font-size="12.8" style="fill: #000000;text-anchor:middle;font-family:sans-serif;font-style:normal;font-weight:normal" x="823" y="377.467">
+      <tspan x="823" y="377.467">allData.db</tspan>
+    </text>
+  </g>
+  <g>
+    <line style="fill: none; fill-opacity:0; stroke-width: 2; stroke: #000000" x1="580.45" y1="342.388" x2="780.846" y2="364.375"/>
+    <polygon style="fill: #000000" points="788.301,365.193 777.815,369.072 780.846,364.375 778.906,359.132 "/>
+    <polygon style="fill: none; fill-opacity:0; stroke-width: 2; stroke: #000000" points="788.301,365.193 777.815,369.072 780.846,364.375 778.906,359.132 "/>
+  </g>
+  <g>
+    <rect style="fill: #ffffff" x="651.15" y="423" width="247.7" height="86"/>
+    <rect style="fill: none; fill-opacity:0; stroke-width: 2; stroke: #000000" x="651.15" y="423" width="247.7" height="86"/>
+    <text font-size="12.8" style="fill: #000000;text-anchor:middle;font-family:sans-serif;font-style:normal;font-weight:normal" x="775" y="446.8">
+      <tspan x="775" y="446.8">frmtReport.py</tspan>
+      <tspan x="775" y="462.8">GUI</tspan>
+      <tspan x="775" y="478.8">select outcome of interest and generate</tspan>
+      <tspan x="775" y="494.8">csv file</tspan>
+    </text>
+  </g>
+  <g>
+    <path style="fill: #ffffff" d="M 506.676 444 L 583.326,444 L 583.326,478.286 C 567.996,472.571 560.331,472.571 545.001,478.286 C 529.671,484 522.006,484 506.676,478.286 L 506.676,444z"/>
+    <path style="fill: none; fill-opacity:0; stroke-width: 2; stroke: #000000" d="M 506.676 444 L 583.326,444 L 583.326,478.286 C 567.996,472.571 560.331,472.571 545.001,478.286 C 529.671,484 522.006,484 506.676,478.286 L 506.676,444"/>
+    <text font-size="12.8" style="fill: #000000;text-anchor:middle;font-family:sans-serif;font-style:normal;font-weight:normal" x="545.001" y="463.086">
+      <tspan x="545.001" y="463.086">outcome.csv</tspan>
+    </text>
+  </g>
+  <g>
+    <line style="fill: none; fill-opacity:0; stroke-width: 2; stroke: #000000" x1="811.973" y1="391.284" x2="801.08" y2="413.297"/>
+    <polygon style="fill: #000000" points="797.753,420.019 797.707,408.839 801.08,413.297 806.67,413.274 "/>
+    <polygon style="fill: none; fill-opacity:0; stroke-width: 2; stroke: #000000" points="797.753,420.019 797.707,408.839 801.08,413.297 806.67,413.274 "/>
+  </g>
+  <g>
+    <line style="fill: none; fill-opacity:0; stroke-width: 2; stroke: #000000" x1="650.16" y1="464.914" x2="594.057" y2="464.427"/>
+    <polygon style="fill: #000000" points="586.557,464.361 596.601,459.449 594.057,464.427 596.514,469.448 "/>
+    <polygon style="fill: none; fill-opacity:0; stroke-width: 2; stroke: #000000" points="586.557,464.361 596.601,459.449 594.057,464.427 596.514,469.448 "/>
+  </g>
+  <text font-size="12.8" style="fill: #000000;text-anchor:start;font-family:sans-serif;font-style:normal;font-weight:normal" x="99" y="687">
+    <tspan x="99" y="687">"dat_file" is a stand-in for any data file name that might be varied, e.g., "bstrk".</tspan>
+    <tspan x="99" y="703">"inp_file" is a stand-in for any input scenario, e.g., "blxD".</tspan>
+    <tspan x="99" y="719">"NN" is a stand-in for digits with the simulation number.</tspan>
+    <tspan x="99" y="735">Arrows indicate the flow of processing forward, inputs to programs (in rectangles) or outputs from the programs.</tspan>
+  </text>
+  <text font-size="12.8" style="fill: #000000;text-anchor:start;font-family:sans-serif;font-style:normal;font-weight:normal" x="291" y="21">
+    <tspan x="291" y="21">Flow of Information Before and After Monte-Carlo Simulation</tspan>
+  </text>
+  <g>
+    <path style="fill: #ffffff" d="M 142.2 247.5 L 312.1,247.5 L 312.1,201.9 C 278.12,209.5 261.13,209.5 227.15,201.9 C 193.17,194.3 176.18,194.3 142.2,201.9 L 142.2,247.5z"/>
+    <path style="fill: none; fill-opacity:0; stroke-width: 2; stroke: #00ff00" d="M 142.2 247.5 L 312.1,247.5 L 312.1,201.9 C 278.12,209.5 261.13,209.5 227.15,201.9 C 193.17,194.3 176.18,194.3 142.2,201.9 L 142.2,247.5"/>
+    <text font-size="12.8" style="fill: #0000ff;text-anchor:middle;font-family:sans-serif;font-style:normal;font-weight:normal" x="227.15" y="225.3">
+      <tspan x="227.15" y="225.3">calib.csv</tspan>
+      <tspan x="227.15" y="241.3">used in calibrating the model</tspan>
+    </text>
+  </g>
+  <g>
+    <path style="fill: #ffffff" d="M 350.5 248.5 L 549.8,248.5 L 549.8,202.9 C 509.94,210.5 490.01,210.5 450.15,202.9 C 410.29,195.3 390.36,195.3 350.5,202.9 L 350.5,248.5z"/>
+    <path style="fill: none; fill-opacity:0; stroke-width: 2; stroke: #00ff00" d="M 350.5 248.5 L 549.8,248.5 L 549.8,202.9 C 509.94,210.5 490.01,210.5 450.15,202.9 C 410.29,195.3 390.36,195.3 350.5,202.9 L 350.5,248.5"/>
+    <text font-size="12.8" style="fill: #0000ff;text-anchor:middle;font-family:sans-serif;font-style:normal;font-weight:normal" x="450.15" y="226.3">
+      <tspan x="450.15" y="226.3">totresults.csv</tspan>
+      <tspan x="450.15" y="242.3">main place for additional variables</tspan>
+    </text>
+  </g>
+  <g>
+    <path style="fill: #ffffff" d="M 582.6 247.5 L 897.7,247.5 L 897.7,201.9 C 834.68,209.5 803.17,209.5 740.15,201.9 C 677.13,194.3 645.62,194.3 582.6,201.9 L 582.6,247.5z"/>
+    <path style="fill: none; fill-opacity:0; stroke-width: 2; stroke: #00ff00" d="M 582.6 247.5 L 897.7,247.5 L 897.7,201.9 C 834.68,209.5 803.17,209.5 740.15,201.9 C 677.13,194.3 645.62,194.3 582.6,201.9 L 582.6,247.5"/>
+    <text font-size="12.8" style="fill: #0000ff;text-anchor:middle;font-family:sans-serif;font-style:normal;font-weight:normal" x="740.15" y="225.3">
+      <tspan x="740.15" y="225.3">targets_output.csv</tspan>
+      <tspan x="740.15" y="241.3">target variables that we want to calibrate the model to</tspan>
+    </text>
+  </g>
+  <g>
+    <line style="fill: none; fill-opacity:0; stroke-width: 2; stroke: #000000" x1="303.444" y1="102.995" x2="243.868" y2="195.065"/>
+    <polygon style="fill: #000000" points="239.793,201.361 241.028,190.249 243.868,195.065 249.424,195.682 "/>
+    <polygon style="fill: none; fill-opacity:0; stroke-width: 2; stroke: #000000" points="239.793,201.361 241.028,190.249 243.868,195.065 249.424,195.682 "/>
+  </g>
+  <g>
+    <line style="fill: none; fill-opacity:0; stroke-width: 2; stroke: #000000" x1="338.971" y1="102.939" x2="421.362" y2="191.096"/>
+    <polygon style="fill: #000000" points="426.483,196.576 416.002,192.684 421.362,191.096 423.308,185.856 "/>
+    <polygon style="fill: none; fill-opacity:0; stroke-width: 2; stroke: #000000" points="426.483,196.576 416.002,192.684 421.362,191.096 423.308,185.856 "/>
+  </g>
+  <text font-size="12.8" style="fill: #0000ff;text-anchor:start;font-family:sans-serif;font-style:normal;font-weight:normal" x="930.15" y="223.475">
+    <tspan x="930.15" y="223.475">New with the HF model</tspan>
+  </text>
+  <g>
+    <rect style="fill: #ffffff" x="428.55" y="307" width="150.9" height="54"/>
+    <rect style="fill: none; fill-opacity:0; stroke-width: 2; stroke: #000000" x="428.55" y="307" width="150.9" height="54"/>
+    <text font-size="12.7998" style="fill: #000000;text-anchor:middle;font-family:sans-serif;font-style:normal;font-weight:normal" x="504" y="330.8">
+      <tspan x="504" y="330.8">monte carlo supervisor</tspan>
+      <tspan x="504" y="346.8">(Javascript</tspan>
+    </text>
+  </g>
+  <g>
+    <line style="fill: none; fill-opacity:0; stroke-width: 2; stroke: #000000" x1="380" y1="80.5" x2="666.013" y2="191.998"/>
+    <polygon style="fill: #000000" points="673,194.723 661.867,195.749 666.013,191.998 665.499,186.432 "/>
+    <polygon style="fill: none; fill-opacity:0; stroke-width: 2; stroke: #000000" points="673,194.723 661.867,195.749 666.013,191.998 665.499,186.432 "/>
+  </g>
+  <g>
+    <line style="fill: none; fill-opacity:0; stroke-width: 2; stroke: #000000" x1="294.47" y1="248.402" x2="426.434" y2="302.312"/>
+    <polygon style="fill: #000000" points="433.377,305.149 422.228,305.995 426.434,302.312 426.01,296.738 "/>
+    <polygon style="fill: none; fill-opacity:0; stroke-width: 2; stroke: #000000" points="433.377,305.149 422.228,305.995 426.434,302.312 426.01,296.738 "/>
+  </g>
+  <g>
+    <line style="fill: none; fill-opacity:0; stroke-width: 2; stroke: #000000" x1="463.409" y1="249.501" x2="486.332" y2="297.22"/>
+    <polygon style="fill: #000000" points="489.579,303.98 480.742,297.131 486.332,297.22 489.756,292.801 "/>
+    <polygon style="fill: none; fill-opacity:0; stroke-width: 2; stroke: #000000" points="489.579,303.98 480.742,297.131 486.332,297.22 489.756,292.801 "/>
+  </g>
+  <g>
+    <line style="fill: none; fill-opacity:0; stroke-width: 2; stroke: #000000" x1="682.727" y1="248.402" x2="571.256" y2="301.789"/>
+    <polygon style="fill: #000000" points="564.492,305.028 571.351,296.199 571.256,301.789 575.671,305.218 "/>
+    <polygon style="fill: none; fill-opacity:0; stroke-width: 2; stroke: #000000" points="564.492,305.028 571.351,296.199 571.256,301.789 575.671,305.218 "/>
+  </g>
+  <g>
+    <path style="fill: #ffffff" d="M 113.75 296.2 L 210.25,296.2 L 210.25,361 C 190.95,350.2 181.3,350.2 162,361 C 142.7,371.8 133.05,371.8 113.75,361 L 113.75,296.2z"/>
+    <path style="fill: none; fill-opacity:0; stroke-width: 2; stroke: #000000" d="M 113.75 296.2 L 210.25,296.2 L 210.25,361 C 190.95,350.2 181.3,350.2 162,361 C 142.7,371.8 133.05,371.8 113.75,361 L 113.75,296.2"/>
+    <text font-size="12.7998" style="fill: #000000;text-anchor:middle;font-family:sans-serif;font-style:normal;font-weight:normal" x="162" y="312.2">
+      <tspan x="162" y="312.2">monte.conf</tspan>
+      <tspan x="162" y="328.2">which variables </tspan>
+      <tspan x="162" y="344.2">to preservel</tspan>
+    </text>
+  </g>
+  <g>
+    <line style="fill: none; fill-opacity:0; stroke-width: 2; stroke: #000000" x1="211.179" y1="334" x2="417.813" y2="334"/>
+    <polygon style="fill: #000000" points="425.313,334 415.313,339 417.813,334 415.313,329 "/>
+    <polygon style="fill: none; fill-opacity:0; stroke-width: 2; stroke: #000000" points="425.313,334 415.313,339 417.813,334 415.313,329 "/>
+  </g>
+</svg>

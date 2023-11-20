@@ -1,0 +1,199 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!DOCTYPE svg PUBLIC "-//W3C//DTD SVG 1.0//EN" "http://www.w3.org/TR/2001/PR-SVG-20010719/DTD/svg10.dtd">
+<svg width="41cm" height="37cm" viewBox="86 8 814 730" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
+  <g>
+    <path style="fill: #ffffff" d="M 104.25 103 L 197.75,103 L 197.75,137.286 C 179.05,131.571 169.7,131.571 151,137.286 C 132.3,143 122.95,143 104.25,137.286 L 104.25,103z"/>
+    <path style="fill: none; fill-opacity:0; stroke-width: 2; stroke: #000000" d="M 104.25 103 L 197.75,103 L 197.75,137.286 C 179.05,131.571 169.7,131.571 151,137.286 C 132.3,143 122.95,143 104.25,137.286 L 104.25,103"/>
+    <text font-size="12.8" style="fill: #000000;text-anchor:middle;font-family:sans-serif;font-style:normal;font-weight:normal" x="151" y="122.086">
+      <tspan x="151" y="122.086">dat_file_mc.dat</tspan>
+    </text>
+  </g>
+  <g>
+    <path style="fill: #ffffff" d="M 87.15 192.4 L 178.85,192.4 L 178.85,238 C 160.51,230.4 151.34,230.4 133,238 C 114.66,245.6 105.49,245.6 87.15,238 L 87.15,192.4z"/>
+    <path style="fill: none; fill-opacity:0; stroke-width: 2; stroke: #000000" d="M 87.15 192.4 L 178.85,192.4 L 178.85,238 C 160.51,230.4 151.34,230.4 133,238 C 114.66,245.6 105.49,245.6 87.15,238 L 87.15,192.4"/>
+    <text font-size="12.8" style="fill: #000000;text-anchor:middle;font-family:sans-serif;font-style:normal;font-weight:normal" x="133" y="216.2">
+      <tspan x="133" y="216.2">inp_file_mc.inp</tspan>
+    </text>
+  </g>
+  <g>
+    <rect style="fill: #ffffff" x="258" y="128" width="124" height="43"/>
+    <rect style="fill: none; fill-opacity:0; stroke-width: 2; stroke: #000000" x="258" y="128" width="124" height="43"/>
+    <text font-size="12.8" style="fill: #000000;text-anchor:middle;font-family:sans-serif;font-style:normal;font-weight:normal" x="320" y="154.3">
+      <tspan x="320" y="154.3">Fortran Model</tspan>
+    </text>
+  </g>
+  <g>
+    <line style="fill: none; fill-opacity:0; stroke-width: 2; stroke: #000000" x1="197.75" y1="120.143" x2="249.248" y2="145.235"/>
+    <polygon style="fill: #000000" points="255.99,148.521 244.81,148.635 249.248,145.235 249.19,139.645 "/>
+    <polygon style="fill: none; fill-opacity:0; stroke-width: 2; stroke: #000000" points="255.99,148.521 244.81,148.635 249.248,145.235 249.19,139.645 "/>
+  </g>
+  <g>
+    <line style="fill: none; fill-opacity:0; stroke-width: 2; stroke: #000000" x1="178.85" y1="215.2" x2="250.509" y2="155.718"/>
+    <polygon style="fill: #000000" points="256.279,150.928 251.778,161.162 250.509,155.718 245.391,153.468 "/>
+    <polygon style="fill: none; fill-opacity:0; stroke-width: 2; stroke: #000000" points="256.279,150.928 251.778,161.162 250.509,155.718 245.391,153.468 "/>
+  </g>
+  <g>
+    <path style="fill: #ffffff" d="M 349.626 192.2 L 588.376,192.2 L 588.376,257 C 540.626,246.2 516.751,246.2 469.001,257 C 421.251,267.8 397.376,267.8 349.626,257 L 349.626,192.2z"/>
+    <path style="fill: none; fill-opacity:0; stroke-width: 2; stroke: #000000" d="M 349.626 192.2 L 588.376,192.2 L 588.376,257 C 540.626,246.2 516.751,246.2 469.001,257 C 421.251,267.8 397.376,267.8 349.626,257 L 349.626,192.2"/>
+    <text font-size="12.8" style="fill: #000000;text-anchor:middle;font-family:sans-serif;font-style:normal;font-weight:normal" x="469.001" y="208">
+      <tspan x="469.001" y="208">inp_file_mc.out</tspan>
+      <tspan x="469.001" y="224">extensive tables of many outcomes</tspan>
+      <tspan x="469.001" y="240">separate reports for each simulation year</tspan>
+    </text>
+  </g>
+  <g>
+    <rect style="fill: #ffffff" x="536.6" y="126" width="76.8" height="38"/>
+    <rect style="fill: none; fill-opacity:0; stroke-width: 2; stroke: #000000" x="536.6" y="126" width="76.8" height="38"/>
+    <text font-size="12.8" style="fill: #000000;text-anchor:middle;font-family:sans-serif;font-style:normal;font-weight:normal" x="575" y="149.8">
+      <tspan x="575" y="149.8">format.py</tspan>
+    </text>
+  </g>
+  <g>
+    <line style="fill: none; fill-opacity:0; stroke-width: 2; stroke: #000000" x1="382" y1="149.5" x2="419.915" y2="184.582"/>
+    <polygon style="fill: #000000" points="425.42,189.676 414.685,186.554 419.915,184.582 421.476,179.214 "/>
+    <polygon style="fill: none; fill-opacity:0; stroke-width: 2; stroke: #000000" points="425.42,189.676 414.685,186.554 419.915,184.582 421.476,179.214 "/>
+  </g>
+  <g>
+    <line style="fill: none; fill-opacity:0; stroke-width: 2; stroke: #000000" x1="499.846" y1="191.215" x2="530.54" y2="152.62"/>
+    <polygon style="fill: #000000" points="535.208,146.75 532.897,157.689 530.54,152.62 525.07,151.465 "/>
+    <polygon style="fill: none; fill-opacity:0; stroke-width: 2; stroke: #000000" points="535.208,146.75 532.897,157.689 530.54,152.62 525.07,151.465 "/>
+  </g>
+  <g>
+    <path style="fill: #ffffff" d="M 612.4 163.8 L 863.6,163.8 L 863.6,267 C 813.36,249.8 788.24,249.8 738,267 C 687.76,284.2 662.64,284.2 612.4,267 L 612.4,163.8z"/>
+    <path style="fill: none; fill-opacity:0; stroke-width: 2; stroke: #000000" d="M 612.4 163.8 L 863.6,163.8 L 863.6,267 C 813.36,249.8 788.24,249.8 738,267 C 687.76,284.2 662.64,284.2 612.4,267 L 612.4,163.8"/>
+    <text font-size="12.8" style="fill: #000000;text-anchor:middle;font-family:sans-serif;font-style:normal;font-weight:normal" x="738" y="179.6">
+      <tspan x="738" y="179.6">inp_file_mc.frmt</tspan>
+      <tspan x="738" y="195.6">later</tspan>
+      <tspan x="738" y="211.6">MC/results/breakdown/in_file_NN.frmt</tspan>
+      <tspan x="738" y="227.6">info from many selected categories in input</tspan>
+      <tspan x="738" y="243.6">much more regular format</tspan>
+    </text>
+  </g>
+  <g>
+    <line style="fill: none; fill-opacity:0; stroke-width: 2; stroke: #000000" x1="613.4" y1="145" x2="665.885" y2="160.966"/>
+    <polygon style="fill: #000000" points="673.061,163.149 662.038,165.022 665.885,160.966 664.949,155.455 "/>
+    <polygon style="fill: none; fill-opacity:0; stroke-width: 2; stroke: #000000" points="673.061,163.149 662.038,165.022 665.885,160.966 664.949,155.455 "/>
+  </g>
+  <g>
+    <path style="fill: #ffffff" d="M 200.176 308.8 L 435.826,308.8 L 435.826,412 C 388.696,394.8 365.131,394.8 318.001,412 C 270.871,429.2 247.306,429.2 200.176,412 L 200.176,308.8z"/>
+    <path style="fill: none; fill-opacity:0; stroke-width: 2; stroke: #000000" d="M 200.176 308.8 L 435.826,308.8 L 435.826,412 C 388.696,394.8 365.131,394.8 318.001,412 C 270.871,429.2 247.306,429.2 200.176,412 L 200.176,308.8"/>
+    <text font-size="12.8" style="fill: #000000;text-anchor:middle;font-family:sans-serif;font-style:normal;font-weight:normal" x="318.001" y="324.6">
+      <tspan x="318.001" y="324.6">outfile.dat</tspan>
+      <tspan x="318.001" y="340.6">later</tspan>
+      <tspan x="318.001" y="356.6">MC/results/cumulative/inp_file_NN.dat</tspan>
+      <tspan x="318.001" y="372.6">19 key outcomes x columns of sex x age</tspan>
+      <tspan x="318.001" y="388.6">sum over all years</tspan>
+    </text>
+  </g>
+  <g>
+    <line style="fill: none; fill-opacity:0; stroke-width: 2; stroke: #000000" x1="319.796" y1="171.9" x2="318.647" y2="298.059"/>
+    <polygon style="fill: #000000" points="318.579,305.559 313.67,295.514 318.647,298.059 323.67,295.605 "/>
+    <polygon style="fill: none; fill-opacity:0; stroke-width: 2; stroke: #000000" points="318.579,305.559 313.67,295.514 318.647,298.059 323.67,295.605 "/>
+  </g>
+  <g>
+    <rect style="fill: #ffffff" x="229.35" y="469" width="175.3" height="54"/>
+    <rect style="fill: none; fill-opacity:0; stroke-width: 2; stroke: #000000" x="229.35" y="469" width="175.3" height="54"/>
+    <text font-size="12.8" style="fill: #000000;text-anchor:middle;font-family:sans-serif;font-style:normal;font-weight:normal" x="317" y="492.8">
+      <tspan x="317" y="492.8">sum_results.py</tspan>
+      <tspan x="317" y="508.8">when all simulations done</tspan>
+    </text>
+  </g>
+  <g>
+    <line style="fill: none; fill-opacity:0; stroke-width: 2; stroke: #000000" x1="317.653" y1="413.168" x2="317.297" y2="458.258"/>
+    <polygon style="fill: #000000" points="317.238,465.758 312.317,455.719 317.297,458.258 322.317,455.798 "/>
+    <polygon style="fill: none; fill-opacity:0; stroke-width: 2; stroke: #000000" points="317.238,465.758 312.317,455.719 317.297,458.258 322.317,455.798 "/>
+  </g>
+  <g>
+    <path style="fill: #ffffff" d="M 380.174 606 L 643.824,606 L 643.824,640.286 C 591.094,634.571 564.729,634.571 511.999,640.286 C 459.269,646 432.904,646 380.174,640.286 L 380.174,606z"/>
+    <path style="fill: none; fill-opacity:0; stroke-width: 2; stroke: #000000" d="M 380.174 606 L 643.824,606 L 643.824,640.286 C 591.094,634.571 564.729,634.571 511.999,640.286 C 459.269,646 432.904,646 380.174,640.286 L 380.174,606"/>
+    <text font-size="12.8" style="fill: #000000;text-anchor:middle;font-family:sans-serif;font-style:normal;font-weight:normal" x="511.999" y="625.086">
+      <tspan x="511.999" y="625.086">MC/results/summary/ageranges_outcome.csv</tspan>
+    </text>
+  </g>
+  <g>
+    <line style="fill: none; fill-opacity:0; stroke-width: 2; stroke: #000000" x1="359.001" y1="524.001" x2="472.43" y2="599.62"/>
+    <polygon style="fill: #000000" points="478.67,603.781 467.576,602.394 472.43,599.62 473.123,594.073 "/>
+    <polygon style="fill: none; fill-opacity:0; stroke-width: 2; stroke: #000000" points="478.67,603.781 467.576,602.394 472.43,599.62 473.123,594.073 "/>
+  </g>
+  <g>
+    <path style="fill: #ffffff" d="M 128.125 571.4 L 281.875,571.4 L 281.875,617 C 251.125,609.4 235.75,609.4 205,617 C 174.25,624.6 158.875,624.6 128.125,617 L 128.125,571.4z"/>
+    <path style="fill: none; fill-opacity:0; stroke-width: 2; stroke: #000000" d="M 128.125 571.4 L 281.875,571.4 L 281.875,617 C 251.125,609.4 235.75,609.4 205,617 C 174.25,624.6 158.875,624.6 128.125,617 L 128.125,571.4"/>
+    <text font-size="12.8" style="fill: #000000;text-anchor:middle;font-family:sans-serif;font-style:normal;font-weight:normal" x="205" y="587.2">
+      <tspan x="205" y="587.2">MC/input_variation/inp.txt</tspan>
+      <tspan x="205" y="603.2">add means and sds</tspan>
+    </text>
+  </g>
+  <g>
+    <path style="fill: none; fill-opacity:0; stroke-width: 2; stroke: #000000" d="M 219.729,494.863 A 84.7313,84.7313 0 0 0 130,575"/>
+    <polygon style="fill: #000000" points="227.148,495.611 216.431,498.796 219.762,494.307 218.17,488.948 "/>
+    <polygon style="fill: none; fill-opacity:0; stroke-width: 2; stroke: #000000" points="227.148,495.611 216.431,498.796 219.762,494.307 218.17,488.948 "/>
+  </g>
+  <g>
+    <path style="fill: none; fill-opacity:0; stroke-width: 2; stroke: #000000" d="M 290.777,601.899 A 59.4328,59.4328 0 0 0 317,523"/>
+    <polygon style="fill: #000000" points="284.003,604.912 291.979,597.076 291.139,602.603 295.057,606.591 "/>
+    <polygon style="fill: none; fill-opacity:0; stroke-width: 2; stroke: #000000" points="284.003,604.912 291.979,597.076 291.139,602.603 295.057,606.591 "/>
+  </g>
+  <g>
+    <rect style="fill: #ffffff" x="556.8" y="304" width="202.4" height="70"/>
+    <rect style="fill: none; fill-opacity:0; stroke-width: 2; stroke: #000000" x="556.8" y="304" width="202.4" height="70"/>
+    <text font-size="12.8" style="fill: #000000;text-anchor:middle;font-family:sans-serif;font-style:normal;font-weight:normal" x="658" y="327.8">
+      <tspan x="658" y="327.8">frmtToData.py</tspan>
+      <tspan x="658" y="343.8">read all .frmt file and</tspan>
+      <tspan x="658" y="359.8">convert to a single file database</tspan>
+    </text>
+  </g>
+  <g>
+    <line style="fill: none; fill-opacity:0; stroke-width: 2; stroke: #000000" x1="700.148" y1="278.412" x2="688.604" y2="295.007"/>
+    <polygon style="fill: #000000" points="684.321,301.164 685.927,290.099 688.604,295.007 694.136,295.81 "/>
+    <polygon style="fill: none; fill-opacity:0; stroke-width: 2; stroke: #000000" points="684.321,301.164 685.927,290.099 688.604,295.007 694.136,295.81 "/>
+  </g>
+  <g>
+    <path style="fill: #ffffff" d="M 791.45 354.333 C 804.07,348.833 810.38,347 823,347 C 835.62,347 841.93,348.833 854.55,354.333 L 854.55,383.667 C 841.93,389.167 835.62,391 823,391 C 810.38,391 804.07,389.167 791.45,383.667 L 791.45,354.333z"/>
+    <path style="fill: none; fill-opacity:0; stroke-width: 2; stroke: #000000" d="M 791.45 354.333 C 804.07,348.833 810.38,347 823,347 C 835.62,347 841.93,348.833 854.55,354.333 L 854.55,383.667 C 841.93,389.167 835.62,391 823,391 C 810.38,391 804.07,389.167 791.45,383.667 L 791.45,354.333"/>
+    <path style="fill: none; fill-opacity:0; stroke-width: 2; stroke: #000000" d="M 791.45 354.333 C 804.07,359.833 810.38,361.667 823,361.667 C 835.62,361.667 841.93,359.833 854.55,354.333"/>
+    <text font-size="12.8" style="fill: #000000;text-anchor:middle;font-family:sans-serif;font-style:normal;font-weight:normal" x="823" y="377.467">
+      <tspan x="823" y="377.467">allData.db</tspan>
+    </text>
+  </g>
+  <g>
+    <line style="fill: none; fill-opacity:0; stroke-width: 2; stroke: #000000" x1="760.209" y1="357.583" x2="780.862" y2="361.339"/>
+    <polygon style="fill: #000000" points="788.241,362.68 777.508,365.811 780.862,361.339 779.297,355.972 "/>
+    <polygon style="fill: none; fill-opacity:0; stroke-width: 2; stroke: #000000" points="788.241,362.68 777.508,365.811 780.862,361.339 779.297,355.972 "/>
+  </g>
+  <g>
+    <rect style="fill: #ffffff" x="651.15" y="423" width="247.7" height="86"/>
+    <rect style="fill: none; fill-opacity:0; stroke-width: 2; stroke: #000000" x="651.15" y="423" width="247.7" height="86"/>
+    <text font-size="12.8" style="fill: #000000;text-anchor:middle;font-family:sans-serif;font-style:normal;font-weight:normal" x="775" y="446.8">
+      <tspan x="775" y="446.8">frmtReport.py</tspan>
+      <tspan x="775" y="462.8">GUI</tspan>
+      <tspan x="775" y="478.8">select outcome of interest and generate</tspan>
+      <tspan x="775" y="494.8">csv file</tspan>
+    </text>
+  </g>
+  <g>
+    <path style="fill: #ffffff" d="M 506.676 444 L 583.326,444 L 583.326,478.286 C 567.996,472.571 560.331,472.571 545.001,478.286 C 529.671,484 522.006,484 506.676,478.286 L 506.676,444z"/>
+    <path style="fill: none; fill-opacity:0; stroke-width: 2; stroke: #000000" d="M 506.676 444 L 583.326,444 L 583.326,478.286 C 567.996,472.571 560.331,472.571 545.001,478.286 C 529.671,484 522.006,484 506.676,478.286 L 506.676,444"/>
+    <text font-size="12.8" style="fill: #000000;text-anchor:middle;font-family:sans-serif;font-style:normal;font-weight:normal" x="545.001" y="463.086">
+      <tspan x="545.001" y="463.086">outcome.csv</tspan>
+    </text>
+  </g>
+  <g>
+    <line style="fill: none; fill-opacity:0; stroke-width: 2; stroke: #000000" x1="811.973" y1="391.284" x2="801.08" y2="413.297"/>
+    <polygon style="fill: #000000" points="797.753,420.019 797.707,408.839 801.08,413.297 806.67,413.274 "/>
+    <polygon style="fill: none; fill-opacity:0; stroke-width: 2; stroke: #000000" points="797.753,420.019 797.707,408.839 801.08,413.297 806.67,413.274 "/>
+  </g>
+  <g>
+    <line style="fill: none; fill-opacity:0; stroke-width: 2; stroke: #000000" x1="650.16" y1="464.914" x2="594.057" y2="464.427"/>
+    <polygon style="fill: #000000" points="586.557,464.361 596.601,459.449 594.057,464.427 596.514,469.448 "/>
+    <polygon style="fill: none; fill-opacity:0; stroke-width: 2; stroke: #000000" points="586.557,464.361 596.601,459.449 594.057,464.427 596.514,469.448 "/>
+  </g>
+  <text font-size="12.8" style="fill: #000000;text-anchor:start;font-family:sans-serif;font-style:normal;font-weight:normal" x="99" y="687">
+    <tspan x="99" y="687">"dat_file" is a stand-in for any data file name that might be varied, e.g., "bstrk".</tspan>
+    <tspan x="99" y="703">"inp_file" is a stand-in for any input scenario, e.g., "blxD".</tspan>
+    <tspan x="99" y="719">"NN" is a stand-in for digits with the simulation number.</tspan>
+    <tspan x="99" y="735">Arrows indicate the flow of processing forward, inputs to programs (in rectangles) or outputs from the programs.</tspan>
+  </text>
+  <text font-size="12.8" style="fill: #000000;text-anchor:start;font-family:sans-serif;font-style:normal;font-weight:normal" x="291" y="21">
+    <tspan x="291" y="21">Flow of Information Before and After Monte-Carlo Simulation</tspan>
+  </text>
+</svg>

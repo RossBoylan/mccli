@@ -160,4 +160,16 @@
     <polygon style="fill: #000000" points="425.313,334 415.313,339 417.813,334 415.313,329 "/>
     <polygon style="fill: none; fill-opacity:0; stroke-width: 2; stroke: #000000" points="425.313,334 415.313,339 417.813,334 415.313,329 "/>
   </g>
+  <g>
+    <path style="fill: #ffffff" d="M 149.05 387 L 318.95,387 L 318.95,421.286 C 284.97,415.571 267.98,415.571 234,421.286 C 200.02,427 183.03,427 149.05,421.286 L 149.05,387z"/>
+    <path style="fill: none; fill-opacity:0; stroke-width: 2; stroke: #000000" d="M 149.05 387 L 318.95,387 L 318.95,421.286 C 284.97,415.571 267.98,415.571 234,421.286 C 200.02,427 183.03,427 149.05,421.286 L 149.05,387"/>
+    <text font-size="12.7998" style="fill: #000000;text-anchor:middle;font-family:sans-serif;font-style:normal;font-weight:normal" x="234" y="406.286">
+      <tspan x="234" y="406.286">CVDPM_HF_Variable_List.csv</tspan>
+    </text>
+  </g>
+  <g>
+    <line style="fill: none; fill-opacity:0; stroke-width: 2; stroke: #000000" x1="311.684" y1="385.996" x2="418.4" y2="357.144"/>
+    <polygon style="fill: #000000" points="425.64,355.186 417.292,362.623 418.4,357.144 414.682,352.969 "/>
+    <polygon style="fill: none; fill-opacity:0; stroke-width: 2; stroke: #000000" points="425.64,355.186 417.292,362.623 418.4,357.144 414.682,352.969 "/>
+  </g>
 </svg>

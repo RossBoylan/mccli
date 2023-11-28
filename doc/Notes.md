@@ -56,9 +56,10 @@ one of the basic inputs to the monte-carlo simulation.  Automatically installed 
 ### `doc/`
 This directory includes user documentation and internal notes.  In general the `.md` and `.dia` files are the masters, to which edits should be made, while `.svg`, `.pdf` and `.html` files are derived from them.  Among the figures, `Process.dia` is mostly the master of the other 2 `Process*.dia` files (created by removing some elements in `Process.dia`), though I think I added a bit to `ProcessNew.dia`.   After conversion to `.svg` the figures appear in `UserGuide`.
 
+As is typical, there is an issue about whether only the original sources or the derived files should go into version control.  The purist solution only puts the originals under version control.  The problem with that strategy is that it makes life harder for people, including users, who just want to see the final product.  In the case of `.literate` files it means even someone who wants to see the code would need to install `VSCode` and the `literate` plugin to get anything.  I have so far adopted a mixed approach, leaving `.pdf`'s out of version control and putting most other things in.  Building from the originals is particularly onerous because, as the next section reveals, there is not an automated build system.
 
 ## Build System
-There isn't one, though maybe there should be.  Typically, the developer will need to do these steps:
+There isn't one, though maybe there should be.  The core of the application has been a bunch of `.js` and `.py` files that had no need to be built.  But things are getting more complex.  Typically, the developer will need to do these steps:
    1. Modify the code in its master place, either a `.literate`, `.py`, or `.js` file.
    2. Generate revised output from the literate files if any of them changed.
    3. Test.  There is currently a small amount of automated tests for the `Python` code.  More would be good!

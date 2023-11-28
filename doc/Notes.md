@@ -10,7 +10,7 @@ These are internal notes for developers:
 
 # General Notes for Contributors
 
-See the [README](README) for instructions on installing and using this package and the [User Guide](UserGuide) for additional information and background.
+See the [README](../README) for instructions on installing and using this package and the [User Guide](UserGuide) for additional information and background.
 
 At the outer level this is a `JavaScript` package designed for `Node.js` to carry out simulations of an external `Fortran` model with externally provided data, in the form of many input files.  `mc` is the name of the top-level program. Significant parts of the work are performed by `Python` programs, mostly run automatically during and at the end of the simulation.  Some of the `Python` programs can or must be run stand-alone once the simulation is done.  The `Python` programs are shipped as part of this package, and are in `bin/python/`.  The top-level program is `bin/mc.js`, and most code it invokes is in `bin/js/`.
 
@@ -53,6 +53,9 @@ Captured the exact level of the packages at one point for a known working config
 ### `bin/input_data.json`
 one of the basic inputs to the monte-carlo simulation.  Automatically installed as needed.
 
+### `doc/`
+This directory includes user documentation and internal notes.  In general the `.md` and `.dia` files are the masters, to which edits should be made, while `.svg`, `.pdf` and `.html` files are derived from them.  Among the figures, `Process.dia` is mostly the master of the other 2 `Process*.dia` files (created by removing some elements in `Process.dia`), though I think I added a bit to `ProcessNew.dia`.   After conversion to `.svg` the figures appear in `UserGuide`.
+
 
 ## Build System
 There isn't one, though maybe there should be.  Typically, the developer will need to do these steps:
@@ -60,11 +63,11 @@ There isn't one, though maybe there should be.  Typically, the developer will ne
    2. Generate revised output from the literate files if any of them changed.
    3. Test.  There is currently a small amount of automated tests for the `Python` code.  More would be good!
    4. Update `README.md`, `UserGuide.md`, and `Notes.md` if needed
-   5.  Generate additional documentation as desired.  At the moment, `UserGuide.pdf` comes from using the [`Markdown PDF`](https://marketplace.visualstudio.com/items?itemName=yzane.markdown-pdf) extension to generate it while viewing `UserGuide.md`.  I modified the default coloring because it made stuff in code format `like this` too hard to see.  One could also run html to pdf converters.
-   6.  Review `package.json` and `requirements.txt` to see they are still appropriate.
-   7.  Update `ChangeLog`.
-   8.  Bump version in `package.json`.
-   9.  Tag release.
+   5. Generate additional documentation as desired.  At the moment, `UserGuide.pdf` comes from using the [`Markdown PDF`](https://marketplace.visualstudio.com/items?itemName=yzane.markdown-pdf) extension to generate it while viewing `UserGuide.md`.  I modified the default coloring because it made stuff in code format `like this` too hard to see.  One could also run html to pdf converters.
+   6. Review `package.json` and `requirements.txt` to see they are still appropriate.
+   7. Update `ChangeLog`.
+   8. Bump version in `package.json`.
+   9. Tag release.
    10. Push changes to github.
    11. Close or comment on any issues as appropriate.  Note that notations like `Fixes #11` in the commit logs will close issues automatically on upload.
    12. Tell the world.
@@ -213,6 +216,12 @@ Some of this stems from the use of `{silent:true}` option, which is the default,
 The `python-shell` module advertises much better error reporting, but I've never been able to get it to do anything.  My latest attempts apparently couldn't even get it to run anything.  I have *2* different branches experimenting with the package, *both* named `python-shell`.  The primary archive in `J:\source\repos\mccli` has that branch with work from Feb 2022.  The archive in `C:\Users\rdboylan\Documents\KBD\mccli-release`, intended for production runs, has some *different* work from Nov 2022.  It is not based on the earlier branch.
 
 # Log
+
+2023-11-27
+----------
+Created a `doc/` subdirectory and moved much of the recently created documentation to it.
+
+Added general instructions for contributors and a table of contents to `Notes.md`.
 
 2022-09-14
 ----------

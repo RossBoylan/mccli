@@ -1,0 +1,289 @@
+Version 4 of `mccli` uses new `Fortran` code for the Heart Failure model.  As explained more fully in the [User Guide](../doc/UserGuide), the older versions emited a bunch of human-friendly formatted files, which `mccli` processed using various `Python` programs.  The new `Fortran` model continues to emit all those files, and we continue to process them exactly as before, at least for now.  But the new code also emits 3 `.csv` files with all of the new and most of the old variables.  The code developed here adds the ability to cope with this to `mccli`.
+
+# Tools
+
+This file, `v4.literate`, is designed to be processed by the [`literate`](https://marketplace.visualstudio.com/items?itemName=jesterking.literate) extension to [Visual Studio Code](https://code.visualstudio.com/).  To work with it you will need to install `VSCode` and then, from within it, install the `literate` extension.
+
+The diagrams for this and other documents were created with [`Dia`](https://sourceforge.net/projects/dia-installer/); if you want to modify them, you will need to install it.
+
+`.literate` files are in markdown format. That means they should be readable and editable as text files.  It also means they can be nicely formatted; `VSCode` has commands that let you preview the results, and the preview will update as you make changes.
+
+See [`Notes.md`](../doc/Notes.md) for much other information about the internal workings of the system, including fuller discussion of [`.literate`](../doc/Notes.md#literate) files and the [build](../doc/Notes.md#build-system) procedures.
+
+Outputs from running the command `Literate: Process` in `VSCode` will be a `v4.html`, the human friendly description of the program--perhaps what you are reading now--in this directory and code files in `bin/js/`.  The output files appear below after fragment names that end in the literal `.*`, e.g., `<<section name.*>>= ../bin/js/something.js`.
+
+# Big Picture
+
+![processing](../doc/ProcessingNew.svg)
+
+The monte carlo supervisor repeatedly generates random input files for the model, runs the `Fortran` program to get their implications (i.e., output files), and processes the results.  The code in this document concerns how it processes the new, `.csv`, output files introduced in version 4 of `mccli` and shown in the picture above.
+
+The strategy is to piggy-back on a previously used method of storing results for many simulations by putting them in a database.  We will use the same database, `SQLite3` in the same format--same tables, column names and indices--as before. `bin/python/frmtToData.py` created such a database (from an entirely different set of inputs) and `frmtReport.py`, a GUI, read it to produce human friendly reports.
+
+`SQLite3` is a simple database: everything is stored in a single file and there is no separate database manager.
+
+There are hundreds of variables in the 3 `.csv` files, which feature mostly non-overlapping sets of variables distinguished by their likely use.  It is likely only a relatively limited set will be of interest and so there is a configuration file `monte.conf` that tells this program which variables from the `.csv` files to preserve in the database.  The rest will be overwritten with each iteration.
+
+The database also allows for variables to have fuller descriptions in addition to their names; `CVDPM_HF_Variable_List.csv` provides that information.  It could potentially be used as a check or restriction on the variables in `monte.conf`, or even those in the `.csv` files (which include a header line with variable names) but we aren't doing that now.  It might also provide a quick way to say which variables a given `monte.conf` had selected (since it can use patterns), but that's not a goal for the first round.
+
+The old strategy, which remains active for now, was to make copies of each desired output file (and some input files) with iteration numbers appended to the file name.  All the file copying and renaming came with some overhead since disk operations are slower than number-crunching.  That overhead would presumably be even higher with the more extensive outputs of the new model.
+
+There are a lot choices already embedded in the description above.  The new `Fortran` code's output formats and names are already wired in, and changing them is likely to be slow.  There would also be some advantages to doing the variable restrictions in `Fortran` so that it never even writes out (or computes?) variables that aren't needed.  Likewise it might be preferable for the `Fortran` program to at least have an option to write output to a pipe so the receiving program could take it without it ever needing to touch the disk.
+
+Turning to the code here, `SQLite3` is far from the only choice of a data store, and it may yet prove to have sufficient problems with speed or disk space to merit a switch to something else.  Initial testing has shown that it is not very space-efficient compared to pure binary storage of the results; adding information to the database seems to take about as much space as the original `.csv` files, perhaps because `SQLite` stores almost everything as a string.
+
+But we provisionally take all those matters as given, and move to the first high-level choice.
+
+## First Decision: Language Choice
+
+Given that the existing code to work with the database is in `Python` and that most helper tasks are done by `Python` programs, not to mention the current author's familiarity and fondness for the language, it at first seemed the obvious choice.
+
+However, using it would come at a cost.  Our `Python` programs are mostly one-shot affairs.  While this problem could be handled that way, it seems more natural and efficient to have a long-running task.  And there are coordination problems: the `Fortran` outputs do not include the iteration number because the `Fortran` program has no idea it's in a monte carlo simulation.  But the database requires a simulation number.  So that informtion would have to get from the `Javascript` simulation supervisor to the process gathering input.  And the program that collects the input has to tell the supervisor when it is safe to proceed with the next simulation.
+
+So the end result seemed to be a lot of coordination problems, not to mention managing a long-running `Python` process.
+
+All of which led me to decide, on balance, to keep these data gathering functions within the `Javascript` system that manages the simulations.  Which, of course, came with it's own set of problems (e.g., neither `JavaScript` nor `Node` seem to have a native "[read one line of a file](https://geshan.com.np/blog/2021/10/nodejs-read-file-line-by-line/)" command!).
+
+## Splitting the Problem Up
+
+There are 3 kinds of input files: 
+   1. `.csv` files with the data, which will be written by the `Fortran` program and read by the code below repeatedly
+   2. `monte.conf` specifying which variables in the `.csv` files to preserve in the database
+   3. A file with a codebook giving variable names and descriptions, currently called `CVDPM_HF_Variable_List.csv`.
+
+The last 2 only need to be read once at the start, given the decision to have a persistent process managing the first.
+
+We will divide the code into classes, with one for each kind of input.  Reading the files is not too challenging, but the classes will also manage interpreting them as the data are processed.
+
+There is one output file holding the database; the class that reads the `.csv` files is also responsible for writing to it.
+
+# Some Notes on `JavaScript`
+
+## Module Systems
+
+`JavaScript` running under `Node.js` has 2 module systems, the original [`CommonJS`](https://nodejs.org/dist/latest-v20.x/docs/api/modules.html) used by `Node.js` and the newer and now standardized [`ES6`](https://nodejs.org/dist/latest-v20.x/docs/api/esm.html) (ECMAScript v6), now also available in `Node.js`.  Using them employs different syntaxes; modules built for one generally don't work in the other, and there are a host of differences in the semantics of each. The 2 coexist uneasily, and it's simplest to work with one or the other.
+
+`mccli` was developed using `CommonJS` and most of the modules it uses are available in that form and may not be available as `ES6`.  So this code will continue to use `CommonJS` modules.
+
+That said, `ES6` is probably the wave of the future, and modules are likely to be increasingly available in that format.  One of the key modules `mccli` uses, `inquirer`, is *only* available in `ES6` format for recent releases, leading this package to restrict it to earlier versions in `package.json`
+
+Each file is a module, and it seems fairly conventional to put a class definition in a file so that importing the file creates the class.
+
+I haven't been able to find a clear statement about namespaces for `CommonJS` modules, in particular whether a module needs to import (via `require`) a module already present in the parent.This [discussion](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Guide/Modules#other_differences_between_modules_and_standard_scripts) of [`ES6`] seems pretty clear that the import must be done within the module, saying that only global variables are accessible from the module.  But aren't imported modules global vaiables?
+
+At any rate, redundant imports should be cheap since the results are cached.
+
+## Classes and Types
+
+`JavaScript` now has a syntax for declaring classes, which we will use.  However, `JavaScript` `Object`s are really all of the same type, and `JavaScript` itself barely has types: variables and functions are not declared with types.
+
+`JavaScript` does have a prototype system in which one object--not class--serves as a prototype for another, and that is what the class syntax uses.
+
+[`TypeScript`](https://www.typescriptlang.org/) adds strong typing to `JavaScript`.  `Microsoft` developed it and seems keen on it; for example, `VSCode` is written in `TypeScript`.
+
+## Synchronicity ![album](https://upload.wikimedia.org/wikipedia/ru/thumb/7/7f/Police-album-synchronicity.jpg/274px-Police-album-synchronicity.jpg)
+
+`Node.js`'s fundamental execution model is [asynchronous](https://nodejs.org/en/docs/guides/event-loop-timers-and-nexttick/): function calls usually trigger some activity but return immediately, before it is done.  This was done to enhance overall responsiveness, e.g., for web servers handling many separate requests.  Many actions--getting a response from a remote user, accessing a local file, or querying a database--take some time to complete and that time can be spent doing something else.
+
+Since `mccli` could in principle run multiple simulations simultaneously this seems like a natural fit.  Unfortunately, the current design of the `Fortran` model, which has many hard-coded file names and locations, makes it very difficult to run more than one copy at a time.  And many actions, such as creating a directory and then putting files in it, are inherently serial.
+
+So `mccli` uses the synchronous version of a lot of calls, particularly file-oriented ones, and the overall design is synchronous.  For example, one would not want to process the outputs of the `Fortran` program before it completes.
+
+Practical implications:
+   1. If you're used to a conventional, synchronous, language, be aware that in `JavaScript` things may happen asynchronously unless you take special steps, like calling variant function names or using `JavaScript`'s native sequencing constructs, to prevent it.
+   2. If some operations can run in parallel, consider doing so.  It's easier in `JavaScript` than in most other languages.
+
+# `monte.conf`
+
+The first input file we consider is `monte.conf` which specifies which variables to preserve across simulations.  It uses sections `[filename]` for the 3 possible `.csv` files and free-form (whitespace or `,` or mixes of them) list of patterns to match specific variable names.  The patterns can be a variable name; a shell-glob style `*stuff`, `stuff*`, or `*stuff*` to match any variables ending, starting or containing `stuff` in the name; or a `JavaScript` regular expression.  See the [User Guide](../doc/UserGuide.md) for the complete description.
+
+All patterns get `^` added at the start and `$` at the end, i.e., they must match the entire variable name and it is pointless to add those things in the input text.  Similarly, do *not* include `/` at the start and end of the pattern. 
+
+`*` at the beginning or end is converted to `.*` to match the semantics given above, i.e., to convert from a shell glob to a regular expression. `*` in the middle is a regular expression quantifier.
+
+The class's main job is to read in and parse the file and then, given a variable name, report whether it is of interest.
+
+The rest of the system will only ask once for each variable name, which will permit some optimizations.
+
+## Roads Not Taken
+
+Here are some design decisions reflected in the current approach.
+
+### Missing file
+
+A missing `monte.conf` could mean to take all variables, ignore all variables, or use some pre-specified list of variables.  At the moment, the system throws an error if the file is missing.
+
+If `monte.conf` has no section for a particular file, *all* variables in that `.csv` file will be ignored.
+
+### `JSON`
+
+Many of the other input files to `mc` use `JSON`, and it would be possible to use it for this purpose to.  That would have the potential advantage of re-using an existing configuration file.
+
+The syntax struck me as unnessarily complex for the task, and so I use a standard `.ini` file approach.
+
+### Allow full paths in section headers
+
+Allowing `[pathA/pathB/file]` would provide extra flexibility, which could aid testing.  However, the location is wired into the `Fortran` program and may not exist when the user is setting things up.  This class does not know where the files are.
+
+The specification does treat the `.csv` extension as optional in the section headers.
+
+### Queries
+
+It might be helpful to users to be able to get a concrete list of the variables that `monte.conf` was picking out.  For now, that's a possible future enhancement.
+
+### Skip the file sections
+
+The input could just be a list of variable names since they are not expected to be duplicated across `.csv` files (except for the key identifiers).  I left it this way because it seemed to fit better with the way the users thought of things.  And it makes it easier to tell what `.csv` files can be skipped.
+
+### Case sensitivity
+
+The matching procedure ignores case on the theory that differences in case are accidental and should not prevent a match.
+
+## Top Level Definition of `VariableSelector`
+
+```js : <<Variable Selector class.*>>= ./bin/js/v4-VariableSelector.js
+<<VariableSelector.constants>>
+module.exports = class VariableSelector {
+   <<VariableSelector.construct from configuration file>>
+}
+```
+## Regular Expressions
+
+Define some patterns to help parsing the file.
+ 
+I looked for the best way to include these in the class definition. `static` permits definitions to be done once, but they are not accessible from instances--or at least not accessible without prefixing them with the class name.  Which would get tedious.
+
+Second, one can not use `const` for a class instance attribute, though it has been proposed for [`ES7`](https://stackoverflow.com/a/32647583/4409451).
+
+Apparently the "constants" get instantiated with each instance, and so there may be some overhead in making them (non-constant) instance attributes.
+
+Another possibility is to define the constants at the module level.  This should meet almost all requirements except strict inclusion in the class definition proper.  That may be the best route.  If they are not exported they will remain private.
+
+### Section Headers
+
+```js : <<VariableSelector.constants>>=
+const sectionRE = /\[\s*(\S.*)\s*\]/i;
+```
+The section regular expression will fail with filenames including embedded spaces, but none of ours do and we do not allow inclusion of the full path, ruling out directories with embedded spaces as a problem.
+
+For `sectionRE` I tried `/\[\s*(\S.*)(\.csv)?\s*\]/i` but, because the first group is greedy it matched `.csv` and the 2nd group was always empty.  The `/i` in the current regular expression is a holdover from that; I do not think it makes any difference, but I left it for possible future changes.
+
+There is probably some clever way with look-aheads or look-behinds to get a regular expression that will match just the part without the `.csv`, but it is easy to clean it up later and so I didn't bother.
+
+### Separators
+
+```js : <<VariableSelector.constants>>=+
+const sepRE = /(\s*,\s*)|(\s+)/;
+```
+
+The separator regular expression will consider `a,,c` as having 3 fields, one of which is empty.  An earlier version used the simpler `/[,\s]+/`, which would have treated `a,,c` as having 2 fields with `,,` as a single separator.
+
+
+## Create from configuration file
+
+We leave it to the caller to figure out where the configuration file is.  And we retain, at least for now, the design from the test code in which results are stored in `master`.  Ultimately I might want to keep them in this class, but since other information from other sources goes into `master`, including even the data structures built here, maybe it's OK as is.
+
+`nReadLines` below is a reference to a module that is defined globally; I strongly suspect it will need to be defined in this module, but am trying without that definition as an experiment.
+
+```js : <<VariableSelector.construct from configuration file>>=
+constructor(master, configfile) {
+   let i, line, match, csvname, current, v, rawv;
+   const reader = new nReadLines(configfile);
+   while (line=reader.next()) {
+      line = line.toString('ascii');
+      // strip out comment
+      i = line.indexOf("#")
+      if (i==0)
+         // pure comment
+         continue;
+      if (i>0)
+         line = line.slice(0, i);
+
+      <<handle sections>>
+      <<handle pattern lists>>
+   };
+};
+```
+
+### Sections
+
+Here we identify lines that are section headers and interpret those headers.  Because of the final `continue` we move on to the next line, rather than falling through to pattern handling.
+
+At the moment we do not check the entries for validity, though that would probably be a good idea.
+
+We do allow an optional `.csv` at the end of the name, adding it if it is absent.
+
+At the end `csvname` is set to the file name (not the full path) and `master.csvs` has a new entry.
+
+```js : <<handle sections>>=
+if (match = line.match(sectionRE)){
+   // process section heading
+   csvname = match[1];
+   if (csvname.slice(-4).toLowerCase() != ".csv")
+         csvname += ".csv"
+   current = {
+         /* varPatterns has keys that are the raw text entered
+         and values that are regular expressions.
+         If the raw text is matched, the item will be removed.
+         */
+         varPatterns: new Map(),
+   }
+   master.csvs.set(csvname, current);
+   continue;
+};
+```
+
+### Pattern List
+
+Here we turn every pattern in the line into a regular expression and record it.  This implements our special interpretation of `*` at the start or end as being like shell globs.  And it requires that the pattern match the complete variable name, not just part of it, by prefixing it with `^` and suffixing with `$`.  Matching specific variable names will be case insensitive.  **Is the non-RE version of the pattern handled case insensitively?  It probably should be.**
+
+This handles a single line; the pattern list may continue on additional lines.
+
+Writes values to `current` which was created when the section header was encountered, and which is already installed in `master.csvs`.
+
+```js : <<handle pattern lists>>=
+// handle list of variables
+for (rawv of line.split(sepRE)){
+   v = rawv
+   // convert pseudo-shell globs to RE
+   if (v.startsWith("*"))
+         v = "."+v
+   if (v.endsWith("*"))
+         v = v.slice(0, v.length-1)+".*"
+   /* Most v will likely not be regular expressions.
+   But any effort to figure out what is and isn't an RE
+   will burden either the programmer or the user.
+   So we store them both ways.
+   */
+   current.varPatterns.set(rawv, new RegExp("^"+v+"$", "i"));
+}
+```
+
+# Configuration of One CSV Input File
+
+This class organizes all the information about how to interpret a particular kind of CSV file: what headers it has, which of them to record in the database, which patterns to match.
+
+```js : <<CSVConfig.*>>= ./bin/js/v4-csvconfig.js
+module.exports = class CSVConfig {
+   <<CSVConfig.constants>>
+   <<CSVConfig.constructor>>
+   <<CSVConfig.queries>>
+}
+```
+## Fixed Column Definitions
+
+These give the locations of fixed demographic columns.  We could look them up each time, but the locations are fixed.  If we wanted to be fancy we could put them in a prototype to be shared among instances.
+
+The values are `const` but `JavaScript` does not permit that in a class definition.
+
+The demographic columns are most of the index for the data values that go in the database.
+
+Note there are 2 available columns with the year, one giving years since start of simulation and the other calendar year. The choice below is calendar year.  Set `year = 1` to get simulation years, which are 1-based (the two 1's are completely different uses).
+
+`age` and `sex` use numeric codes; their interpretation is discussed elsewhere.
+
+```js : <<CSVConfig.constants>>=
+year = 0;
+age = 2;
+sex = 3;
+```

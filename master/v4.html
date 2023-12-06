@@ -1,0 +1,227 @@
+<html>
+  <head>
+    <link rel="stylesheet" type="text/css" href="./style.css">
+  </head>
+  <body>
+  <p>Version 4 of <code>mccli</code> uses new <code>Fortran</code> code for the Heart Failure model.  As explained more fully in the <a href="../doc/UserGuide">User Guide</a>, the older versions emited a bunch of human-friendly formatted files, which <code>mccli</code> processed using various <code>Python</code> programs.  The new <code>Fortran</code> model continues to emit all those files, and we continue to process them exactly as before, at least for now.  But the new code also emits 3 <code>.csv</code> files with all of the new and most of the old variables.  The code developed here adds the ability to cope with this to <code>mccli</code>.</p>
+<h1>Tools</h1>
+<p>This file, <code>v4.literate</code>, is designed to be processed by the <a href="https://marketplace.visualstudio.com/items?itemName=jesterking.literate"><code>literate</code></a> extension to <a href="https://code.visualstudio.com/">Visual Studio Code</a>.  To work with it you will need to install <code>VSCode</code> and then, from within it, install the <code>literate</code> extension.</p>
+<p>The diagrams for this and other documents were created with <a href="https://sourceforge.net/projects/dia-installer/"><code>Dia</code></a>; if you want to modify them, you will need to install it.</p>
+<p><code>.literate</code> files are in markdown format. That means they should be readable and editable as text files.  It also means they can be nicely formatted; <code>VSCode</code> has commands that let you preview the results, and the preview will update as you make changes.</p>
+<p>See <a href="../doc/Notes.md"><code>Notes.md</code></a> for much other information about the internal workings of the system, including fuller discussion of <a href="../doc/Notes.md#literate"><code>.literate</code></a> files and the <a href="../doc/Notes.md#build-system">build</a> procedures.</p>
+<p>Outputs from running the command <code>Literate: Process</code> in <code>VSCode</code> will be a <code>v4.html</code>, the human friendly description of the program--perhaps what you are reading now--in this directory and code files in <code>bin/js/</code>.  The output files appear below after fragment names that end in the literal <code>.*</code>, e.g., <code>&lt;&lt;section name.*&gt;&gt;= ../bin/js/something.js</code>.</p>
+<h1>Big Picture</h1>
+<p><img src="../doc/ProcessingNew.svg" alt="processing"></p>
+<p>The monte carlo supervisor repeatedly generates random input files for the model, runs the <code>Fortran</code> program to get their implications (i.e., output files), and processes the results.  The code in this document concerns how it processes the new, <code>.csv</code>, output files introduced in version 4 of <code>mccli</code> and shown in the picture above.</p>
+<p>The strategy is to piggy-back on a previously used method of storing results for many simulations by putting them in a database.  We will use the same database, <code>SQLite3</code> in the same format--same tables, column names and indices--as before. <code>bin/python/frmtToData.py</code> created such a database (from an entirely different set of inputs) and <code>frmtReport.py</code>, a GUI, read it to produce human friendly reports.</p>
+<p><code>SQLite3</code> is a simple database: everything is stored in a single file and there is no separate database manager.</p>
+<p>There are hundreds of variables in the 3 <code>.csv</code> files, which feature mostly non-overlapping sets of variables distinguished by their likely use.  It is likely only a relatively limited set will be of interest and so there is a configuration file <code>monte.conf</code> that tells this program which variables from the <code>.csv</code> files to preserve in the database.  The rest will be overwritten with each iteration.</p>
+<p>The database also allows for variables to have fuller descriptions in addition to their names; <code>CVDPM_HF_Variable_List.csv</code> provides that information.  It could potentially be used as a check or restriction on the variables in <code>monte.conf</code>, or even those in the <code>.csv</code> files (which include a header line with variable names) but we aren't doing that now.  It might also provide a quick way to say which variables a given <code>monte.conf</code> had selected (since it can use patterns), but that's not a goal for the first round.</p>
+<p>The old strategy, which remains active for now, was to make copies of each desired output file (and some input files) with iteration numbers appended to the file name.  All the file copying and renaming came with some overhead since disk operations are slower than number-crunching.  That overhead would presumably be even higher with the more extensive outputs of the new model.</p>
+<p>There are a lot choices already embedded in the description above.  The new <code>Fortran</code> code's output formats and names are already wired in, and changing them is likely to be slow.  There would also be some advantages to doing the variable restrictions in <code>Fortran</code> so that it never even writes out (or computes?) variables that aren't needed.  Likewise it might be preferable for the <code>Fortran</code> program to at least have an option to write output to a pipe so the receiving program could take it without it ever needing to touch the disk.</p>
+<p>Turning to the code here, <code>SQLite3</code> is far from the only choice of a data store, and it may yet prove to have sufficient problems with speed or disk space to merit a switch to something else.  Initial testing has shown that it is not very space-efficient compared to pure binary storage of the results; adding information to the database seems to take about as much space as the original <code>.csv</code> files, perhaps because <code>SQLite</code> stores almost everything as a string.</p>
+<p>But we provisionally take all those matters as given, and move to the first high-level choice.</p>
+<h2>First Decision: Language Choice</h2>
+<p>Given that the existing code to work with the database is in <code>Python</code> and that most helper tasks are done by <code>Python</code> programs, not to mention the current author's familiarity and fondness for the language, it at first seemed the obvious choice.</p>
+<p>However, using it would come at a cost.  Our <code>Python</code> programs are mostly one-shot affairs.  While this problem could be handled that way, it seems more natural and efficient to have a long-running task.  And there are coordination problems: the <code>Fortran</code> outputs do not include the iteration number because the <code>Fortran</code> program has no idea it's in a monte carlo simulation.  But the database requires a simulation number.  So that informtion would have to get from the <code>Javascript</code> simulation supervisor to the process gathering input.  And the program that collects the input has to tell the supervisor when it is safe to proceed with the next simulation.</p>
+<p>So the end result seemed to be a lot of coordination problems, not to mention managing a long-running <code>Python</code> process.</p>
+<p>All of which led me to decide, on balance, to keep these data gathering functions within the <code>Javascript</code> system that manages the simulations.  Which, of course, came with it's own set of problems (e.g., neither <code>JavaScript</code> nor <code>Node</code> seem to have a native &quot;<a href="https://geshan.com.np/blog/2021/10/nodejs-read-file-line-by-line/">read one line of a file</a>&quot; command!).</p>
+<h2>Splitting the Problem Up</h2>
+<p>There are 3 kinds of input files:</p>
+<ol>
+<li><code>.csv</code> files with the data, which will be written by the <code>Fortran</code> program and read by the code below repeatedly</li>
+<li><code>monte.conf</code> specifying which variables in the <code>.csv</code> files to preserve in the database</li>
+<li>A file with a codebook giving variable names and descriptions, currently called <code>CVDPM_HF_Variable_List.csv</code>.</li>
+</ol>
+<p>The last 2 only need to be read once at the start, given the decision to have a persistent process managing the first.</p>
+<p>We will divide the code into classes, with one for each kind of input.  Reading the files is not too challenging, but the classes will also manage interpreting them as the data are processed.</p>
+<p>There is one output file holding the database; the class that reads the <code>.csv</code> files is also responsible for writing to it.</p>
+<h1>Some Notes on <code>JavaScript</code></h1>
+<h2>Module Systems</h2>
+<p><code>JavaScript</code> running under <code>Node.js</code> has 2 module systems, the original <a href="https://nodejs.org/dist/latest-v20.x/docs/api/modules.html"><code>CommonJS</code></a> used by <code>Node.js</code> and the newer and now standardized <a href="https://nodejs.org/dist/latest-v20.x/docs/api/esm.html"><code>ES6</code></a> (ECMAScript v6), now also available in <code>Node.js</code>.  Using them employs different syntaxes; modules built for one generally don't work in the other, and there are a host of differences in the semantics of each. The 2 coexist uneasily, and it's simplest to work with one or the other.</p>
+<p><code>mccli</code> was developed using <code>CommonJS</code> and most of the modules it uses are available in that form and may not be available as <code>ES6</code>.  So this code will continue to use <code>CommonJS</code> modules.</p>
+<p>That said, <code>ES6</code> is probably the wave of the future, and modules are likely to be increasingly available in that format.  One of the key modules <code>mccli</code> uses, <code>inquirer</code>, is <em>only</em> available in <code>ES6</code> format for recent releases, leading this package to restrict it to earlier versions in <code>package.json</code></p>
+<p>Each file is a module, and it seems fairly conventional to put a class definition in a file so that importing the file creates the class.</p>
+<p>I haven't been able to find a clear statement about namespaces for <code>CommonJS</code> modules, in particular whether a module needs to import (via <code>require</code>) a module already present in the parent.This <a href="https://developer.mozilla.org/en-US/docs/Web/JavaScript/Guide/Modules#other_differences_between_modules_and_standard_scripts">discussion</a> of [<code>ES6</code>] seems pretty clear that the import must be done within the module, saying that only global variables are accessible from the module.  But aren't imported modules global vaiables?</p>
+<p>At any rate, redundant imports should be cheap since the results are cached.</p>
+<h2>Classes and Types</h2>
+<p><code>JavaScript</code> now has a syntax for declaring classes, which we will use.  However, <code>JavaScript</code> <code>Object</code>s are really all of the same type, and <code>JavaScript</code> itself barely has types: variables and functions are not declared with types.</p>
+<p><code>JavaScript</code> does have a prototype system in which one object--not class--serves as a prototype for another, and that is what the class syntax uses.</p>
+<p><a href="https://www.typescriptlang.org/"><code>TypeScript</code></a> adds strong typing to <code>JavaScript</code>.  <code>Microsoft</code> developed it and seems keen on it; for example, <code>VSCode</code> is written in <code>TypeScript</code>.</p>
+<h2>Synchronicity <img src="https://upload.wikimedia.org/wikipedia/ru/thumb/7/7f/Police-album-synchronicity.jpg/274px-Police-album-synchronicity.jpg" alt="album"></h2>
+<p><code>Node.js</code>'s fundamental execution model is <a href="https://nodejs.org/en/docs/guides/event-loop-timers-and-nexttick/">asynchronous</a>: function calls usually trigger some activity but return immediately, before it is done.  This was done to enhance overall responsiveness, e.g., for web servers handling many separate requests.  Many actions--getting a response from a remote user, accessing a local file, or querying a database--take some time to complete and that time can be spent doing something else.</p>
+<p>Since <code>mccli</code> could in principle run multiple simulations simultaneously this seems like a natural fit.  Unfortunately, the current design of the <code>Fortran</code> model, which has many hard-coded file names and locations, makes it very difficult to run more than one copy at a time.  And many actions, such as creating a directory and then putting files in it, are inherently serial.</p>
+<p>So <code>mccli</code> uses the synchronous version of a lot of calls, particularly file-oriented ones, and the overall design is synchronous.  For example, one would not want to process the outputs of the <code>Fortran</code> program before it completes.</p>
+<p>Practical implications:</p>
+<ol>
+<li>If you're used to a conventional, synchronous, language, be aware that in <code>JavaScript</code> things may happen asynchronously unless you take special steps, like calling variant function names or using <code>JavaScript</code>'s native sequencing constructs, to prevent it.</li>
+<li>If some operations can run in parallel, consider doing so.  It's easier in <code>JavaScript</code> than in most other languages.</li>
+</ol>
+<h1><code>monte.conf</code></h1>
+<p>The first input file we consider is <code>monte.conf</code> which specifies which variables to preserve across simulations.  It uses sections <code>[filename]</code> for the 3 possible <code>.csv</code> files and free-form (whitespace or <code>,</code> or mixes of them) list of patterns to match specific variable names.  The patterns can be a variable name; a shell-glob style <code>*stuff</code>, <code>stuff*</code>, or <code>*stuff*</code> to match any variables ending, starting or containing <code>stuff</code> in the name; or a <code>JavaScript</code> regular expression.  See the <a href="../doc/UserGuide.md">User Guide</a> for the complete description.</p>
+<p>All patterns get <code>^</code> added at the start and <code>$</code> at the end, i.e., they must match the entire variable name and it is pointless to add those things in the input text.  Similarly, do <em>not</em> include <code>/</code> at the start and end of the pattern.</p>
+<p><code>*</code> at the beginning or end is converted to <code>.*</code> to match the semantics given above, i.e., to convert from a shell glob to a regular expression. <code>*</code> in the middle is a regular expression quantifier.</p>
+<p>The class's main job is to read in and parse the file and then, given a variable name, report whether it is of interest.</p>
+<p>The rest of the system will only ask once for each variable name, which will permit some optimizations.</p>
+<h2>Roads Not Taken</h2>
+<p>Here are some design decisions reflected in the current approach.</p>
+<h3>Missing file</h3>
+<p>A missing <code>monte.conf</code> could mean to take all variables, ignore all variables, or use some pre-specified list of variables.  At the moment, the system throws an error if the file is missing.</p>
+<p>If <code>monte.conf</code> has no section for a particular file, <em>all</em> variables in that <code>.csv</code> file will be ignored.</p>
+<h3><code>JSON</code></h3>
+<p>Many of the other input files to <code>mc</code> use <code>JSON</code>, and it would be possible to use it for this purpose to.  That would have the potential advantage of re-using an existing configuration file.</p>
+<p>The syntax struck me as unnessarily complex for the task, and so I use a standard <code>.ini</code> file approach.</p>
+<h3>Allow full paths in section headers</h3>
+<p>Allowing <code>[pathA/pathB/file]</code> would provide extra flexibility, which could aid testing.  However, the location is wired into the <code>Fortran</code> program and may not exist when the user is setting things up.  This class does not know where the files are.</p>
+<p>The specification does treat the <code>.csv</code> extension as optional in the section headers.</p>
+<h3>Queries</h3>
+<p>It might be helpful to users to be able to get a concrete list of the variables that <code>monte.conf</code> was picking out.  For now, that's a possible future enhancement.</p>
+<h3>Skip the file sections</h3>
+<p>The input could just be a list of variable names since they are not expected to be duplicated across <code>.csv</code> files (except for the key identifiers).  I left it this way because it seemed to fit better with the way the users thought of things.  And it makes it easier to tell what <code>.csv</code> files can be skipped.</p>
+<h3>Case sensitivity</h3>
+<p>The matching procedure ignores case on the theory that differences in case are accidental and should not prevent a match.</p>
+<h2>Top Level Definition of <code>VariableSelector</code></h2>
+<div class="codefragment">
+<div class="fragmentname">&lt;&lt;Variable Selector class.*&gt;&gt;= ./bin/js/v4-VariableSelector.js</div>
+<div class="code">
+<pre><code><span class="literate-tag-name">&lt;&lt;VariableSelector.constants&gt;&gt;</span>
+<span class="hljs-variable language_">module</span>.<span class="hljs-property">exports</span> = <span class="hljs-keyword">class</span> <span class="hljs-title class_">VariableSelector</span> {
+   <span class="literate-tag-name">&lt;&lt;VariableSelector.construct from configuration file&gt;&gt;</span>
+}
+</code></pre>
+
+</div>
+</div><h2>Regular Expressions</h2>
+<p>Define some patterns to help parsing the file.</p>
+<p>I looked for the best way to include these in the class definition. <code>static</code> permits definitions to be done once, but they are not accessible from instances--or at least not accessible without prefixing them with the class name.  Which would get tedious.</p>
+<p>Second, one can not use <code>const</code> for a class instance attribute, though it has been proposed for <a href="https://stackoverflow.com/a/32647583/4409451"><code>ES7</code></a>.</p>
+<p>Apparently the &quot;constants&quot; get instantiated with each instance, and so there may be some overhead in making them (non-constant) instance attributes.</p>
+<p>Another possibility is to define the constants at the module level.  This should meet almost all requirements except strict inclusion in the class definition proper.  That may be the best route.  If they are not exported they will remain private.</p>
+<h3>Section Headers</h3>
+<div class="codefragment">
+<div class="fragmentname">&lt;&lt;VariableSelector.constants&gt;&gt;= </div>
+<div class="code">
+<pre><code><span class="hljs-keyword">const</span> sectionRE = <span class="hljs-regexp">/\[\s*(\S.*)\s*\]/i</span>;
+</code></pre>
+
+</div>
+</div><p>The section regular expression will fail with filenames including embedded spaces, but none of ours do and we do not allow inclusion of the full path, ruling out directories with embedded spaces as a problem.</p>
+<p>For <code>sectionRE</code> I tried <code>/\[\s*(\S.*)(\.csv)?\s*\]/i</code> but, because the first group is greedy it matched <code>.csv</code> and the 2nd group was always empty.  The <code>/i</code> in the current regular expression is a holdover from that; I do not think it makes any difference, but I left it for possible future changes.</p>
+<p>There is probably some clever way with look-aheads or look-behinds to get a regular expression that will match just the part without the <code>.csv</code>, but it is easy to clean it up later and so I didn't bother.</p>
+<h3>Separators</h3>
+<div class="codefragment">
+<div class="fragmentname">&lt;&lt;VariableSelector.constants&gt;&gt;=+ </div>
+<div class="code">
+<pre><code><span class="hljs-keyword">const</span> sepRE = <span class="hljs-regexp">/(\s*,\s*)|(\s+)/</span>;
+</code></pre>
+
+</div>
+</div><p>The separator regular expression will consider <code>a,,c</code> as having 3 fields, one of which is empty.  An earlier version used the simpler <code>/[,\s]+/</code>, which would have treated <code>a,,c</code> as having 2 fields with <code>,,</code> as a single separator.</p>
+<h2>Create from configuration file</h2>
+<p>We leave it to the caller to figure out where the configuration file is.  And we retain, at least for now, the design from the test code in which results are stored in <code>master</code>.  Ultimately I might want to keep them in this class, but since other information from other sources goes into <code>master</code>, including even the data structures built here, maybe it's OK as is.</p>
+<p><code>nReadLines</code> below is a reference to a module that is defined globally; I strongly suspect it will need to be defined in this module, but am trying without that definition as an experiment.</p>
+<div class="codefragment">
+<div class="fragmentname">&lt;&lt;VariableSelector.construct from configuration file&gt;&gt;= </div>
+<div class="code">
+<pre><code><span class="hljs-title function_">constructor</span>(<span class="hljs-params">master, configfile</span>) {
+   <span class="hljs-keyword">let</span> i, line, match, csvname, current, v, rawv;
+   <span class="hljs-keyword">const</span> reader = <span class="hljs-keyword">new</span> <span class="hljs-title function_">nReadLines</span>(configfile);
+   <span class="hljs-keyword">while</span> (line=reader.<span class="hljs-title function_">next</span>()) {
+      line = line.<span class="hljs-title function_">toString</span>(<span class="hljs-string">&#x27;ascii&#x27;</span>);
+      <span class="hljs-comment">// strip out comment</span>
+      i = line.<span class="hljs-title function_">indexOf</span>(<span class="hljs-string">&quot;#&quot;</span>)
+      <span class="hljs-keyword">if</span> (i==<span class="hljs-number">0</span>)
+         <span class="hljs-comment">// pure comment</span>
+         <span class="hljs-keyword">continue</span>;
+      <span class="hljs-keyword">if</span> (i&gt;<span class="hljs-number">0</span>)
+         line = line.<span class="hljs-title function_">slice</span>(<span class="hljs-number">0</span>, i);
+
+      <span class="literate-tag-name">&lt;&lt;handle sections&gt;&gt;</span>
+      <span class="literate-tag-name">&lt;&lt;handle pattern lists&gt;&gt;</span>
+   };
+};
+</code></pre>
+
+</div>
+</div><h3>Sections</h3>
+<p>Here we identify lines that are section headers and interpret those headers.  Because of the final <code>continue</code> we move on to the next line, rather than falling through to pattern handling.</p>
+<p>At the moment we do not check the entries for validity, though that would probably be a good idea.</p>
+<p>We do allow an optional <code>.csv</code> at the end of the name, adding it if it is absent.</p>
+<p>At the end <code>csvname</code> is set to the file name (not the full path) and <code>master.csvs</code> has a new entry.</p>
+<div class="codefragment">
+<div class="fragmentname">&lt;&lt;handle sections&gt;&gt;= </div>
+<div class="code">
+<pre><code><span class="hljs-keyword">if</span> (match = line.<span class="hljs-title function_">match</span>(sectionRE)){
+   <span class="hljs-comment">// process section heading</span>
+   csvname = match[<span class="hljs-number">1</span>];
+   <span class="hljs-keyword">if</span> (csvname.<span class="hljs-title function_">slice</span>(-<span class="hljs-number">4</span>).<span class="hljs-title function_">toLowerCase</span>() != <span class="hljs-string">&quot;.csv&quot;</span>)
+         csvname += <span class="hljs-string">&quot;.csv&quot;</span>
+   current = {
+         <span class="hljs-comment">/* varPatterns has keys that are the raw text entered
+         and values that are regular expressions.
+         If the raw text is matched, the item will be removed.
+         */</span>
+         <span class="hljs-attr">varPatterns</span>: <span class="hljs-keyword">new</span> <span class="hljs-title class_">Map</span>(),
+   }
+   master.<span class="hljs-property">csvs</span>.<span class="hljs-title function_">set</span>(csvname, current);
+   <span class="hljs-keyword">continue</span>;
+};
+</code></pre>
+
+</div>
+</div><h3>Pattern List</h3>
+<p>Here we turn every pattern in the line into a regular expression and record it.  This implements our special interpretation of <code>*</code> at the start or end as being like shell globs.  And it requires that the pattern match the complete variable name, not just part of it, by prefixing it with <code>^</code> and suffixing with <code>$</code>.  Matching specific variable names will be case insensitive.  <strong>Is the non-RE version of the pattern handled case insensitively?  It probably should be.</strong></p>
+<p>This handles a single line; the pattern list may continue on additional lines.</p>
+<p>Writes values to <code>current</code> which was created when the section header was encountered, and which is already installed in <code>master.csvs</code>.</p>
+<div class="codefragment">
+<div class="fragmentname">&lt;&lt;handle pattern lists&gt;&gt;= </div>
+<div class="code">
+<pre><code><span class="hljs-comment">// handle list of variables</span>
+<span class="hljs-keyword">for</span> (rawv <span class="hljs-keyword">of</span> line.<span class="hljs-title function_">split</span>(sepRE)){
+   v = rawv
+   <span class="hljs-comment">// convert pseudo-shell globs to RE</span>
+   <span class="hljs-keyword">if</span> (v.<span class="hljs-title function_">startsWith</span>(<span class="hljs-string">&quot;*&quot;</span>))
+         v = <span class="hljs-string">&quot;.&quot;</span>+v
+   <span class="hljs-keyword">if</span> (v.<span class="hljs-title function_">endsWith</span>(<span class="hljs-string">&quot;*&quot;</span>))
+         v = v.<span class="hljs-title function_">slice</span>(<span class="hljs-number">0</span>, v.<span class="hljs-property">length</span>-<span class="hljs-number">1</span>)+<span class="hljs-string">&quot;.*&quot;</span>
+   <span class="hljs-comment">/* Most v will likely not be regular expressions.
+   But any effort to figure out what is and isn&#x27;t an RE
+   will burden either the programmer or the user.
+   So we store them both ways.
+   */</span>
+   current.<span class="hljs-property">varPatterns</span>.<span class="hljs-title function_">set</span>(rawv, <span class="hljs-keyword">new</span> <span class="hljs-title class_">RegExp</span>(<span class="hljs-string">&quot;^&quot;</span>+v+<span class="hljs-string">&quot;$&quot;</span>, <span class="hljs-string">&quot;i&quot;</span>));
+}
+</code></pre>
+
+</div>
+</div><h1>Configuration of One CSV Input File</h1>
+<p>This class organizes all the information about how to interpret a particular kind of CSV file: what headers it has, which of them to record in the database, which patterns to match.</p>
+<div class="codefragment">
+<div class="fragmentname">&lt;&lt;CSVConfig.*&gt;&gt;= ./bin/js/v4-csvconfig.js</div>
+<div class="code">
+<pre><code><span class="hljs-variable language_">module</span>.<span class="hljs-property">exports</span> = <span class="hljs-keyword">class</span> <span class="hljs-title class_">CSVConfig</span> {
+   <span class="literate-tag-name">&lt;&lt;CSVConfig.constants&gt;&gt;</span>
+   <span class="literate-tag-name">&lt;&lt;CSVConfig.constructor&gt;&gt;</span>
+   <span class="literate-tag-name">&lt;&lt;CSVConfig.queries&gt;&gt;</span>
+}
+</code></pre>
+
+</div>
+</div><h2>Fixed Column Definitions</h2>
+<p>These give the locations of fixed demographic columns.  We could look them up each time, but the locations are fixed.  If we wanted to be fancy we could put them in a prototype to be shared among instances.</p>
+<p>The values are <code>const</code> but <code>JavaScript</code> does not permit that in a class definition.</p>
+<p>The demographic columns are most of the index for the data values that go in the database.</p>
+<p>Note there are 2 available columns with the year, one giving years since start of simulation and the other calendar year. The choice below is calendar year.  Set <code>year = 1</code> to get simulation years, which are 1-based (the two 1's are completely different uses).</p>
+<p><code>age</code> and <code>sex</code> use numeric codes; their interpretation is discussed elsewhere.</p>
+<div class="codefragment">
+<div class="fragmentname">&lt;&lt;CSVConfig.constants&gt;&gt;= </div>
+<div class="code">
+<pre><code>year = <span class="hljs-number">0</span>;
+age = <span class="hljs-number">2</span>;
+sex = <span class="hljs-number">3</span>;
+</code></pre>
+
+</div>
+</div>
+  </body>
+</html>

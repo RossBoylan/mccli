@@ -1,6 +1,6 @@
 These are internal notes for developers:  
    1. [General](#general-notes-for-contributors) Orientation to those wishing to build or modify the source code.
-   2. [What files](#notes-on-internal-use-of-files) `montecarlo.py`, `runSims.js` and the `Fortran` model use; the motivation is to support testing.  This is *not* an exhaustive list of all the files used by the `Fortran` model.
+   2. [What files](#notes-on-internal-use-of-files)  `montecarlo.py`, `runSims.js`, [stuff](#literate), and the `Fortran` model use; the motivation is to support testing.  This is *not* an exhaustive list of all the files used by the `Fortran` model.
    3. [Heart Failure](#heart-failure) (likely duplicates what's in User Guide)
    4. [Other](#other-notes) Notes on operation of simulation
    5. Notes on the [design of random sampling](#sampling-for-inp-and-dat-files), namely that sampling from `.inp` and `.dat` files uses different code paths and logic.
@@ -57,6 +57,9 @@ one of the basic inputs to the monte-carlo simulation.  Automatically installed 
 This directory includes user documentation and internal notes.  In general the `.md` and `.dia` files are the masters, to which edits should be made, while `.svg`, `.pdf` and `.html` files are derived from them.  Among the figures, `Process.dia` is mostly the master of the other 2 `Process*.dia` files (created by removing some elements in `Process.dia`), though I think I added a bit to `ProcessNew.dia`.   After conversion to `.svg` the figures appear in `UserGuide`.
 
 As is typical, there is an issue about whether only the original sources or the derived files should go into version control.  The purist solution only puts the originals under version control.  The problem with that strategy is that it makes life harder for people, including users, who just want to see the final product.  In the case of `.literate` files it means even someone who wants to see the code would need to install `VSCode` and the `literate` plugin to get anything.  I have so far adopted a mixed approach, leaving `.pdf`'s out of version control and putting most other things in.  Building from the originals is particularly onerous because, as the next section reveals, there is not an automated build system.
+
+### `master/`
+This directory holds the `.literate` files that are the masters for some of the code--at the moment only `bin/js/v4*.js`.  They also include the human documentation generated from the `.literate` files as `.html`.  Note that even the "human" documentation is for developers rather than ordinary users.  Not that developers aren't human, dear reader!
 
 ## Build System
 There isn't one, though maybe there should be.  The core of the application has been a bunch of `.js` and `.py` files that had no need to be built.  But things are getting more complex.  Typically, the developer will need to do these steps:
@@ -223,6 +226,8 @@ The `python-shell` module advertises much better error reporting, but I've never
 Created a `doc/` subdirectory and moved much of the recently created documentation to it.
 
 Added general instructions for contributors and a table of contents to `Notes.md`.
+
+Created `master/` subdirectory to hold `.literate` files, part of the introduction of literate programming tools into the system as discussed in `Notes.md`, `literate.md`, and `v4.literate`.  The requires `VSCode` and its `literate` extension for the full development cycle.   See `literate.md` for the pros and cons of various alternatives.
 
 2022-09-14
 ----------

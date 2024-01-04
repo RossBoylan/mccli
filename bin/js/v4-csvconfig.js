@@ -3,5 +3,7 @@ module.exports = class CSVConfig {
    age = 2;
    sex = 3;
    <<CSVConfig.constructor>>
-   <<CSVConfig.queries>>
+   <<CSVConfig pattern handling>>
+   <<CSVConfig codebook handling>>
+   <<CSVConfig csv input handling>>
 }

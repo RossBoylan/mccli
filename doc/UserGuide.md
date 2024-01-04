@@ -70,7 +70,7 @@ That means that from the `targets_output.csv` file keep the information tpoprx a
 
 Anything from the first `#` on the line to the end is considered a comment and ignored.
 
-In general, the file consists of sections that begin with `[]` around a file name, with or without the `.csv`.  The program knows what directory to look in.
+In general, the file consists of sections that begin with `[]` around a file name, with or without the `.csv`.  The program knows what directory to look in.  Explicitly including the extension, `.csv` or `.CSV` is safest, matching the actual case of the file.  Otherwise, the  program will add `.csv` which will likely work on Windows but might fail on `*Nix` systems like Mac or Linux.
 
 Within each section is a list of variables or patterns.  Each variable is separated from the others by whitespace (1 or more space, tab or newlines) or a comma with optional whitespace around it.
 

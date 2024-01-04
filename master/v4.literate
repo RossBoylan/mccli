@@ -10,7 +10,7 @@ The diagrams for this and other documents were created with [`Dia`](https://sour
 
 See [`Notes.md`](../doc/Notes.md) for much other information about the internal workings of the system, including fuller discussion of [`.literate`](../doc/Notes.md#literate) files and the [build](../doc/Notes.md#build-system) procedures.
 
-Outputs from running the command `Literate: Process` in `VSCode` will be a `v4.html`, the human friendly description of the program--perhaps what you are reading now--in this directory and code files in `bin/js/`.  The output files appear below after fragment names that end in the literal `.*`, e.g., `<<section name.*>>= ../bin/js/something.js`.
+Outputs from running the command `Literate: Process` in `VSCode` will be a `v4.html`, the human friendly description of the program--perhaps what you are reading now--in this directory and code files in `bin/js/`.  The output files appear below after fragment names that end in the literal `.*`, e.g., `<<section name.*>>= ./bin/js/something.js`.
 
 # Big Picture
 
@@ -42,7 +42,7 @@ However, using it would come at a cost.  Our `Python` programs are mostly one-sh
 
 So the end result seemed to be a lot of coordination problems, not to mention managing a long-running `Python` process.
 
-All of which led me to decide, on balance, to keep these data gathering functions within the `Javascript` system that manages the simulations.  Which, of course, came with it's own set of problems (e.g., neither `JavaScript` nor `Node` seem to have a native "[read one line of a file](https://geshan.com.np/blog/2021/10/nodejs-read-file-line-by-line/)" command!).
+All of which led me to decide, on balance, to keep these data gathering functions within the `Javascript` system that manages the simulations.  Which, of course, came with its own set of problems (e.g., neither `JavaScript` nor `Node` seem to have a native "[read one line of a file](https://geshan.com.np/blog/2021/10/nodejs-read-file-line-by-line/)" command!).
 
 ## Splitting the Problem Up
 
@@ -77,7 +77,7 @@ At any rate, redundant imports should be cheap since the results are cached.
 
 `JavaScript` now has a syntax for declaring classes, which we will use.  However, `JavaScript` `Object`s are really all of the same type, and `JavaScript` itself barely has types: variables and functions are not declared with types.
 
-`JavaScript` does have a prototype system in which one object--not class--serves as a prototype for another, and that is what the class syntax uses.
+`JavaScript` does have a prototype system in which one object--not class--serves as a prototype for another. The class system is actually just a syntactic gloss on the prototype sy.
 
 [`TypeScript`](https://www.typescriptlang.org/) adds strong typing to `JavaScript`.  `Microsoft` developed it and seems keen on it; for example, `VSCode` is written in `TypeScript`.
 
@@ -162,13 +162,12 @@ Another possibility is to define the constants at the module level.  This should
 ### Section Headers
 
 ```js : <<VariableSelector.constants>>=
-const sectionRE = /\[\s*(\S.*)\s*\]/i;
+const sectionRE = /\[\s*((\S.*\.csv)|(\S.*)(?<=\S))\s*\]/i;
 ```
-The section regular expression will fail with filenames including embedded spaces, but none of ours do and we do not allow inclusion of the full path, ruling out directories with embedded spaces as a problem.
 
-For `sectionRE` I tried `/\[\s*(\S.*)(\.csv)?\s*\]/i` but, because the first group is greedy it matched `.csv` and the 2nd group was always empty.  The `/i` in the current regular expression is a holdover from that; I do not think it makes any difference, but I left it for possible future changes.
+For `sectionRE` I tried `/\[\s*(\S.*)(\.csv)?\s*\]/i` but, because the first group is greedy it matched `.csv` and the 2nd group was always empty.
 
-There is probably some clever way with look-aheads or look-behinds to get a regular expression that will match just the part without the `.csv`, but it is easy to clean it up later and so I didn't bother.
+Filenames ending in `.csv` will match either side of the `|`, but it seems to match the first if it can.  So if the filename ends in `.csv` it will match the 2nd capture group, otherwise the third.
 
 ### Separators
 
@@ -211,7 +210,7 @@ Here we identify lines that are section headers and interpret those headers.  Be
 
 At the moment we do not check the entries for validity, though that would probably be a good idea.
 
-We do allow an optional `.csv` at the end of the name, adding it if it is absent.
+We do allow an optional `.csv` at the end of the name, adding it if it is absent.  That may fail on case-sensitive file systems, typically `Unix` types (Mac, Linux, BSD).
 
 At the end `csvname` is set to the file name (not the full path) and `master.csvs` has a new entry.
 
@@ -219,7 +218,7 @@ At the end `csvname` is set to the file name (not the full path) and `master.csv
 if (match = line.match(sectionRE)){
    // process section heading
    csvname = match[1];
-   if (csvname.slice(-4).toLowerCase() != ".csv")
+   if (match[3]) // pattern without .csv
          csvname += ".csv"
    current = {
          /* varPatterns has keys that are the raw text entered
@@ -267,7 +266,9 @@ This class organizes all the information about how to interpret a particular kin
 module.exports = class CSVConfig {
    <<CSVConfig.constants>>
    <<CSVConfig.constructor>>
-   <<CSVConfig.queries>>
+   <<CSVConfig pattern handling>>
+   <<CSVConfig codebook handling>>
+   <<CSVConfig csv input handling>>
 }
 ```
 ## Fixed Column Definitions
@@ -287,3 +288,28 @@ year = 0;
 age = 2;
 sex = 3;
 ```
+
+## Constructor
+
+We start with only the file name from the `monte.conf` section header.  At this point there may not be any actual output files to rely on.  There are a number of design issues to consider.
+
+### Case
+
+It would be nice to convert filenames to a standard case to ease matching.  But file systems vary in case sensitivity: some are case sensitive (Unix) while others aren't (MS-Windows usually, though it is case-preserving).  A case-preserved name may fail to match the actual file name.
+
+### Extension
+
+We (almost) know the files will all end with a `.csv`, and so I originally said this could be omited.  But if the file system is case-sensitive, adding `.csv` to the name won't  work if the actual end is `.CSV`.
+
+The simplest approach, programmatically, is simply to require the user to specify the file name, including the extension, in the appropriate case.  The simplest approach for the user is for the program to work out the extension, and for that reason that was the original behavior of my test code and documentation in the User Guide.  Despite the fact that adding `.csv` will work fine on MS-Windows, even if the real extension is `.CSV`, supporting it in general is a mess.
+
+For now, we recommend providing the file extension and warn of possible problems if the real files don't end with lowercase `.csv` on case-sensitive file systems.  This is asking a fair amount of the user since the real files don't even exist until the run starts.  Also we are not requiring the user to know the directory they are in.  Since they are produced by our `Fortran` code we should know the extension case, but the vagaries of different libraries and operating systems still imply some uncertainty about what we'll get.
+
+### Validation
+
+A `monte.conf` may include a section header that is incorrect--misspelled, or in the wrong case.  As noted above, there may not be any real files to check at the start.  We could just wait until their actual use proves impossible, but that seems annoying for the users.
+
+**To Do** Do a case insensitive match to the 3 possible legitimate values and report an error immediately if it fails.
+
+**To Do** This will not catch case-only differences.  Should they, or various other problems arise, we should abort the simulations, rather than letting the same error occur for each one.
+

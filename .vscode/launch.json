@@ -29,6 +29,13 @@
             ],
             "console": "integratedTerminal",
             "cwd": "J:\\source\\repos\\mccli\\Mod92_YLMC_09292022"
+        },
+        {
+            "type": "node",
+            "request": "launch",
+            "name": "Node for focus file",
+            "program": "${file}",
+            "console": "integratedTerminal"
         }
     ]
 }

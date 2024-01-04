@@ -1,15 +1,19 @@
+<!DOCTYPE html>
 <html>
-  <head>
-    <link rel="stylesheet" type="text/css" href="./style.css">
-  </head>
-  <body>
-  <p>Version 4 of <code>mccli</code> uses new <code>Fortran</code> code for the Heart Failure model.  As explained more fully in the <a href="../doc/UserGuide">User Guide</a>, the older versions emited a bunch of human-friendly formatted files, which <code>mccli</code> processed using various <code>Python</code> programs.  The new <code>Fortran</code> model continues to emit all those files, and we continue to process them exactly as before, at least for now.  But the new code also emits 3 <code>.csv</code> files with all of the new and most of the old variables.  The code developed here adds the ability to cope with this to <code>mccli</code>.</p>
+<head>
+  <meta name="description" content="A Literate Program written with the Literate Programming vscode extension by Nathan 'jesterKing' Letwory and contributors" />
+  <meta property="og:description" content="A Literate Program written with the Literate Programming vscode extension by Nathan 'jesterKing' Letwory and contributors" />
+  <link rel="stylesheet" type="text/css" href="./style.css">
+  <meta name="author" content="">
+</head>
+<body>
+<p>Version 4 of <code>mccli</code> uses new <code>Fortran</code> code for the Heart Failure model.  As explained more fully in the <a href="../doc/UserGuide">User Guide</a>, the older versions emited a bunch of human-friendly formatted files, which <code>mccli</code> processed using various <code>Python</code> programs.  The new <code>Fortran</code> model continues to emit all those files, and we continue to process them exactly as before, at least for now.  But the new code also emits 3 <code>.csv</code> files with all of the new and most of the old variables.  The code developed here adds the ability to cope with this to <code>mccli</code>.</p>
 <h1>Tools</h1>
 <p>This file, <code>v4.literate</code>, is designed to be processed by the <a href="https://marketplace.visualstudio.com/items?itemName=jesterking.literate"><code>literate</code></a> extension to <a href="https://code.visualstudio.com/">Visual Studio Code</a>.  To work with it you will need to install <code>VSCode</code> and then, from within it, install the <code>literate</code> extension.</p>
 <p>The diagrams for this and other documents were created with <a href="https://sourceforge.net/projects/dia-installer/"><code>Dia</code></a>; if you want to modify them, you will need to install it.</p>
 <p><code>.literate</code> files are in markdown format. That means they should be readable and editable as text files.  It also means they can be nicely formatted; <code>VSCode</code> has commands that let you preview the results, and the preview will update as you make changes.</p>
 <p>See <a href="../doc/Notes.md"><code>Notes.md</code></a> for much other information about the internal workings of the system, including fuller discussion of <a href="../doc/Notes.md#literate"><code>.literate</code></a> files and the <a href="../doc/Notes.md#build-system">build</a> procedures.</p>
-<p>Outputs from running the command <code>Literate: Process</code> in <code>VSCode</code> will be a <code>v4.html</code>, the human friendly description of the program--perhaps what you are reading now--in this directory and code files in <code>bin/js/</code>.  The output files appear below after fragment names that end in the literal <code>.*</code>, e.g., <code>&lt;&lt;section name.*&gt;&gt;= ../bin/js/something.js</code>.</p>
+<p>Outputs from running the command <code>Literate: Process</code> in <code>VSCode</code> will be a <code>v4.html</code>, the human friendly description of the program--perhaps what you are reading now--in this directory and code files in <code>bin/js/</code>.  The output files appear below after fragment names that end in the literal <code>.*</code>, e.g., <code>&lt;&lt;section name.*&gt;&gt;= ./bin/js/something.js</code>.</p>
 <h1>Big Picture</h1>
 <p><img src="../doc/ProcessingNew.svg" alt="processing"></p>
 <p>The monte carlo supervisor repeatedly generates random input files for the model, runs the <code>Fortran</code> program to get their implications (i.e., output files), and processes the results.  The code in this document concerns how it processes the new, <code>.csv</code>, output files introduced in version 4 of <code>mccli</code> and shown in the picture above.</p>
@@ -25,7 +29,7 @@
 <p>Given that the existing code to work with the database is in <code>Python</code> and that most helper tasks are done by <code>Python</code> programs, not to mention the current author's familiarity and fondness for the language, it at first seemed the obvious choice.</p>
 <p>However, using it would come at a cost.  Our <code>Python</code> programs are mostly one-shot affairs.  While this problem could be handled that way, it seems more natural and efficient to have a long-running task.  And there are coordination problems: the <code>Fortran</code> outputs do not include the iteration number because the <code>Fortran</code> program has no idea it's in a monte carlo simulation.  But the database requires a simulation number.  So that informtion would have to get from the <code>Javascript</code> simulation supervisor to the process gathering input.  And the program that collects the input has to tell the supervisor when it is safe to proceed with the next simulation.</p>
 <p>So the end result seemed to be a lot of coordination problems, not to mention managing a long-running <code>Python</code> process.</p>
-<p>All of which led me to decide, on balance, to keep these data gathering functions within the <code>Javascript</code> system that manages the simulations.  Which, of course, came with it's own set of problems (e.g., neither <code>JavaScript</code> nor <code>Node</code> seem to have a native &quot;<a href="https://geshan.com.np/blog/2021/10/nodejs-read-file-line-by-line/">read one line of a file</a>&quot; command!).</p>
+<p>All of which led me to decide, on balance, to keep these data gathering functions within the <code>Javascript</code> system that manages the simulations.  Which, of course, came with its own set of problems (e.g., neither <code>JavaScript</code> nor <code>Node</code> seem to have a native &quot;<a href="https://geshan.com.np/blog/2021/10/nodejs-read-file-line-by-line/">read one line of a file</a>&quot; command!).</p>
 <h2>Splitting the Problem Up</h2>
 <p>There are 3 kinds of input files:</p>
 <ol>
@@ -46,7 +50,7 @@
 <p>At any rate, redundant imports should be cheap since the results are cached.</p>
 <h2>Classes and Types</h2>
 <p><code>JavaScript</code> now has a syntax for declaring classes, which we will use.  However, <code>JavaScript</code> <code>Object</code>s are really all of the same type, and <code>JavaScript</code> itself barely has types: variables and functions are not declared with types.</p>
-<p><code>JavaScript</code> does have a prototype system in which one object--not class--serves as a prototype for another, and that is what the class syntax uses.</p>
+<p><code>JavaScript</code> does have a prototype system in which one object--not class--serves as a prototype for another. The class system is actually just a syntactic gloss on the prototype sy.</p>
 <p><a href="https://www.typescriptlang.org/"><code>TypeScript</code></a> adds strong typing to <code>JavaScript</code>.  <code>Microsoft</code> developed it and seems keen on it; for example, <code>VSCode</code> is written in <code>TypeScript</code>.</p>
 <h2>Synchronicity <img src="https://upload.wikimedia.org/wikipedia/ru/thumb/7/7f/Police-album-synchronicity.jpg/274px-Police-album-synchronicity.jpg" alt="album"></h2>
 <p><code>Node.js</code>'s fundamental execution model is <a href="https://nodejs.org/en/docs/guides/event-loop-timers-and-nexttick/">asynchronous</a>: function calls usually trigger some activity but return immediately, before it is done.  This was done to enhance overall responsiveness, e.g., for web servers handling many separate requests.  Many actions--getting a response from a remote user, accessing a local file, or querying a database--take some time to complete and that time can be spent doing something else.</p>
@@ -82,7 +86,7 @@
 <p>The matching procedure ignores case on the theory that differences in case are accidental and should not prevent a match.</p>
 <h2>Top Level Definition of <code>VariableSelector</code></h2>
 <div class="codefragment">
-<div class="fragmentname">&lt;&lt;Variable Selector class.*&gt;&gt;= ./bin/js/v4-VariableSelector.js</div>
+<div class="fragmentname">&lt;&lt;Variable Selector class.*&gt;&gt;= </div>
 <div class="code">
 <pre><code><span class="literate-tag-name">&lt;&lt;VariableSelector.constants&gt;&gt;</span>
 <span class="hljs-variable language_">module</span>.<span class="hljs-property">exports</span> = <span class="hljs-keyword">class</span> <span class="hljs-title class_">VariableSelector</span> {
@@ -101,13 +105,12 @@
 <div class="codefragment">
 <div class="fragmentname">&lt;&lt;VariableSelector.constants&gt;&gt;= </div>
 <div class="code">
-<pre><code><span class="hljs-keyword">const</span> sectionRE = <span class="hljs-regexp">/\[\s*(\S.*)\s*\]/i</span>;
+<pre><code><span class="hljs-keyword">const</span> sectionRE = <span class="hljs-regexp">/\[\s*((\S.*\.csv)|(\S.*)(?&lt;=\S))\s*\]/i</span>;
 </code></pre>
 
 </div>
-</div><p>The section regular expression will fail with filenames including embedded spaces, but none of ours do and we do not allow inclusion of the full path, ruling out directories with embedded spaces as a problem.</p>
-<p>For <code>sectionRE</code> I tried <code>/\[\s*(\S.*)(\.csv)?\s*\]/i</code> but, because the first group is greedy it matched <code>.csv</code> and the 2nd group was always empty.  The <code>/i</code> in the current regular expression is a holdover from that; I do not think it makes any difference, but I left it for possible future changes.</p>
-<p>There is probably some clever way with look-aheads or look-behinds to get a regular expression that will match just the part without the <code>.csv</code>, but it is easy to clean it up later and so I didn't bother.</p>
+</div><p>For <code>sectionRE</code> I tried <code>/\[\s*(\S.*)(\.csv)?\s*\]/i</code> but, because the first group is greedy it matched <code>.csv</code> and the 2nd group was always empty.</p>
+<p>Filenames ending in <code>.csv</code> will match either side of the <code>|</code>, but it seems to match the first if it can.  So if the filename ends in <code>.csv</code> it will match the 2nd capture group, otherwise the third.</p>
 <h3>Separators</h3>
 <div class="codefragment">
 <div class="fragmentname">&lt;&lt;VariableSelector.constants&gt;&gt;=+ </div>
@@ -128,10 +131,10 @@
    <span class="hljs-keyword">const</span> reader = <span class="hljs-keyword">new</span> <span class="hljs-title function_">nReadLines</span>(configfile);
    <span class="hljs-keyword">while</span> (line=reader.<span class="hljs-title function_">next</span>()) {
       line = line.<span class="hljs-title function_">toString</span>(<span class="hljs-string">&#x27;ascii&#x27;</span>);
-      <span class="hljs-comment">// strip out comment</span>
+      
       i = line.<span class="hljs-title function_">indexOf</span>(<span class="hljs-string">&quot;#&quot;</span>)
       <span class="hljs-keyword">if</span> (i==<span class="hljs-number">0</span>)
-         <span class="hljs-comment">// pure comment</span>
+         
          <span class="hljs-keyword">continue</span>;
       <span class="hljs-keyword">if</span> (i&gt;<span class="hljs-number">0</span>)
          line = line.<span class="hljs-title function_">slice</span>(<span class="hljs-number">0</span>, i);
@@ -146,21 +149,18 @@
 </div><h3>Sections</h3>
 <p>Here we identify lines that are section headers and interpret those headers.  Because of the final <code>continue</code> we move on to the next line, rather than falling through to pattern handling.</p>
 <p>At the moment we do not check the entries for validity, though that would probably be a good idea.</p>
-<p>We do allow an optional <code>.csv</code> at the end of the name, adding it if it is absent.</p>
+<p>We do allow an optional <code>.csv</code> at the end of the name, adding it if it is absent.  That may fail on case-sensitive file systems, typically <code>Unix</code> types (Mac, Linux, BSD).</p>
 <p>At the end <code>csvname</code> is set to the file name (not the full path) and <code>master.csvs</code> has a new entry.</p>
 <div class="codefragment">
 <div class="fragmentname">&lt;&lt;handle sections&gt;&gt;= </div>
 <div class="code">
 <pre><code><span class="hljs-keyword">if</span> (match = line.<span class="hljs-title function_">match</span>(sectionRE)){
-   <span class="hljs-comment">// process section heading</span>
+   
    csvname = match[<span class="hljs-number">1</span>];
-   <span class="hljs-keyword">if</span> (csvname.<span class="hljs-title function_">slice</span>(-<span class="hljs-number">4</span>).<span class="hljs-title function_">toLowerCase</span>() != <span class="hljs-string">&quot;.csv&quot;</span>)
+   <span class="hljs-keyword">if</span> (match[<span class="hljs-number">3</span>]) 
          csvname += <span class="hljs-string">&quot;.csv&quot;</span>
    current = {
-         <span class="hljs-comment">/* varPatterns has keys that are the raw text entered
-         and values that are regular expressions.
-         If the raw text is matched, the item will be removed.
-         */</span>
+         
          <span class="hljs-attr">varPatterns</span>: <span class="hljs-keyword">new</span> <span class="hljs-title class_">Map</span>(),
    }
    master.<span class="hljs-property">csvs</span>.<span class="hljs-title function_">set</span>(csvname, current);
@@ -176,20 +176,16 @@
 <div class="codefragment">
 <div class="fragmentname">&lt;&lt;handle pattern lists&gt;&gt;= </div>
 <div class="code">
-<pre><code><span class="hljs-comment">// handle list of variables</span>
+<pre><code>
 <span class="hljs-keyword">for</span> (rawv <span class="hljs-keyword">of</span> line.<span class="hljs-title function_">split</span>(sepRE)){
    v = rawv
-   <span class="hljs-comment">// convert pseudo-shell globs to RE</span>
+   
    <span class="hljs-keyword">if</span> (v.<span class="hljs-title function_">startsWith</span>(<span class="hljs-string">&quot;*&quot;</span>))
          v = <span class="hljs-string">&quot;.&quot;</span>+v
    <span class="hljs-keyword">if</span> (v.<span class="hljs-title function_">endsWith</span>(<span class="hljs-string">&quot;*&quot;</span>))
          v = v.<span class="hljs-title function_">slice</span>(<span class="hljs-number">0</span>, v.<span class="hljs-property">length</span>-<span class="hljs-number">1</span>)+<span class="hljs-string">&quot;.*&quot;</span>
-   <span class="hljs-comment">/* Most v will likely not be regular expressions.
-   But any effort to figure out what is and isn&#x27;t an RE
-   will burden either the programmer or the user.
-   So we store them both ways.
-   */</span>
-   current.<span class="hljs-property">varPatterns</span>.<span class="hljs-title function_">set</span>(rawv, <span class="hljs-keyword">new</span> <span class="hljs-title class_">RegExp</span>(<span class="hljs-string">&quot;^&quot;</span>+v+<span class="hljs-string">&quot;$&quot;</span>, <span class="hljs-string">&quot;i&quot;</span>));
+   
+   current.<span class="hljs-property">varPatterns</span>.<span class="hljs-title function_">set</span>(rawv, <span class="hljs-keyword">new</span> <span class="hljs-title class_">RegExp</span>(<span class="hljs-string">&quot;^&quot;</span>+v+<span class="hljs-string">&quot;[CONTENT]quot;</span>, <span class="hljs-string">&quot;i&quot;</span>));
 }
 </code></pre>
 
@@ -197,12 +193,14 @@
 </div><h1>Configuration of One CSV Input File</h1>
 <p>This class organizes all the information about how to interpret a particular kind of CSV file: what headers it has, which of them to record in the database, which patterns to match.</p>
 <div class="codefragment">
-<div class="fragmentname">&lt;&lt;CSVConfig.*&gt;&gt;= ./bin/js/v4-csvconfig.js</div>
+<div class="fragmentname">&lt;&lt;CSVConfig.*&gt;&gt;= </div>
 <div class="code">
 <pre><code><span class="hljs-variable language_">module</span>.<span class="hljs-property">exports</span> = <span class="hljs-keyword">class</span> <span class="hljs-title class_">CSVConfig</span> {
    <span class="literate-tag-name">&lt;&lt;CSVConfig.constants&gt;&gt;</span>
    <span class="literate-tag-name">&lt;&lt;CSVConfig.constructor&gt;&gt;</span>
-   <span class="literate-tag-name">&lt;&lt;CSVConfig.queries&gt;&gt;</span>
+   <span class="literate-tag-name">&lt;&lt;CSVConfig pattern handling&gt;&gt;</span>
+   <span class="literate-tag-name">&lt;&lt;CSVConfig codebook handling&gt;&gt;</span>
+   <span class="literate-tag-name">&lt;&lt;CSVConfig csv input handling&gt;&gt;</span>
 }
 </code></pre>
 
@@ -222,6 +220,21 @@ sex = <span class="hljs-number">3</span>;
 </code></pre>
 
 </div>
-</div>
-  </body>
+</div><h2>Constructor</h2>
+<p>We start with only the file name from the <code>monte.conf</code> section header.  At this point there may not be any actual output files to rely on.  There are a number of design issues to consider.</p>
+<h3>Case</h3>
+<p>It would be nice to convert filenames to a standard case to ease matching.  But file systems vary in case sensitivity: some are case sensitive (Unix) while others aren't (MS-Windows usually, though it is case-preserving).  A case-preserved name may fail to match the actual file name.</p>
+<h3>Extension</h3>
+<p>We (almost) know the files will all end with a <code>.csv</code>, and so I originally said this could be omited.  But if the file system is case-sensitive, adding <code>.csv</code> to the name won't  work if the actual end is <code>.CSV</code>.</p>
+<p>The simplest approach, programmatically, is simply to require the user to specify the file name, including the extension, in the appropriate case.  The simplest approach for the user is for the program to work out the extension, and for that reason that was the original behavior of my test code and documentation in the User Guide.  Despite the fact that adding <code>.csv</code> will work fine on MS-Windows, even if the real extension is <code>.CSV</code>, supporting it in general is a mess.</p>
+<p>For now, we recommend providing the file extension and warn of possible problems if the real files don't end with lowercase <code>.csv</code> on case-sensitive file systems.  This is asking a fair amount of the user since the real files don't even exist until the run starts.  Also we are not requiring the user to know the directory they are in.  Since they are produced by our <code>Fortran</code> code we should know the extension case, but the vagaries of different libraries and operating systems still imply some uncertainty about what we'll get.</p>
+<h3>Validation</h3>
+<p>A <code>monte.conf</code> may include a section header that is incorrect--misspelled, or in the wrong case.  As noted above, there may not be any real files to check at the start.  We could just wait until their actual use proves impossible, but that seems annoying for the users.</p>
+<p><strong>To Do</strong> Do a case insensitive match to the 3 possible legitimate values and report an error immediately if it fails.</p>
+<p><strong>To Do</strong> This will not catch case-only differences.  Should they, or various other problems arise, we should abort the simulations, rather than letting the same error occur for each one.</p>
+
+<script type="module">
+  import mermaid from 'https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.esm.min.mjs';
+</script>
+</body>
 </html>

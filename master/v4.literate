@@ -141,7 +141,7 @@ The matching procedure ignores case on the theory that differences in case are a
 
 ## Top Level Definition of `VariableSelector`
 
-```js : <<Variable Selector class.*>>= ./bin/js/v4-VariableSelector.js
+```js : <<Variable Selector class.*>>= ./bin/js/v4-VariableSelector.js $
 <<VariableSelector.constants>>
 module.exports = class VariableSelector {
    <<VariableSelector.construct from configuration file>>
@@ -276,7 +276,7 @@ for (rawv of line.split(sepRE)){
 
 This class organizes all the information about how to interpret a particular kind of CSV file: what headers it has, which of them to record in the database, which patterns to match.
 
-```js : <<CSVConfig.*>>= ./bin/js/v4-csvconfig.js
+```js : <<CSVConfig.*>>= ./bin/js/v4-csvconfig.js $
 module.exports = class CSVConfig {
    <<CSVConfig.constants>>
    <<CSVConfig.constructor>>
@@ -309,7 +309,7 @@ We start with only the file name from the `monte.conf` section header.  At this 
 
 ### Case
 
-It would be nice to convert filenames to a standard case to ease matching.  But file systems vary in case sensitivity: some are case sensitive (Unix) while others aren't (MS-Windows usually, though it is case-preserving).  A case-preserved name may fail to match the actual file name.
+It would be nice to convert filenames to a standard case to ease matching.  But file systems vary in case sensitivity: some are case sensitive (Unix) while others aren't (MS-Windows usually, though it is case-preserving).  A case-preserved name may fail to match the actual file name.  See these useful [notes](https://nodejs.org/en/guides/working-with-different-filesystems) on the vagaries of different file systems (which include both case and encoding) and how to handle them in `Node.js`.
 
 ### Extension
 

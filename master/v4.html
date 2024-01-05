@@ -86,7 +86,7 @@
 <p>The matching procedure ignores case on the theory that differences in case are accidental and should not prevent a match.</p>
 <h2>Top Level Definition of <code>VariableSelector</code></h2>
 <div class="codefragment">
-<div class="fragmentname">&lt;&lt;Variable Selector class.*&gt;&gt;= </div>
+<div class="fragmentname">&lt;&lt;Variable Selector class.*&gt;&gt;= ./bin/js/v4-VariableSelector.js $</div>
 <div class="code">
 <pre><code><span class="literate-tag-name">&lt;&lt;VariableSelector.constants&gt;&gt;</span>
 <span class="hljs-variable language_">module</span>.<span class="hljs-property">exports</span> = <span class="hljs-keyword">class</span> <span class="hljs-title class_">VariableSelector</span> {
@@ -207,7 +207,7 @@
 </div><h1>Configuration of One CSV Input File</h1>
 <p>This class organizes all the information about how to interpret a particular kind of CSV file: what headers it has, which of them to record in the database, which patterns to match.</p>
 <div class="codefragment">
-<div class="fragmentname">&lt;&lt;CSVConfig.*&gt;&gt;= </div>
+<div class="fragmentname">&lt;&lt;CSVConfig.*&gt;&gt;= ./bin/js/v4-csvconfig.js $</div>
 <div class="code">
 <pre><code><span class="hljs-variable language_">module</span>.<span class="hljs-property">exports</span> = <span class="hljs-keyword">class</span> <span class="hljs-title class_">CSVConfig</span> {
    <span class="literate-tag-name">&lt;&lt;CSVConfig.constants&gt;&gt;</span>
@@ -237,7 +237,7 @@ sex = <span class="hljs-number">3</span>;
 </div><h2>Constructor</h2>
 <p>We start with only the file name from the <code>monte.conf</code> section header.  At this point there may not be any actual output files to rely on.  There are a number of design issues to consider.</p>
 <h3>Case</h3>
-<p>It would be nice to convert filenames to a standard case to ease matching.  But file systems vary in case sensitivity: some are case sensitive (Unix) while others aren't (MS-Windows usually, though it is case-preserving).  A case-preserved name may fail to match the actual file name.</p>
+<p>It would be nice to convert filenames to a standard case to ease matching.  But file systems vary in case sensitivity: some are case sensitive (Unix) while others aren't (MS-Windows usually, though it is case-preserving).  A case-preserved name may fail to match the actual file name.  See these useful <a href="https://nodejs.org/en/guides/working-with-different-filesystems">notes</a> on the vagaries of different file systems (which include both case and encoding) and how to handle them in <code>Node.js</code>.</p>
 <h3>Extension</h3>
 <p>We (almost) know the files will all end with a <code>.csv</code>, and so I originally said this could be omited.  But if the file system is case-sensitive, adding <code>.csv</code> to the name won't  work if the actual end is <code>.CSV</code>.</p>
 <p>The simplest approach, programmatically, is simply to require the user to specify the file name, including the extension, in the appropriate case.  The simplest approach for the user is for the program to work out the extension, and for that reason that was the original behavior of my test code and documentation in the User Guide.  Despite the fact that adding <code>.csv</code> will work fine on MS-Windows, even if the real extension is <code>.CSV</code>, supporting it in general is a mess.</p>

@@ -105,7 +105,8 @@
 <div class="codefragment">
 <div class="fragmentname">&lt;&lt;VariableSelector.constants&gt;&gt;= </div>
 <div class="code">
-<pre><code><span class="hljs-keyword">const</span> sectionRE = <span class="hljs-regexp">/\[\s*((\S.*\.csv)|(\S.*)(?&lt;=\S))\s*\]/i</span>;
+<pre><code><span class="hljs-keyword">const</span> sectionRE = <span class="hljs-regexp">/\[\s*((?&lt;full&gt;(?&lt;base&gt;\S.*)(?&lt;ext&gt;\.csv))|(?&lt;simple&gt;\S.*)(?&lt;=\S))\s*\]/i</span>;
+<span class="hljs-keyword">const</span> sectionNames = <span class="hljs-title class_">Set</span>([<span class="hljs-string">&quot;targets_output&quot;</span>, <span class="hljs-string">&quot;totresults&quot;</span>, <span class="hljs-string">&quot;calib&quot;</span>])
 </code></pre>
 
 </div>
@@ -127,7 +128,7 @@
 <div class="fragmentname">&lt;&lt;VariableSelector.construct from configuration file&gt;&gt;= </div>
 <div class="code">
 <pre><code><span class="hljs-title function_">constructor</span>(<span class="hljs-params">master, configfile</span>) {
-   <span class="hljs-keyword">let</span> i, line, match, csvname, current, v, rawv;
+   <span class="hljs-keyword">let</span> i, line, match, csvname, base, ext, current, v, rawv;
    <span class="hljs-keyword">const</span> reader = <span class="hljs-keyword">new</span> <span class="hljs-title function_">nReadLines</span>(configfile);
    <span class="hljs-keyword">while</span> (line=reader.<span class="hljs-title function_">next</span>()) {
       line = line.<span class="hljs-title function_">toString</span>(<span class="hljs-string">&#x27;ascii&#x27;</span>);
@@ -156,9 +157,22 @@
 <div class="code">
 <pre><code><span class="hljs-keyword">if</span> (match = line.<span class="hljs-title function_">match</span>(sectionRE)){
    
-   csvname = match[<span class="hljs-number">1</span>];
-   <span class="hljs-keyword">if</span> (match[<span class="hljs-number">3</span>]) 
-         csvname += <span class="hljs-string">&quot;.csv&quot;</span>
+   
+   csvname = match.<span class="hljs-property">groups</span>.<span class="hljs-property">full</span>;
+   <span class="hljs-keyword">if</span> (csvname) {
+      base = match.<span class="hljs-property">group</span>.<span class="hljs-property">base</span>;
+      ext = match.<span class="hljs-property">group</span>.<span class="hljs-property">ext</span>;
+   } <span class="hljs-keyword">else</span> {
+      base = match.<span class="hljs-property">group</span>.<span class="hljs-property">simple</span>;
+      <span class="hljs-keyword">if</span> (! base)
+         
+         <span class="hljs-title function_">error</span>(<span class="hljs-string">&quot;monte.conf has an empty section heading.&quot;</span>);
+      ext = <span class="hljs-string">&quot;.csv&quot;</span>;
+      csvname = base + ext;
+   }
+   
+   <span class="hljs-keyword">if</span> (!sectionNames.<span class="hljs-title function_">has</span>(base.<span class="hljs-title function_">toLowerCase</span>()))
+      <span class="hljs-title function_">error</span>(<span class="hljs-string">&quot;monte.conf has section for ${base}.  Unknown; expected one of ${sectionNames}.&quot;</span>);
    current = {
          
          <span class="hljs-attr">varPatterns</span>: <span class="hljs-keyword">new</span> <span class="hljs-title class_">Map</span>(),
@@ -229,8 +243,7 @@ sex = <span class="hljs-number">3</span>;
 <p>The simplest approach, programmatically, is simply to require the user to specify the file name, including the extension, in the appropriate case.  The simplest approach for the user is for the program to work out the extension, and for that reason that was the original behavior of my test code and documentation in the User Guide.  Despite the fact that adding <code>.csv</code> will work fine on MS-Windows, even if the real extension is <code>.CSV</code>, supporting it in general is a mess.</p>
 <p>For now, we recommend providing the file extension and warn of possible problems if the real files don't end with lowercase <code>.csv</code> on case-sensitive file systems.  This is asking a fair amount of the user since the real files don't even exist until the run starts.  Also we are not requiring the user to know the directory they are in.  Since they are produced by our <code>Fortran</code> code we should know the extension case, but the vagaries of different libraries and operating systems still imply some uncertainty about what we'll get.</p>
 <h3>Validation</h3>
-<p>A <code>monte.conf</code> may include a section header that is incorrect--misspelled, or in the wrong case.  As noted above, there may not be any real files to check at the start.  We could just wait until their actual use proves impossible, but that seems annoying for the users.</p>
-<p><strong>To Do</strong> Do a case insensitive match to the 3 possible legitimate values and report an error immediately if it fails.</p>
+<p>A <code>monte.conf</code> may include a section header that is incorrect--misspelled, or in the wrong case.  As noted above, there may not be any real files to check at the start.  We could just wait until their actual use proves impossible, but that seems annoying for the users. In the worst case the simulation would proceed and the absence of desired information would only be caught later.  Instead, the program does a case insensitive match to the 3 possible legitimate values and reports an error immediately if it fails.</p>
 <p><strong>To Do</strong> This will not catch case-only differences.  Should they, or various other problems arise, we should abort the simulations, rather than letting the same error occur for each one.</p>
 
 <script type="module">

@@ -72,6 +72,8 @@ Anything from the first `#` on the line to the end is considered a comment and i
 
 In general, the file consists of sections that begin with `[]` around a file name, with or without the `.csv`.  The program knows what directory to look in.  Explicitly including the extension, `.csv` or `.CSV` is safest, matching the actual case of the file.  Otherwise, the  program will add `.csv` which will likely work on Windows but might fail on `*Nix` systems like Mac or Linux.
 
+The only allowed file names are `targets_output`, `totresults` or `calib`.  Using any others will terminate the simulation with a warning.
+
 Within each section is a list of variables or patterns.  Each variable is separated from the others by whitespace (1 or more space, tab or newlines) or a comma with optional whitespace around it.
 
 The rules about separators mean that all the following are equivalent:

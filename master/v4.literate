@@ -162,7 +162,8 @@ Another possibility is to define the constants at the module level.  This should
 ### Section Headers
 
 ```js : <<VariableSelector.constants>>=
-const sectionRE = /\[\s*((\S.*\.csv)|(\S.*)(?<=\S))\s*\]/i;
+const sectionRE = /\[\s*((?<full>(?<base>\S.*)(?<ext>\.csv))|(?<simple>\S.*)(?<=\S))\s*\]/i;
+const sectionNames = Set(["targets_output", "totresults", "calib"])
 ```
 
 For `sectionRE` I tried `/\[\s*(\S.*)(\.csv)?\s*\]/i` but, because the first group is greedy it matched `.csv` and the 2nd group was always empty.
@@ -186,7 +187,7 @@ We leave it to the caller to figure out where the configuration file is.  And we
 
 ```js : <<VariableSelector.construct from configuration file>>=
 constructor(master, configfile) {
-   let i, line, match, csvname, current, v, rawv;
+   let i, line, match, csvname, base, ext, current, v, rawv;
    const reader = new nReadLines(configfile);
    while (line=reader.next()) {
       line = line.toString('ascii');
@@ -217,9 +218,22 @@ At the end `csvname` is set to the file name (not the full path) and `master.csv
 ```js : <<handle sections>>=
 if (match = line.match(sectionRE)){
    // process section heading
-   csvname = match[1];
-   if (match[3]) // pattern without .csv
-         csvname += ".csv"
+   // ((?<full>(?<base>\S.*)(?<ext>\.csv))|(?<simple>\S.*)
+   csvname = match.groups.full;
+   if (csvname) {
+      base = match.group.base;
+      ext = match.group.ext;
+   } else {
+      base = match.group.simple;
+      if (! base)
+         // Trying to use error() defined in runSims.js
+         error("monte.conf has an empty section heading.");
+      ext = ".csv";
+      csvname = base + ext;
+   }
+   // at this poin base, ext and csvname are all set up.
+   if (!sectionNames.has(base.toLowerCase()))
+      error("monte.conf has section for ${base}.  Unknown; expected one of ${sectionNames}.");
    current = {
          /* varPatterns has keys that are the raw text entered
          and values that are regular expressions.
@@ -307,9 +321,7 @@ For now, we recommend providing the file extension and warn of possible problems
 
 ### Validation
 
-A `monte.conf` may include a section header that is incorrect--misspelled, or in the wrong case.  As noted above, there may not be any real files to check at the start.  We could just wait until their actual use proves impossible, but that seems annoying for the users.
-
-**To Do** Do a case insensitive match to the 3 possible legitimate values and report an error immediately if it fails.
+A `monte.conf` may include a section header that is incorrect--misspelled, or in the wrong case.  As noted above, there may not be any real files to check at the start.  We could just wait until their actual use proves impossible, but that seems annoying for the users. In the worst case the simulation would proceed and the absence of desired information would only be caught later.  Instead, the program does a case insensitive match to the 3 possible legitimate values and reports an error immediately if it fails.
 
 **To Do** This will not catch case-only differences.  Should they, or various other problems arise, we should abort the simulations, rather than letting the same error occur for each one.
 

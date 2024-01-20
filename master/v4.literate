@@ -18,7 +18,7 @@ Outputs from running the command `Literate: Process` in `VSCode` will be a `v4.h
 
 The monte carlo supervisor repeatedly generates random input files for the model, runs the `Fortran` program to get their implications (i.e., output files), and processes the results.  The code in this document concerns how it processes the new, `.csv`, output files introduced in version 4 of `mccli` and shown in the picture above.
 
-The strategy is to piggy-back on a previously used method of storing results for many simulations by putting them in a database.  We will use the same database, `SQLite3` in the same format--same tables, column names and indices--as before. `bin/python/frmtToData.py` created such a database (from an entirely different set of inputs) and `frmtReport.py`, a GUI, read it to produce human friendly reports.
+The strategy is to piggy-back on a previously used method of storing results for many simulations by putting them in a database.  We will use the same database, `SQLite3`, in the same format--same tables, column names and indices--as before. `bin/python/frmtToData.py` created such a database (from an entirely different set of inputs) and `frmtReport.py`, a GUI, read it to produce human friendly reports.
 
 `SQLite3` is a simple database: everything is stored in a single file and there is no separate database manager.
 
@@ -48,7 +48,7 @@ All of which led me to decide, on balance, to keep these data gathering function
 
 There are 3 kinds of input files: 
    1. `.csv` files with the data, which will be written by the `Fortran` program and read by the code below repeatedly
-   2. `monte.conf` specifying which variables in the `.csv` files to preserve in the database
+   2. `monte.conf` specifying which variables in which `.csv` files to preserve in the database
    3. A file with a codebook giving variable names and descriptions, currently called `CVDPM_HF_Variable_List.csv`.
 
 The last 2 only need to be read once at the start, given the decision to have a persistent process managing the first.
@@ -69,7 +69,7 @@ That said, `ES6` is probably the wave of the future, and modules are likely to b
 
 Each file is a module, and it seems fairly conventional to put a class definition in a file so that importing the file creates the class.
 
-I haven't been able to find a clear statement about namespaces for `CommonJS` modules, in particular whether a module needs to import (via `require`) a module already present in the parent.This [discussion](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Guide/Modules#other_differences_between_modules_and_standard_scripts) of [`ES6`] seems pretty clear that the import must be done within the module, saying that only global variables are accessible from the module.  But aren't imported modules global vaiables?
+I haven't been able to find a clear statement about namespaces for `CommonJS` modules, in particular whether a module needs to import (via `require`) a module already present in the parent. This [discussion](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Guide/Modules#other_differences_between_modules_and_standard_scripts) of [`ES6`] seems pretty clear that the import must be done within the module, saying that only global variables are accessible from the module.  But aren't imported modules global vaiables?
 
 At any rate, redundant imports should be cheap since the results are cached.
 
@@ -77,7 +77,7 @@ At any rate, redundant imports should be cheap since the results are cached.
 
 `JavaScript` now has a syntax for declaring classes, which we will use.  However, `JavaScript` `Object`s are really all of the same type, and `JavaScript` itself barely has types: variables and functions are not declared with types.
 
-`JavaScript` does have a prototype system in which one object--not class--serves as a prototype for another. The class system is actually just a syntactic gloss on the prototype sy.
+`JavaScript` does have a prototype system in which one object--not class--serves as a prototype for another. The class system is actually just a syntactic gloss on prototypes.
 
 [`TypeScript`](https://www.typescriptlang.org/) adds strong typing to `JavaScript`.  `Microsoft` developed it and seems keen on it; for example, `VSCode` is written in `TypeScript`.
 
@@ -168,7 +168,7 @@ const sectionNames = Set(["targets_output", "totresults", "calib"])
 
 For `sectionRE` I tried `/\[\s*(\S.*)(\.csv)?\s*\]/i` but, because the first group is greedy it matched `.csv` and the 2nd group was always empty.
 
-Filenames ending in `.csv` will match either side of the `|`, but it seems to match the first if it can.  So if the filename ends in `.csv` it will match the 2nd capture group, otherwise the third.
+Filenames ending in `.csv` will match either side of the `|` in the `sectionRE` above, but it seems to match the first if it can.  So if the filename ends in `.csv` it will match the 2nd capture group, otherwise the third.
 
 ### Separators
 
@@ -211,7 +211,7 @@ Here we identify lines that are section headers and interpret those headers.  Be
 
 At the moment we do not check the entries for validity, though that would probably be a good idea.
 
-We do allow an optional `.csv` at the end of the name, adding it if it is absent.  That may fail on case-sensitive file systems, typically `Unix` types (Mac, Linux, BSD).
+We do allow an optional `.csv` at the end of the name, adding it if it is absent.  That may fail on case-sensitive file systems, typically `Unix` types (e.g., Linux, BSD, but generally not Macs).  Case sensitivity is actually a property of a particular file system, not the operating system as a whole.
 
 At the end `csvname` is set to the file name (not the full path) and `master.csvs` has a new entry.
 
@@ -276,6 +276,8 @@ for (rawv of line.split(sepRE)){
 
 This class organizes all the information about how to interpret a particular kind of CSV file: what headers it has, which of them to record in the database, which patterns to match.
 
+This roughly corresponds to the unnamed structure, often referenced by variables named `cfg` or `cfg` in the test code.
+
 ```js : <<CSVConfig.*>>= ./bin/js/v4-csvconfig.js $
 module.exports = class CSVConfig {
    <<CSVConfig.constants>>
@@ -303,6 +305,11 @@ age = 2;
 sex = 3;
 ```
 
+## Location of `.csv` Files
+```js : <<CSVConfig.constants>>=+
+dataPath = path.join(".", "outputs")
+```
+
 ## Constructor
 
 We start with only the file name from the `monte.conf` section header.  At this point there may not be any actual output files to rely on.  There are a number of design issues to consider.
@@ -325,3 +332,24 @@ A `monte.conf` may include a section header that is incorrect--misspelled, or in
 
 **To Do** This will not catch case-only differences.  Should they, or various other problems arise, we should abort the simulations, rather than letting the same error occur for each one.
 
+### Timing
+This is instantiated while scanning `monte.conf` before the `.csv` files it describes have even been created.  So the information in here is built up gradually: first the variable patterns of interest, then the specific variables and locations (columns) of those variables on first encounter with the data, and finally subsequent reads of the file will verify the columns match and pull out the data.
+
+### Code
+
+The argument is a filename including an extension.  This class is responsible for knowing the path.
+```js: <<CSVConfig.constructor>>=
+constructor(ifname) {
+   this.ifname = ifname;
+   this.ifpath = path.join(this.dataPath, ifname);
+   this.#patterns = new Map();
+}
+```
+A `#` as the first character in a variable name make it private to the class, not accessible from outside.
+
+`#patterns` holds individual patterns.  The raw string is the key, and the `RegExp` derived from it is the value.  The keys allow fast lookup for "patterns" that are simply variable names.  They are removed when matched, meaning *they can only be matched once*.  If none match, exhaustive search through the regex's is the only alternative.
+
+
+All the following may belong in a more global structure.
+
+`#byvar` has variable names as keys and a  description as a value.  That is built up later, when reading the codebook file.

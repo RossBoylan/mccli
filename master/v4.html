@@ -17,7 +17,7 @@
 <h1>Big Picture</h1>
 <p><img src="../doc/ProcessingNew.svg" alt="processing"></p>
 <p>The monte carlo supervisor repeatedly generates random input files for the model, runs the <code>Fortran</code> program to get their implications (i.e., output files), and processes the results.  The code in this document concerns how it processes the new, <code>.csv</code>, output files introduced in version 4 of <code>mccli</code> and shown in the picture above.</p>
-<p>The strategy is to piggy-back on a previously used method of storing results for many simulations by putting them in a database.  We will use the same database, <code>SQLite3</code> in the same format--same tables, column names and indices--as before. <code>bin/python/frmtToData.py</code> created such a database (from an entirely different set of inputs) and <code>frmtReport.py</code>, a GUI, read it to produce human friendly reports.</p>
+<p>The strategy is to piggy-back on a previously used method of storing results for many simulations by putting them in a database.  We will use the same database, <code>SQLite3</code>, in the same format--same tables, column names and indices--as before. <code>bin/python/frmtToData.py</code> created such a database (from an entirely different set of inputs) and <code>frmtReport.py</code>, a GUI, read it to produce human friendly reports.</p>
 <p><code>SQLite3</code> is a simple database: everything is stored in a single file and there is no separate database manager.</p>
 <p>There are hundreds of variables in the 3 <code>.csv</code> files, which feature mostly non-overlapping sets of variables distinguished by their likely use.  It is likely only a relatively limited set will be of interest and so there is a configuration file <code>monte.conf</code> that tells this program which variables from the <code>.csv</code> files to preserve in the database.  The rest will be overwritten with each iteration.</p>
 <p>The database also allows for variables to have fuller descriptions in addition to their names; <code>CVDPM_HF_Variable_List.csv</code> provides that information.  It could potentially be used as a check or restriction on the variables in <code>monte.conf</code>, or even those in the <code>.csv</code> files (which include a header line with variable names) but we aren't doing that now.  It might also provide a quick way to say which variables a given <code>monte.conf</code> had selected (since it can use patterns), but that's not a goal for the first round.</p>
@@ -34,7 +34,7 @@
 <p>There are 3 kinds of input files:</p>
 <ol>
 <li><code>.csv</code> files with the data, which will be written by the <code>Fortran</code> program and read by the code below repeatedly</li>
-<li><code>monte.conf</code> specifying which variables in the <code>.csv</code> files to preserve in the database</li>
+<li><code>monte.conf</code> specifying which variables in which <code>.csv</code> files to preserve in the database</li>
 <li>A file with a codebook giving variable names and descriptions, currently called <code>CVDPM_HF_Variable_List.csv</code>.</li>
 </ol>
 <p>The last 2 only need to be read once at the start, given the decision to have a persistent process managing the first.</p>
@@ -46,11 +46,11 @@
 <p><code>mccli</code> was developed using <code>CommonJS</code> and most of the modules it uses are available in that form and may not be available as <code>ES6</code>.  So this code will continue to use <code>CommonJS</code> modules.</p>
 <p>That said, <code>ES6</code> is probably the wave of the future, and modules are likely to be increasingly available in that format.  One of the key modules <code>mccli</code> uses, <code>inquirer</code>, is <em>only</em> available in <code>ES6</code> format for recent releases, leading this package to restrict it to earlier versions in <code>package.json</code></p>
 <p>Each file is a module, and it seems fairly conventional to put a class definition in a file so that importing the file creates the class.</p>
-<p>I haven't been able to find a clear statement about namespaces for <code>CommonJS</code> modules, in particular whether a module needs to import (via <code>require</code>) a module already present in the parent.This <a href="https://developer.mozilla.org/en-US/docs/Web/JavaScript/Guide/Modules#other_differences_between_modules_and_standard_scripts">discussion</a> of [<code>ES6</code>] seems pretty clear that the import must be done within the module, saying that only global variables are accessible from the module.  But aren't imported modules global vaiables?</p>
+<p>I haven't been able to find a clear statement about namespaces for <code>CommonJS</code> modules, in particular whether a module needs to import (via <code>require</code>) a module already present in the parent. This <a href="https://developer.mozilla.org/en-US/docs/Web/JavaScript/Guide/Modules#other_differences_between_modules_and_standard_scripts">discussion</a> of [<code>ES6</code>] seems pretty clear that the import must be done within the module, saying that only global variables are accessible from the module.  But aren't imported modules global vaiables?</p>
 <p>At any rate, redundant imports should be cheap since the results are cached.</p>
 <h2>Classes and Types</h2>
 <p><code>JavaScript</code> now has a syntax for declaring classes, which we will use.  However, <code>JavaScript</code> <code>Object</code>s are really all of the same type, and <code>JavaScript</code> itself barely has types: variables and functions are not declared with types.</p>
-<p><code>JavaScript</code> does have a prototype system in which one object--not class--serves as a prototype for another. The class system is actually just a syntactic gloss on the prototype sy.</p>
+<p><code>JavaScript</code> does have a prototype system in which one object--not class--serves as a prototype for another. The class system is actually just a syntactic gloss on prototypes.</p>
 <p><a href="https://www.typescriptlang.org/"><code>TypeScript</code></a> adds strong typing to <code>JavaScript</code>.  <code>Microsoft</code> developed it and seems keen on it; for example, <code>VSCode</code> is written in <code>TypeScript</code>.</p>
 <h2>Synchronicity <img src="https://upload.wikimedia.org/wikipedia/ru/thumb/7/7f/Police-album-synchronicity.jpg/274px-Police-album-synchronicity.jpg" alt="album"></h2>
 <p><code>Node.js</code>'s fundamental execution model is <a href="https://nodejs.org/en/docs/guides/event-loop-timers-and-nexttick/">asynchronous</a>: function calls usually trigger some activity but return immediately, before it is done.  This was done to enhance overall responsiveness, e.g., for web servers handling many separate requests.  Many actions--getting a response from a remote user, accessing a local file, or querying a database--take some time to complete and that time can be spent doing something else.</p>
@@ -111,7 +111,7 @@
 
 </div>
 </div><p>For <code>sectionRE</code> I tried <code>/\[\s*(\S.*)(\.csv)?\s*\]/i</code> but, because the first group is greedy it matched <code>.csv</code> and the 2nd group was always empty.</p>
-<p>Filenames ending in <code>.csv</code> will match either side of the <code>|</code>, but it seems to match the first if it can.  So if the filename ends in <code>.csv</code> it will match the 2nd capture group, otherwise the third.</p>
+<p>Filenames ending in <code>.csv</code> will match either side of the <code>|</code> in the <code>sectionRE</code> above, but it seems to match the first if it can.  So if the filename ends in <code>.csv</code> it will match the 2nd capture group, otherwise the third.</p>
 <h3>Separators</h3>
 <div class="codefragment">
 <div class="fragmentname">&lt;&lt;VariableSelector.constants&gt;&gt;=+ </div>
@@ -150,7 +150,7 @@
 </div><h3>Sections</h3>
 <p>Here we identify lines that are section headers and interpret those headers.  Because of the final <code>continue</code> we move on to the next line, rather than falling through to pattern handling.</p>
 <p>At the moment we do not check the entries for validity, though that would probably be a good idea.</p>
-<p>We do allow an optional <code>.csv</code> at the end of the name, adding it if it is absent.  That may fail on case-sensitive file systems, typically <code>Unix</code> types (Mac, Linux, BSD).</p>
+<p>We do allow an optional <code>.csv</code> at the end of the name, adding it if it is absent.  That may fail on case-sensitive file systems, typically <code>Unix</code> types (e.g., Linux, BSD, but generally not Macs).  Case sensitivity is actually a property of a particular file system, not the operating system as a whole.</p>
 <p>At the end <code>csvname</code> is set to the file name (not the full path) and <code>master.csvs</code> has a new entry.</p>
 <div class="codefragment">
 <div class="fragmentname">&lt;&lt;handle sections&gt;&gt;= </div>
@@ -206,6 +206,7 @@
 </div>
 </div><h1>Configuration of One CSV Input File</h1>
 <p>This class organizes all the information about how to interpret a particular kind of CSV file: what headers it has, which of them to record in the database, which patterns to match.</p>
+<p>This roughly corresponds to the unnamed structure, often referenced by variables named <code>cfg</code> or <code>cfg</code> in the test code.</p>
 <div class="codefragment">
 <div class="fragmentname">&lt;&lt;CSVConfig.*&gt;&gt;= ./bin/js/v4-csvconfig.js $</div>
 <div class="code">
@@ -234,6 +235,14 @@ sex = <span class="hljs-number">3</span>;
 </code></pre>
 
 </div>
+</div><h2>Location of <code>.csv</code> Files</h2>
+<div class="codefragment">
+<div class="fragmentname">&lt;&lt;CSVConfig.constants&gt;&gt;=+ </div>
+<div class="code">
+<pre><code>dataPath = path.<span class="hljs-title function_">join</span>(<span class="hljs-string">&quot;.&quot;</span>, <span class="hljs-string">&quot;outputs&quot;</span>)
+</code></pre>
+
+</div>
 </div><h2>Constructor</h2>
 <p>We start with only the file name from the <code>monte.conf</code> section header.  At this point there may not be any actual output files to rely on.  There are a number of design issues to consider.</p>
 <h3>Case</h3>
@@ -245,6 +254,25 @@ sex = <span class="hljs-number">3</span>;
 <h3>Validation</h3>
 <p>A <code>monte.conf</code> may include a section header that is incorrect--misspelled, or in the wrong case.  As noted above, there may not be any real files to check at the start.  We could just wait until their actual use proves impossible, but that seems annoying for the users. In the worst case the simulation would proceed and the absence of desired information would only be caught later.  Instead, the program does a case insensitive match to the 3 possible legitimate values and reports an error immediately if it fails.</p>
 <p><strong>To Do</strong> This will not catch case-only differences.  Should they, or various other problems arise, we should abort the simulations, rather than letting the same error occur for each one.</p>
+<h3>Timing</h3>
+<p>This is instantiated while scanning <code>monte.conf</code> before the <code>.csv</code> files it describes have even been created.  So the information in here is built up gradually: first the variable patterns of interest, then the specific variables and locations (columns) of those variables on first encounter with the data, and finally subsequent reads of the file will verify the columns match and pull out the data.</p>
+<h3>Code</h3>
+<p>The argument is a filename including an extension.  This class is responsible for knowing the path.</p>
+<div class="codefragment">
+<div class="fragmentname">&lt;&lt;CSVConfig.constructor&gt;&gt;= </div>
+<div class="code">
+<pre title="<<CSVConfig.constructor>>=">constructor(ifname) {
+   this.ifname = ifname;
+   this.ifpath = path.join(this.dataPath, ifname);
+   this.#patterns = new Map();
+}
+</pre>
+
+</div>
+</div><p>A <code>#</code> as the first character in a variable name make it private to the class, not accessible from outside.</p>
+<p><code>#patterns</code> holds individual patterns.  The raw string is the key, and the <code>RegExp</code> derived from it is the value.  The keys allow fast lookup for &quot;patterns&quot; that are simply variable names.  They are removed when matched, meaning <em>they can only be matched once</em>.  If none match, exhaustive search through the regex's is the only alternative.</p>
+<p>All the following may belong in a more global structure.</p>
+<p><code>#byvar</code> has variable names as keys and a  description as a value.  That is built up later, when reading the codebook file.</p>
 
 <script type="module">
   import mermaid from 'https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.esm.min.mjs';

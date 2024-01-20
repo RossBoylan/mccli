@@ -93,6 +93,90 @@ Practical implications:
    1. If you're used to a conventional, synchronous, language, be aware that in `JavaScript` things may happen asynchronously unless you take special steps, like calling variant function names or using `JavaScript`'s native sequencing constructs, to prevent it.
    2. If some operations can run in parallel, consider doing so.  It's easier in `JavaScript` than in most other languages.
 
+
+# Configuration of One CSV Input File
+
+This class organizes all the information about how to interpret a particular kind of CSV file: what headers it has, which of them to record in the database, which patterns to match.
+
+This roughly corresponds to the unnamed structure, often referenced by variables named `cfg` or `cfg` in the test code.
+
+```js : <<CSVConfig.*>>= ./bin/js/v4-csvconfig.js $
+module.exports = class CSVConfig {
+   <<CSVConfig.constants>>
+   <<CSVConfig.constructor>>
+   <<CSVConfig pattern handling>>
+   <<CSVConfig codebook handling>>
+   <<CSVConfig csv input handling>>
+}
+```
+## Fixed Column Definitions
+
+These give the locations of fixed demographic columns.  We could look them up each time, but the locations are fixed.  If we wanted to be fancy we could put them in a prototype to be shared among instances.
+
+The values are `const` but `JavaScript` does not permit that in a class definition.
+
+The demographic columns are most of the index for the data values that go in the database.
+
+Note there are 2 available columns with the year, one giving years since start of simulation and the other calendar year. The choice below is calendar year.  Set `year = 1` to get simulation years, which are 1-based (the two 1's are completely different uses).
+
+`age` and `sex` use numeric codes; their interpretation is discussed elsewhere.
+
+```js : <<CSVConfig.constants>>=
+year = 0;
+age = 2;
+sex = 3;
+```
+
+## Location of `.csv` Files
+```js : <<CSVConfig.constants>>=+
+dataPath = path.join(".", "outputs")
+```
+
+## Constructor
+
+We start with only the file name from the `monte.conf` section header.  At this point there may not be any actual output files to rely on.  There are a number of design issues to consider.
+
+### Case
+
+It would be nice to convert filenames to a standard case to ease matching.  But file systems vary in case sensitivity: some are case sensitive (Unix) while others aren't (MS-Windows usually, though it is case-preserving).  A case-preserved name may fail to match the actual file name.  See these useful [notes](https://nodejs.org/en/guides/working-with-different-filesystems) on the vagaries of different file systems (which include both case and encoding) and how to handle them in `Node.js`.
+
+### Extension
+
+We (almost) know the files will all end with a `.csv`, and so I originally said this could be omited.  But if the file system is case-sensitive, adding `.csv` to the name won't  work if the actual end is `.CSV`.
+
+The simplest approach, programmatically, is simply to require the user to specify the file name, including the extension, in the appropriate case.  The simplest approach for the user is for the program to work out the extension, and for that reason that was the original behavior of my test code and documentation in the User Guide.  Despite the fact that adding `.csv` will work fine on MS-Windows, even if the real extension is `.CSV`, supporting it in general is a mess.
+
+For now, we recommend providing the file extension and warn of possible problems if the real files don't end with lowercase `.csv` on case-sensitive file systems.  This is asking a fair amount of the user since the real files don't even exist until the run starts.  Also we are not requiring the user to know the directory they are in.  Since they are produced by our `Fortran` code we should know the extension case, but the vagaries of different libraries and operating systems still imply some uncertainty about what we'll get.
+
+### Validation
+
+A `monte.conf` may include a section header that is incorrect--misspelled, or in the wrong case.  As noted above, there may not be any real files to check at the start.  We could just wait until their actual use proves impossible, but that seems annoying for the users. In the worst case the simulation would proceed and the absence of desired information would only be caught later.  Instead, the program does a case insensitive match to the 3 possible legitimate values and reports an error immediately if it fails.
+
+**To Do** This will not catch case-only differences.  Should they, or various other problems arise, we should abort the simulations, rather than letting the same error occur for each one.
+
+### Timing
+This is instantiated while scanning `monte.conf` before the `.csv` files it describes have even been created.  So the information in here is built up gradually: first the variable patterns of interest, then the specific variables and locations (columns) of those variables on first encounter with the data, and finally subsequent reads of the file will verify the columns match and pull out the data.
+
+### Code
+
+The argument is a filename including an extension.  This class is responsible for knowing the path.
+```js: <<CSVConfig.constructor>>=
+constructor(ifname) {
+   this.ifname = ifname;
+   this.ifpath = path.join(this.dataPath, ifname);
+   this.#patterns = new Map();
+}
+```
+A `#` as the first character in a variable name make it private to the class, not accessible from outside.
+
+`#patterns` holds individual patterns.  The raw string is the key, and the `RegExp` derived from it is the value.  The keys allow fast lookup for "patterns" that are simply variable names.  They are removed when matched, meaning *they can only be matched once*.  If none match, exhaustive search through the regex's is the only alternative.
+
+
+All the following may belong in a more global structure.
+
+`#byvar` has variable names as keys and a  description as a value.  That is built up later, when reading the codebook file.
+
+
 # `monte.conf`
 
 The first input file we consider is `monte.conf` which specifies which variables to preserve across simulations.  It uses sections `[filename]` for the 3 possible `.csv` files and free-form (whitespace or `,` or mixes of them) list of patterns to match specific variable names.  The patterns can be a variable name; a shell-glob style `*stuff`, `stuff*`, or `*stuff*` to match any variables ending, starting or containing `stuff` in the name; or a `JavaScript` regular expression.  See the [User Guide](../doc/UserGuide.md) for the complete description.
@@ -271,85 +355,3 @@ for (rawv of line.split(sepRE)){
    current.varPatterns.set(rawv, new RegExp("^"+v+"$", "i"));
 }
 ```
-
-# Configuration of One CSV Input File
-
-This class organizes all the information about how to interpret a particular kind of CSV file: what headers it has, which of them to record in the database, which patterns to match.
-
-This roughly corresponds to the unnamed structure, often referenced by variables named `cfg` or `cfg` in the test code.
-
-```js : <<CSVConfig.*>>= ./bin/js/v4-csvconfig.js $
-module.exports = class CSVConfig {
-   <<CSVConfig.constants>>
-   <<CSVConfig.constructor>>
-   <<CSVConfig pattern handling>>
-   <<CSVConfig codebook handling>>
-   <<CSVConfig csv input handling>>
-}
-```
-## Fixed Column Definitions
-
-These give the locations of fixed demographic columns.  We could look them up each time, but the locations are fixed.  If we wanted to be fancy we could put them in a prototype to be shared among instances.
-
-The values are `const` but `JavaScript` does not permit that in a class definition.
-
-The demographic columns are most of the index for the data values that go in the database.
-
-Note there are 2 available columns with the year, one giving years since start of simulation and the other calendar year. The choice below is calendar year.  Set `year = 1` to get simulation years, which are 1-based (the two 1's are completely different uses).
-
-`age` and `sex` use numeric codes; their interpretation is discussed elsewhere.
-
-```js : <<CSVConfig.constants>>=
-year = 0;
-age = 2;
-sex = 3;
-```
-
-## Location of `.csv` Files
-```js : <<CSVConfig.constants>>=+
-dataPath = path.join(".", "outputs")
-```
-
-## Constructor
-
-We start with only the file name from the `monte.conf` section header.  At this point there may not be any actual output files to rely on.  There are a number of design issues to consider.
-
-### Case
-
-It would be nice to convert filenames to a standard case to ease matching.  But file systems vary in case sensitivity: some are case sensitive (Unix) while others aren't (MS-Windows usually, though it is case-preserving).  A case-preserved name may fail to match the actual file name.  See these useful [notes](https://nodejs.org/en/guides/working-with-different-filesystems) on the vagaries of different file systems (which include both case and encoding) and how to handle them in `Node.js`.
-
-### Extension
-
-We (almost) know the files will all end with a `.csv`, and so I originally said this could be omited.  But if the file system is case-sensitive, adding `.csv` to the name won't  work if the actual end is `.CSV`.
-
-The simplest approach, programmatically, is simply to require the user to specify the file name, including the extension, in the appropriate case.  The simplest approach for the user is for the program to work out the extension, and for that reason that was the original behavior of my test code and documentation in the User Guide.  Despite the fact that adding `.csv` will work fine on MS-Windows, even if the real extension is `.CSV`, supporting it in general is a mess.
-
-For now, we recommend providing the file extension and warn of possible problems if the real files don't end with lowercase `.csv` on case-sensitive file systems.  This is asking a fair amount of the user since the real files don't even exist until the run starts.  Also we are not requiring the user to know the directory they are in.  Since they are produced by our `Fortran` code we should know the extension case, but the vagaries of different libraries and operating systems still imply some uncertainty about what we'll get.
-
-### Validation
-
-A `monte.conf` may include a section header that is incorrect--misspelled, or in the wrong case.  As noted above, there may not be any real files to check at the start.  We could just wait until their actual use proves impossible, but that seems annoying for the users. In the worst case the simulation would proceed and the absence of desired information would only be caught later.  Instead, the program does a case insensitive match to the 3 possible legitimate values and reports an error immediately if it fails.
-
-**To Do** This will not catch case-only differences.  Should they, or various other problems arise, we should abort the simulations, rather than letting the same error occur for each one.
-
-### Timing
-This is instantiated while scanning `monte.conf` before the `.csv` files it describes have even been created.  So the information in here is built up gradually: first the variable patterns of interest, then the specific variables and locations (columns) of those variables on first encounter with the data, and finally subsequent reads of the file will verify the columns match and pull out the data.
-
-### Code
-
-The argument is a filename including an extension.  This class is responsible for knowing the path.
-```js: <<CSVConfig.constructor>>=
-constructor(ifname) {
-   this.ifname = ifname;
-   this.ifpath = path.join(this.dataPath, ifname);
-   this.#patterns = new Map();
-}
-```
-A `#` as the first character in a variable name make it private to the class, not accessible from outside.
-
-`#patterns` holds individual patterns.  The raw string is the key, and the `RegExp` derived from it is the value.  The keys allow fast lookup for "patterns" that are simply variable names.  They are removed when matched, meaning *they can only be matched once*.  If none match, exhaustive search through the regex's is the only alternative.
-
-
-All the following may belong in a more global structure.
-
-`#byvar` has variable names as keys and a  description as a value.  That is built up later, when reading the codebook file.

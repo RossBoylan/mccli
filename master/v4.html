@@ -61,6 +61,29 @@
 <li>If you're used to a conventional, synchronous, language, be aware that in <code>JavaScript</code> things may happen asynchronously unless you take special steps, like calling variant function names or using <code>JavaScript</code>'s native sequencing constructs, to prevent it.</li>
 <li>If some operations can run in parallel, consider doing so.  It's easier in <code>JavaScript</code> than in most other languages.</li>
 </ol>
+<h1>Simulation Data Source</h1>
+<p>Concretely, a data source is one particular named <code>.csv</code> file that holds data from a run of the <code>Fortran</code> model.  In the future it may also be a particular named pipe whose contents are in the same format.  This class collects all relevant information from all files about one of those data sources, and knows how to read the data source and store the relevant results.</p>
+<p>This is the successor to the <code>CSVConfig</code> file in the next section, and roughly corresponds to the unnamed structure, often referenced by variables named <code>cfg</code> or <code>cfg</code> in the test code.</p>
+<p>Almost all the configuration ends up in this object: the variable patterns in <code>monte.conf</code>, the codebook information, and the actual headers and columns of interest.  Of course, only the subset relevant to a particular file type goes here.  And if the data source is not mentioned in <code>monte.conf</code> the object is skipped entirely.</p>
+<p>The information is built up in stages:</p>
+<ol>
+<li>The <code>VariableConfiguration</code> class reads <code>monte.conf</code> and creates a <code>SimDataSource</code> if it encounters the relevant section.</li>
+<li><code>VariableConfiguration</code> informs <code>SimDataSource</code> of each pattern it finds.</li>
+<li><code>Codebook</code> reads the relevant file and extracts the entries for each <code>SimDataSource</code> (if any) and informs <code>SimDataSource</code> of them.</li>
+<li><code>SimDataSource</code> reads its main data input for the first time.
+<ul>
+<li>It records the headers.</li>
+<li>It generates information about the columns matching the variables of interest: specific column names, integer index.  It also has info on certain fixed columns that define the observation, such as demographic groups and simulation year.</li>
+<li>It writes the appropriate info to the database.</li>
+</ul>
+</li>
+<li>On later reads, <code>SimDataSource</code>
+<ul>
+<li>Verifies the header is consistent with earlier reads.</li>
+<li>Writes appropriate info to the database, using previously computed information on the names and locations of the variables to keep.</li>
+</ul>
+</li>
+</ol>
 <h1>Configuration of One CSV Input File</h1>
 <p>This class organizes all the information about how to interpret a particular kind of CSV file: what headers it has, which of them to record in the database, which patterns to match.</p>
 <p>This roughly corresponds to the unnamed structure, often referenced by variables named <code>cfg</code> or <code>cfg</code> in the test code.</p>

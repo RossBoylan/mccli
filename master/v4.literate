@@ -93,6 +93,24 @@ Practical implications:
    1. If you're used to a conventional, synchronous, language, be aware that in `JavaScript` things may happen asynchronously unless you take special steps, like calling variant function names or using `JavaScript`'s native sequencing constructs, to prevent it.
    2. If some operations can run in parallel, consider doing so.  It's easier in `JavaScript` than in most other languages.
 
+# Simulation Data Source
+Concretely, a data source is one particular named `.csv` file that holds data from a run of the `Fortran` model.  In the future it may also be a particular named pipe whose contents are in the same format.  This class collects all relevant information from all files about one of those data sources, and knows how to read the data source and store the relevant results.
+
+This is the successor to the `CSVConfig` file in the next section, and roughly corresponds to the unnamed structure, often referenced by variables named `cfg` or `cfg` in the test code.
+
+Almost all the configuration ends up in this object: the variable patterns in `monte.conf`, the codebook information, and the actual headers and columns of interest.  Of course, only the subset relevant to a particular file type goes here.  And if the data source is not mentioned in `monte.conf` the object is skipped entirely.
+
+The information is built up in stages:
+   1. The `VariableConfiguration` class reads `monte.conf` and creates a `SimDataSource` if it encounters the relevant section.
+   2. `VariableConfiguration` informs `SimDataSource` of each pattern it finds.
+   3. `Codebook` reads the relevant file and extracts the entries for each `SimDataSource` (if any) and informs `SimDataSource` of them.
+   4. `SimDataSource` reads its main data input for the first time.
+      * It records the headers.
+      * It generates information about the columns matching the variables of interest: specific column names, integer index.  It also has info on certain fixed columns that define the observation, such as demographic groups and simulation year.
+      * It writes the appropriate info to the database.
+   5. On later reads, `SimDataSource`
+      * Verifies the header is consistent with earlier reads.
+      * Writes appropriate info to the database, using previously computed information on the names and locations of the variables to keep.
 
 # Configuration of One CSV Input File
 

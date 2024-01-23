@@ -84,30 +84,14 @@
 </ul>
 </li>
 </ol>
-<h1>Configuration of One CSV Input File</h1>
-<p>This class organizes all the information about how to interpret a particular kind of CSV file: what headers it has, which of them to record in the database, which patterns to match.</p>
-<p>This roughly corresponds to the unnamed structure, often referenced by variables named <code>cfg</code> or <code>cfg</code> in the test code.</p>
-<div class="codefragment">
-<div class="fragmentname">&lt;&lt;CSVConfig.*&gt;&gt;= ./bin/js/v4-csvconfig.js $</div>
-<div class="code">
-<pre><code><span class="hljs-variable language_">module</span>.<span class="hljs-property">exports</span> = <span class="hljs-keyword">class</span> <span class="hljs-title class_">CSVConfig</span> {
-   <span class="literate-tag-name">&lt;&lt;CSVConfig.constants&gt;&gt;</span>
-   <span class="literate-tag-name">&lt;&lt;CSVConfig.constructor&gt;&gt;</span>
-   <span class="literate-tag-name">&lt;&lt;CSVConfig pattern handling&gt;&gt;</span>
-   <span class="literate-tag-name">&lt;&lt;CSVConfig codebook handling&gt;&gt;</span>
-   <span class="literate-tag-name">&lt;&lt;CSVConfig csv input handling&gt;&gt;</span>
-}
-</code></pre>
-
-</div>
-</div><h2>Fixed Column Definitions</h2>
+<h2>Fixed Column Definitions</h2>
 <p>These give the locations of fixed demographic columns.  We could look them up each time, but the locations are fixed.  If we wanted to be fancy we could put them in a prototype to be shared among instances.</p>
 <p>The values are <code>const</code> but <code>JavaScript</code> does not permit that in a class definition.</p>
 <p>The demographic columns are most of the index for the data values that go in the database.</p>
 <p>Note there are 2 available columns with the year, one giving years since start of simulation and the other calendar year. The choice below is calendar year.  Set <code>year = 1</code> to get simulation years, which are 1-based (the two 1's are completely different uses).</p>
 <p><code>age</code> and <code>sex</code> use numeric codes; their interpretation is discussed elsewhere.</p>
 <div class="codefragment">
-<div class="fragmentname">&lt;&lt;CSVConfig.constants&gt;&gt;= </div>
+<div class="fragmentname">&lt;&lt;SimDataSource.constants&gt;&gt;= </div>
 <div class="code">
 <pre><code>year = <span class="hljs-number">0</span>;
 age = <span class="hljs-number">2</span>;
@@ -117,7 +101,7 @@ sex = <span class="hljs-number">3</span>;
 </div>
 </div><h2>Location of <code>.csv</code> Files</h2>
 <div class="codefragment">
-<div class="fragmentname">&lt;&lt;CSVConfig.constants&gt;&gt;=+ </div>
+<div class="fragmentname">&lt;&lt;SimDataSource.constants&gt;&gt;=+ </div>
 <div class="code">
 <pre><code>dataPath = path.<span class="hljs-title function_">join</span>(<span class="hljs-string">&quot;.&quot;</span>, <span class="hljs-string">&quot;outputs&quot;</span>)
 </code></pre>
@@ -132,28 +116,152 @@ sex = <span class="hljs-number">3</span>;
 <p>The simplest approach, programmatically, is simply to require the user to specify the file name, including the extension, in the appropriate case.  The simplest approach for the user is for the program to work out the extension, and for that reason that was the original behavior of my test code and documentation in the User Guide.  Despite the fact that adding <code>.csv</code> will work fine on MS-Windows, even if the real extension is <code>.CSV</code>, supporting it in general is a mess.</p>
 <p>For now, we recommend providing the file extension and warn of possible problems if the real files don't end with lowercase <code>.csv</code> on case-sensitive file systems.  This is asking a fair amount of the user since the real files don't even exist until the run starts.  Also we are not requiring the user to know the directory they are in.  Since they are produced by our <code>Fortran</code> code we should know the extension case, but the vagaries of different libraries and operating systems still imply some uncertainty about what we'll get.</p>
 <h3>Validation</h3>
-<p>A <code>monte.conf</code> may include a section header that is incorrect--misspelled, or in the wrong case.  As noted above, there may not be any real files to check at the start.  We could just wait until their actual use proves impossible, but that seems annoying for the users. In the worst case the simulation would proceed and the absence of desired information would only be caught later.  Instead, the program does a case insensitive match to the 3 possible legitimate values and reports an error immediately if it fails.</p>
+<p><code>monte.conf</code> may include a section header that is incorrect--misspelled, or in the wrong case.  As noted above, there may not be any real files to check at the start.  We could just wait until their actual use proves impossible, but that seems annoying for the users. In the worst case the simulation would proceed and the absence of desired information would only be caught later.  Instead, the program does a case insensitive match to the 3 possible legitimate values and reports an error immediately if it fails.</p>
+<p>It is the responsibility of the code that creates an instance of this class to assure the name is valid.</p>
 <p><strong>To Do</strong> This will not catch case-only differences.  Should they, or various other problems arise, we should abort the simulations, rather than letting the same error occur for each one.</p>
 <h3>Timing</h3>
 <p>This is instantiated while scanning <code>monte.conf</code> before the <code>.csv</code> files it describes have even been created.  So the information in here is built up gradually: first the variable patterns of interest, then the specific variables and locations (columns) of those variables on first encounter with the data, and finally subsequent reads of the file will verify the columns match and pull out the data.</p>
 <h3>Code</h3>
-<p>The argument is a filename including an extension.  This class is responsible for knowing the path.</p>
+<p>The argument is a filename including an extension.  This class is responsible for knowing the path. <code>basename</code> is a string with the core name of the input, e.g, <code>&quot;totresults&quot;</code> and <code>ifname</code> is the full name, without the path, e.g., <code>&quot;totresults.csv&quot;</code>.  The latter is potentially case sensitive, depending on the underlying file system.</p>
+<p>The private variables <code>#patterns</code> and <code>#byvar</code> must be &quot;declared&quot; before use to avoid the error &quot;private field #xx must be declared in enclosing class&quot;.</p>
 <div class="codefragment">
-<div class="fragmentname">&lt;&lt;CSVConfig.constructor&gt;&gt;= </div>
+<div class="fragmentname">&lt;&lt;SimDataSource.constructor&gt;&gt;= </div>
 <div class="code">
-<pre title="<<CSVConfig.constructor>>=">constructor(ifname) {
+<pre title="<<SimDataSource.constructor>>=">#patterns;
+#byvar;
+constructor(basename, ifname) {
+   this.basename = basename.toLowerCase();
    this.ifname = ifname;
    this.ifpath = path.join(this.dataPath, ifname);
-   this.#patterns = new Map();
+   this.#patterns = new Map(); // identify variables of interest
+   this.#byvar = new Map(); // codebook, all variables
 }
 </pre>
 
 </div>
 </div><p>A <code>#</code> as the first character in a variable name make it private to the class, not accessible from outside.</p>
-<p><code>#patterns</code> holds individual patterns.  The raw string is the key, and the <code>RegExp</code> derived from it is the value.  The keys allow fast lookup for &quot;patterns&quot; that are simply variable names.  They are removed when matched, meaning <em>they can only be matched once</em>.  If none match, exhaustive search through the regex's is the only alternative.</p>
-<p>All the following may belong in a more global structure.</p>
-<p><code>#byvar</code> has variable names as keys and a  description as a value.  That is built up later, when reading the codebook file.</p>
-<h1><code>monte.conf</code></h1>
+<p><code>#patterns</code> holds individual patterns used to select variables to preserve in the database.  The raw string is the key, and the <code>RegExp</code> derived from it is the value.  The keys allow fast lookup for &quot;patterns&quot; that are simply variable names.  They are removed when matched, meaning <em>they can only be matched once</em>.  If none match, exhaustive search through the regex's is the only alternative.</p>
+<p><code>#byvar</code> will eventually have variable names as keys and a  description as a value.  That is built up later, when reading the codebook file.  It includes all possible variables, not just those of interest.</p>
+<h2>Adding Variables of Interest</h2>
+<p>In <code>monte.conf</code> a user  specifies a list of variables, and patterns for variables, to preserve in the database.  Here is where they are preserved.  <code>text</code> is the plain text representation for the common case in which the &quot;pattern&quot; is just a variable name; <code>regex</code> is a regular expression object that corresponds to it.</p>
+<p>We convert the key to lowercase to simplifying matching on it; this means the key may not match the case known to the user.</p>
+<div class="codefragment">
+<div class="fragmentname">&lt;&lt;SimDataSource.addPattern&gt;&gt;= </div>
+<div class="code">
+<pre title="<<SimDataSource.addPattern>>=">addPattern(text, regex) {
+   this.#patterns.set(text.toLowerCase(), regex);
+}
+</pre>
+
+</div>
+</div><h2>Adding Codebook information</h2>
+<div class="codefragment">
+<div class="fragmentname">&lt;&lt;SimDataSource.addVariableWithDescription&gt;&gt;= </div>
+<div class="code">
+<pre title="<<SimDataSource.addVariableWithDescription>>=">addVarDescription(varname, description){
+   this.#byvar.set(varname.toLowerCase(), description);
+}
+</pre>
+
+</div>
+</div><h2>From Patterns to Variables</h2>
+<p>Once the complete list of variables is  loaded in <code>#byvar</code> we check that every pattern for an allowed variable matches the name of at least one actual variable.  We work on a copy so that we can delete entries as an optimization.</p>
+<p>The result of this function is a <code>Map</code> with regex's as keys and a value which is  a count of the number of variables it matches and a list of concrete variable names.</p>
+<div class="codefragment">
+<div class="fragmentname">&lt;&lt;SimDataSource.countPatternMatches&gt;&gt;= </div>
+<div class="code">
+<pre title="<<SimDataSource.countPatternMatches>>=">countPatternMatches() {
+   let pats = new Map(this.#patterns); // so deletions don't affect original;
+   let result = new Map();
+   let myvar = new Set(...this.#byvar.keys());
+
+   const vs = [...pats]; // since we mutate pats
+
+   // first check for exact matches
+   for (const [txt, re] of vs) {
+      if (myvar.has(txt)) {
+         result.add(re, [1, [txt,]]);
+         pats.delete(txt);
+         myvar.delete(txt);
+      }
+   }
+
+   // now check all that remain against the regexps
+   // O(n^2) at least
+   const p2 = [...pats];
+   for (const [txt, re] of p2){
+      // myvar is a Set, and therefore doen't have a filter method
+      let matched = [];  // all matching variable names
+      for (const v of myvar){
+         if (re.test(v)){
+            matched.push(v);
+         }
+      }
+      // safer to delete after iteration
+      // Set provide no set-level operator to remove members
+      // experimental difference operator creates a new Set,
+      // and is not currently in Node.js
+      matched.forEach(v=&gt;myvar.delete(v));
+      // note we leave the pattern in pats
+      result.add(re, [matched.length, matched]);
+   }
+
+   return result;
+}
+</pre>
+
+</div>
+</div><p>One thing we can do with the result is to check if any patterns don't match any of the variables.  Since that probably indicates a typo, we alert the user and stop.</p>
+<p>The argument to the next function is the <code>Map</code> output by the previous function.</p>
+<div class="codefragment">
+<div class="fragmentname">&lt;&lt;SimDataSource.checkLostPatterns&gt;&gt;= </div>
+<div class="code">
+<pre title="<<SimDataSource.checkLostPatterns>>=">checkLostPatterns(counts){
+   let missing = [];
+   for (re, [count, vs] of counts){
+      if (count==0)
+         missing.push(re);
+   }
+   if (missing.length == 0)
+      return;
+   console.log(&quot;The following patterns in monte.conf don't match any variables.&quot;);
+   error(&quot;Check for typos: &quot;+missing.join(&quot; &quot;));
+}
+</pre>
+
+</div>
+</div><p>Finally, get the list of concrete variables that matched.  Note that all such variables may not be in the <code>.csv</code> file, but it seems easier to test against this list the specification with regular expressions.</p>
+<p>Returns a <code>Set</code> of variable names.</p>
+<div class="codefragment">
+<div class="fragmentname">&lt;&lt;SimDataSource.concreteVars&gt;&gt;= </div>
+<div class="code">
+<pre title="<<SimDataSource.concreteVars>>=">concreteVars(counts){
+   let result = new Set();
+   // likely the iterator will not support foreach
+   counts.values().forEach(([n, vs])=&gt;vs.forEach(v=&gt;result.add(v)));
+   return result;
+}
+</pre>
+
+</div>
+</div><h2>The Whole McGilla</h2>
+<div class="codefragment">
+<div class="fragmentname">&lt;&lt;SimDataSource.*&gt;&gt;= ./bin/js/v4-SimDataSource.js $</div>
+<div class="code">
+<pre title="<<SimDataSource.*>>= ./bin/js/v4-SimDataSource.js $"><span class="literate-tag-name">&lt;&lt;SimDataSource.constants&gt;&gt;</span>
+
+module.exports = class SimDataSource {
+   <span class="literate-tag-name">&lt;&lt;SimDataSource.constructor&gt;&gt;</span>
+   <span class="literate-tag-name">&lt;&lt;SimDataSource.addPattern&gt;&gt;</span>
+   <span class="literate-tag-name">&lt;&lt;SimDataSource.addVariableWithDescription&gt;&gt;</span>
+   <span class="literate-tag-name">&lt;&lt;SimDataSource.countPatternMatches&gt;&gt;</span>
+   <span class="literate-tag-name">&lt;&lt;SimDataSource.checkLostPatterns&gt;&gt;</span>
+   <span class="literate-tag-name">&lt;&lt;SimDataSource.concreteVars&gt;&gt;</span>
+}
+</pre>
+
+</div>
+</div><h1><code>monte.conf</code></h1>
 <p>The first input file we consider is <code>monte.conf</code> which specifies which variables to preserve across simulations.  It uses sections <code>[filename]</code> for the 3 possible <code>.csv</code> files and free-form (whitespace or <code>,</code> or mixes of them) list of patterns to match specific variable names.  The patterns can be a variable name; a shell-glob style <code>*stuff</code>, <code>stuff*</code>, or <code>*stuff*</code> to match any variables ending, starting or containing <code>stuff</code> in the name; or a <code>JavaScript</code> regular expression.  See the <a href="../doc/UserGuide.md">User Guide</a> for the complete description.</p>
 <p>All patterns get <code>^</code> added at the start and <code>$</code> at the end, i.e., they must match the entire variable name and it is pointless to add those things in the input text.  Similarly, do <em>not</em> include <code>/</code> at the start and end of the pattern.</p>
 <p><code>*</code> at the beginning or end is converted to <code>.*</code> to match the semantics given above, i.e., to convert from a shell glob to a regular expression. <code>*</code> in the middle is a regular expression quantifier.</p>
@@ -241,7 +349,7 @@ sex = <span class="hljs-number">3</span>;
 </div>
 </div><h3>Sections</h3>
 <p>Here we identify lines that are section headers and interpret those headers.  Because of the final <code>continue</code> we move on to the next line, rather than falling through to pattern handling.</p>
-<p>At the moment we do not check the entries for validity, though that would probably be a good idea.</p>
+<p>We check that the entry matches one of the 3 valid possibilities in <code>sectionNames</code>.</p>
 <p>We do allow an optional <code>.csv</code> at the end of the name, adding it if it is absent.  That may fail on case-sensitive file systems, typically <code>Unix</code> types (e.g., Linux, BSD, but generally not Macs).  Case sensitivity is actually a property of a particular file system, not the operating system as a whole.</p>
 <p>At the end <code>csvname</code> is set to the file name (not the full path) and <code>master.csvs</code> has a new entry.</p>
 <div class="codefragment">

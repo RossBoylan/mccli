@@ -112,21 +112,7 @@ The information is built up in stages:
       * Verifies the header is consistent with earlier reads.
       * Writes appropriate info to the database, using previously computed information on the names and locations of the variables to keep.
 
-# Configuration of One CSV Input File
 
-This class organizes all the information about how to interpret a particular kind of CSV file: what headers it has, which of them to record in the database, which patterns to match.
-
-This roughly corresponds to the unnamed structure, often referenced by variables named `cfg` or `cfg` in the test code.
-
-```js : <<CSVConfig.*>>= ./bin/js/v4-csvconfig.js $
-module.exports = class CSVConfig {
-   <<CSVConfig.constants>>
-   <<CSVConfig.constructor>>
-   <<CSVConfig pattern handling>>
-   <<CSVConfig codebook handling>>
-   <<CSVConfig csv input handling>>
-}
-```
 ## Fixed Column Definitions
 
 These give the locations of fixed demographic columns.  We could look them up each time, but the locations are fixed.  If we wanted to be fancy we could put them in a prototype to be shared among instances.
@@ -139,14 +125,14 @@ Note there are 2 available columns with the year, one giving years since start o
 
 `age` and `sex` use numeric codes; their interpretation is discussed elsewhere.
 
-```js : <<CSVConfig.constants>>=
+```js : <<SimDataSource.constants>>=
 year = 0;
 age = 2;
 sex = 3;
 ```
 
 ## Location of `.csv` Files
-```js : <<CSVConfig.constants>>=+
+```js : <<SimDataSource.constants>>=+
 dataPath = path.join(".", "outputs")
 ```
 
@@ -168,7 +154,9 @@ For now, we recommend providing the file extension and warn of possible problems
 
 ### Validation
 
-A `monte.conf` may include a section header that is incorrect--misspelled, or in the wrong case.  As noted above, there may not be any real files to check at the start.  We could just wait until their actual use proves impossible, but that seems annoying for the users. In the worst case the simulation would proceed and the absence of desired information would only be caught later.  Instead, the program does a case insensitive match to the 3 possible legitimate values and reports an error immediately if it fails.
+`monte.conf` may include a section header that is incorrect--misspelled, or in the wrong case.  As noted above, there may not be any real files to check at the start.  We could just wait until their actual use proves impossible, but that seems annoying for the users. In the worst case the simulation would proceed and the absence of desired information would only be caught later.  Instead, the program does a case insensitive match to the 3 possible legitimate values and reports an error immediately if it fails.
+
+It is the responsibility of the code that creates an instance of this class to assure the name is valid.
 
 **To Do** This will not catch case-only differences.  Should they, or various other problems arise, we should abort the simulations, rather than letting the same error occur for each one.
 
@@ -177,23 +165,138 @@ This is instantiated while scanning `monte.conf` before the `.csv` files it desc
 
 ### Code
 
-The argument is a filename including an extension.  This class is responsible for knowing the path.
-```js: <<CSVConfig.constructor>>=
-constructor(ifname) {
+The argument is a filename including an extension.  This class is responsible for knowing the path. `basename` is a string with the core name of the input, e.g, `"totresults"` and `ifname` is the full name, without the path, e.g., `"totresults.csv"`.  The latter is potentially case sensitive, depending on the underlying file system.
+
+The private variables `#patterns` and `#byvar` must be "declared" before use to avoid the error "private field #xx must be declared in enclosing class".
+
+```js: <<SimDataSource.constructor>>=
+#patterns;
+#byvar;
+constructor(basename, ifname) {
+   this.basename = basename.toLowerCase();
    this.ifname = ifname;
    this.ifpath = path.join(this.dataPath, ifname);
-   this.#patterns = new Map();
+   this.#patterns = new Map(); // identify variables of interest
+   this.#byvar = new Map(); // codebook, all variables
 }
 ```
 A `#` as the first character in a variable name make it private to the class, not accessible from outside.
 
-`#patterns` holds individual patterns.  The raw string is the key, and the `RegExp` derived from it is the value.  The keys allow fast lookup for "patterns" that are simply variable names.  They are removed when matched, meaning *they can only be matched once*.  If none match, exhaustive search through the regex's is the only alternative.
+`#patterns` holds individual patterns used to select variables to preserve in the database.  The raw string is the key, and the `RegExp` derived from it is the value.  The keys allow fast lookup for "patterns" that are simply variable names.  They are removed when matched, meaning *they can only be matched once*.  If none match, exhaustive search through the regex's is the only alternative.
+
+`#byvar` will eventually have variable names as keys and a  description as a value.  That is built up later, when reading the codebook file.  It includes all possible variables, not just those of interest.
+
+## Adding Variables of Interest
+
+In `monte.conf` a user  specifies a list of variables, and patterns for variables, to preserve in the database.  Here is where they are preserved.  `text` is the plain text representation for the common case in which the "pattern" is just a variable name; `regex` is a regular expression object that corresponds to it.
+
+We convert the key to lowercase to simplifying matching on it; this means the key may not match the case known to the user.
+
+```js: <<SimDataSource.addPattern>>=
+addPattern(text, regex) {
+   this.#patterns.set(text.toLowerCase(), regex);
+}
+```
+
+## Adding Codebook information
+
+```js: <<SimDataSource.addVariableWithDescription>>=
+addVarDescription(varname, description){
+   this.#byvar.set(varname.toLowerCase(), description);
+}
+```
+
+## From Patterns to Variables
+
+Once the complete list of variables is  loaded in `#byvar` we check that every pattern for an allowed variable matches the name of at least one actual variable.  We work on a copy so that we can delete entries as an optimization.
+
+The result of this function is a `Map` with regex's as keys and a value which is  a count of the number of variables it matches and a list of concrete variable names.
+
+```js: <<SimDataSource.countPatternMatches>>=
+countPatternMatches() {
+   let pats = new Map(this.#patterns); // so deletions don't affect original;
+   let result = new Map();
+   let myvar = new Set(...this.#byvar.keys());
+
+   const vs = [...pats]; // since we mutate pats
+
+   // first check for exact matches
+   for (const [txt, re] of vs) {
+      if (myvar.has(txt)) {
+         result.add(re, [1, [txt,]]);
+         pats.delete(txt);
+         myvar.delete(txt);
+      }
+   }
+
+   // now check all that remain against the regexps
+   // O(n^2) at least
+   const p2 = [...pats];
+   for (const [txt, re] of p2){
+      // myvar is a Set, and therefore doen't have a filter method
+      let matched = [];  // all matching variable names
+      for (const v of myvar){
+         if (re.test(v)){
+            matched.push(v);
+         }
+      }
+      // safer to delete after iteration
+      // Set provide no set-level operator to remove members
+      // experimental difference operator creates a new Set,
+      // and is not currently in Node.js
+      matched.forEach(v=>myvar.delete(v));
+      // note we leave the pattern in pats
+      result.add(re, [matched.length, matched]);
+   }
+
+   return result;
+}
+```
+
+One thing we can do with the result is to check if any patterns don't match any of the variables.  Since that probably indicates a typo, we alert the user and stop.
+
+The argument to the next function is the `Map` output by the previous function.
+
+```js: <<SimDataSource.checkLostPatterns>>=
+checkLostPatterns(counts){
+   let missing = [];
+   for (re, [count, vs] of counts){
+      if (count==0)
+         missing.push(re);
+   }
+   if (missing.length == 0)
+      return;
+   console.log("The following patterns in monte.conf don't match any variables.");
+   error("Check for typos: "+missing.join(" "));
+}
+```
 
 
-All the following may belong in a more global structure.
+Finally, get the list of concrete variables that matched.  Note that all such variables may not be in the `.csv` file, but it seems easier to test against this list the specification with regular expressions.
 
-`#byvar` has variable names as keys and a  description as a value.  That is built up later, when reading the codebook file.
+Returns a `Set` of variable names.
 
+```js: <<SimDataSource.concreteVars>>=
+concreteVars(counts){
+   let result = new Set();
+   // likely the iterator will not support foreach
+   counts.values().forEach(([n, vs])=>vs.forEach(v=>result.add(v)));
+   return result;
+}
+```
+## The Whole McGilla
+```js: <<SimDataSource.*>>= ./bin/js/v4-SimDataSource.js $
+<<SimDataSource.constants>>
+
+module.exports = class SimDataSource {
+   <<SimDataSource.constructor>>
+   <<SimDataSource.addPattern>>
+   <<SimDataSource.addVariableWithDescription>>
+   <<SimDataSource.countPatternMatches>>
+   <<SimDataSource.checkLostPatterns>>
+   <<SimDataSource.concreteVars>>
+}
+```
 
 # `monte.conf`
 
@@ -311,7 +414,7 @@ constructor(master, configfile) {
 
 Here we identify lines that are section headers and interpret those headers.  Because of the final `continue` we move on to the next line, rather than falling through to pattern handling.
 
-At the moment we do not check the entries for validity, though that would probably be a good idea.
+We check that the entry matches one of the 3 valid possibilities in `sectionNames`.
 
 We do allow an optional `.csv` at the end of the name, adding it if it is absent.  That may fail on case-sensitive file systems, typically `Unix` types (e.g., Linux, BSD, but generally not Macs).  Case sensitivity is actually a property of a particular file system, not the operating system as a whole.
 

@@ -257,7 +257,9 @@ constructor(basename, ifname) {
 <div class="codefragment">
 <div class="fragmentname">&lt;&lt;SimDataSource.*&gt;&gt;= ./bin/js/v4-SimDataSource.js $</div>
 <div class="code">
-<pre title="<<SimDataSource.*>>= ./bin/js/v4-SimDataSource.js $"><span class="literate-tag-name">&lt;&lt;SimDataSource.constants&gt;&gt;</span>
+<pre title="<<SimDataSource.*>>= ./bin/js/v4-SimDataSource.js $">'use strict';
+
+<span class="literate-tag-name">&lt;&lt;SimDataSource.constants&gt;&gt;</span>
 
 module.exports = class SimDataSource {
    <span class="literate-tag-name">&lt;&lt;SimDataSource.constructor&gt;&gt;</span>
@@ -297,7 +299,8 @@ module.exports = class SimDataSource {
 <div class="codefragment">
 <div class="fragmentname">&lt;&lt;Variable Selector class.*&gt;&gt;= ./bin/js/v4-VariableSelector.js $</div>
 <div class="code">
-<pre><code><span class="hljs-keyword">const</span> nReadLines = <span class="hljs-built_in">require</span>(<span class="hljs-string">&quot;n-readlines&quot;</span>);
+<pre><code><span class="hljs-meta">&#x27;use strict&#x27;</span>;
+<span class="hljs-keyword">const</span> nReadLines = <span class="hljs-built_in">require</span>(<span class="hljs-string">&quot;n-readlines&quot;</span>);
 
 <span class="literate-tag-name">&lt;&lt;VariableSelector.constants&gt;&gt;</span>
 
@@ -420,7 +423,9 @@ module.exports = class SimDataSource {
 <div class="codefragment">
 <div class="fragmentname">&lt;&lt;TemporaryTop.*&gt;&gt;= ./bin/js/v4.js $</div>
 <div class="code">
-<pre title="<<TemporaryTop.*>>=./bin/js/v4.js $">// class definitions
+<pre title="<<TemporaryTop.*>>=./bin/js/v4.js $">'use strict';
+
+// class definitions
 const SimDataSource = require('./v4-SimDataSource'),
    VariableSelector = require('./v4-VariableSelector');
 

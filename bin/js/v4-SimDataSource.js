@@ -1,3 +1,5 @@
+'use strict';
+
 const path = require('path');
 year = 0;
 age = 2;

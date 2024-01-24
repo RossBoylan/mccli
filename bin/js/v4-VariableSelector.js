@@ -1,3 +1,4 @@
+'use strict';
 const nReadLines = require("n-readlines");
 
 const sectionRE = /\[\s*((?<full>(?<base>\S.*)(?<ext>\.csv))|(?<simple>\S.*)(?<=\S))\s*\]/i;

@@ -294,6 +294,8 @@ concreteVars(counts){
 
 ## The Whole McGilla
 ```js: <<SimDataSource.*>>= ./bin/js/v4-SimDataSource.js $
+'use strict';
+
 <<SimDataSource.constants>>
 
 module.exports = class SimDataSource {
@@ -355,6 +357,7 @@ The matching procedure ignores case on the theory that differences in case are a
 ## Top Level Definition of `VariableSelector`
 
 ```js : <<Variable Selector class.*>>= ./bin/js/v4-VariableSelector.js $
+'use strict';
 const nReadLines = require("n-readlines");
 
 <<VariableSelector.constants>>
@@ -488,6 +491,8 @@ for (rawv of line.split(sepRE)){
 This is for testing and may well be discarded when `v4` is integrated into  the regular processing in `runSims`.
 
 ```js: <<TemporaryTop.*>>=./bin/js/v4.js $
+'use strict';
+
 // class definitions
 const SimDataSource = require('./v4-SimDataSource'),
    VariableSelector = require('./v4-VariableSelector');

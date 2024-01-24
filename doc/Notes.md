@@ -336,3 +336,4 @@ Modified test code to write out iteration number.
       - [ ] possibly make it a long running process across simulations
     - [ ] maybe create command line program to extract results from db
     - [ ] maybe add option to skip generating the format files
+    - [ ] CURRENT: running tests on `v4` with config for same.  Can't load `n-readlines` even though it seems to be in `mccli\node_modules` and seems to be a CommonJS module.  However, it has no `index.js`.  It has `package.json` which points to `readlines.js`.

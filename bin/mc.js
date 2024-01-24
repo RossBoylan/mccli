@@ -2,9 +2,16 @@
 'use strict';
 const yargs = require("yargs"),
 		init = require('./js/init'),
-		runSims = require('./js/runSims')
+		runSims = require('./js/runSims'),
+        v4 = require('./js/v4')
 
 let argv = yargs
+.command({
+    command: 'v4',
+    aliases: ['test'],
+    desc: 'test v4 processing',
+    handler: v4
+})
 .command({
     command: 'init',
     desc: 'initialize MC system in current directory',

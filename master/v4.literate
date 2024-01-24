@@ -112,6 +112,12 @@ The information is built up in stages:
       * Verifies the header is consistent with earlier reads.
       * Writes appropriate info to the database, using previously computed information on the names and locations of the variables to keep.
 
+## Required Libraries
+
+```js: <<SimDataSource.constants>>=
+const path = require('path');
+```
+
 
 ## Fixed Column Definitions
 
@@ -125,7 +131,7 @@ Note there are 2 available columns with the year, one giving years since start o
 
 `age` and `sex` use numeric codes; their interpretation is discussed elsewhere.
 
-```js : <<SimDataSource.constants>>=
+```js : <<SimDataSource.constants>>=+
 year = 0;
 age = 2;
 sex = 3;
@@ -260,7 +266,8 @@ The argument to the next function is the `Map` output by the previous function.
 ```js: <<SimDataSource.checkLostPatterns>>=
 checkLostPatterns(counts){
    let missing = [];
-   for (re, [count, vs] of counts){
+   for (const xx of counts){
+      let re, [count, vs] = xx;
       if (count==0)
          missing.push(re);
    }
@@ -284,6 +291,7 @@ concreteVars(counts){
    return result;
 }
 ```
+
 ## The Whole McGilla
 ```js: <<SimDataSource.*>>= ./bin/js/v4-SimDataSource.js $
 <<SimDataSource.constants>>
@@ -347,7 +355,10 @@ The matching procedure ignores case on the theory that differences in case are a
 ## Top Level Definition of `VariableSelector`
 
 ```js : <<Variable Selector class.*>>= ./bin/js/v4-VariableSelector.js $
+const nReadLines = require("n-readlines");
+
 <<VariableSelector.constants>>
+
 module.exports = class VariableSelector {
    <<VariableSelector.construct from configuration file>>
 }
@@ -368,7 +379,7 @@ Another possibility is to define the constants at the module level.  This should
 
 ```js : <<VariableSelector.constants>>=
 const sectionRE = /\[\s*((?<full>(?<base>\S.*)(?<ext>\.csv))|(?<simple>\S.*)(?<=\S))\s*\]/i;
-const sectionNames = Set(["targets_output", "totresults", "calib"])
+const sectionNames = new Set(["targets_output", "totresults", "calib"])
 ```
 
 For `sectionRE` I tried `/\[\s*(\S.*)(\.csv)?\s*\]/i` but, because the first group is greedy it matched `.csv` and the 2nd group was always empty.
@@ -470,5 +481,21 @@ for (rawv of line.split(sepRE)){
    So we store them both ways.
    */
    sds.addPattern(rawv, new RegExp("^"+v+"$", "i"));
+}
+```
+# Top Level Stub
+
+This is for testing and may well be discarded when `v4` is integrated into  the regular processing in `runSims`.
+
+```js: <<TemporaryTop.*>>=./bin/js/v4.js $
+// class definitions
+const SimDataSource = require('./v4-SimDataSource'),
+   VariableSelector = require('./v4-VariableSelector');
+
+module.exports = (yargs)=> {
+   let master = {};
+   let vs = new VariableSelector(master, './py_tests/monte.conf');
+   console.log(master.sources);
+
 }
 ```

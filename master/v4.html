@@ -84,14 +84,22 @@
 </ul>
 </li>
 </ol>
-<h2>Fixed Column Definitions</h2>
+<h2>Required Libraries</h2>
+<div class="codefragment">
+<div class="fragmentname">&lt;&lt;SimDataSource.constants&gt;&gt;= </div>
+<div class="code">
+<pre title="<<SimDataSource.constants>>=">const path = require('path');
+</pre>
+
+</div>
+</div><h2>Fixed Column Definitions</h2>
 <p>These give the locations of fixed demographic columns.  We could look them up each time, but the locations are fixed.  If we wanted to be fancy we could put them in a prototype to be shared among instances.</p>
 <p>The values are <code>const</code> but <code>JavaScript</code> does not permit that in a class definition.</p>
 <p>The demographic columns are most of the index for the data values that go in the database.</p>
 <p>Note there are 2 available columns with the year, one giving years since start of simulation and the other calendar year. The choice below is calendar year.  Set <code>year = 1</code> to get simulation years, which are 1-based (the two 1's are completely different uses).</p>
 <p><code>age</code> and <code>sex</code> use numeric codes; their interpretation is discussed elsewhere.</p>
 <div class="codefragment">
-<div class="fragmentname">&lt;&lt;SimDataSource.constants&gt;&gt;= </div>
+<div class="fragmentname">&lt;&lt;SimDataSource.constants&gt;&gt;=+ </div>
 <div class="code">
 <pre><code>year = <span class="hljs-number">0</span>;
 age = <span class="hljs-number">2</span>;
@@ -218,7 +226,8 @@ constructor(basename, ifname) {
 <div class="code">
 <pre title="<<SimDataSource.checkLostPatterns>>=">checkLostPatterns(counts){
    let missing = [];
-   for (re, [count, vs] of counts){
+   for (const xx of counts){
+      let re, [count, vs] = xx;
       if (count==0)
          missing.push(re);
    }
@@ -288,7 +297,10 @@ module.exports = class SimDataSource {
 <div class="codefragment">
 <div class="fragmentname">&lt;&lt;Variable Selector class.*&gt;&gt;= ./bin/js/v4-VariableSelector.js $</div>
 <div class="code">
-<pre><code><span class="literate-tag-name">&lt;&lt;VariableSelector.constants&gt;&gt;</span>
+<pre><code><span class="hljs-keyword">const</span> nReadLines = <span class="hljs-built_in">require</span>(<span class="hljs-string">&quot;n-readlines&quot;</span>);
+
+<span class="literate-tag-name">&lt;&lt;VariableSelector.constants&gt;&gt;</span>
+
 <span class="hljs-variable language_">module</span>.<span class="hljs-property">exports</span> = <span class="hljs-keyword">class</span> <span class="hljs-title class_">VariableSelector</span> {
    <span class="literate-tag-name">&lt;&lt;VariableSelector.construct from configuration file&gt;&gt;</span>
 }
@@ -306,7 +318,7 @@ module.exports = class SimDataSource {
 <div class="fragmentname">&lt;&lt;VariableSelector.constants&gt;&gt;= </div>
 <div class="code">
 <pre><code><span class="hljs-keyword">const</span> sectionRE = <span class="hljs-regexp">/\[\s*((?&lt;full&gt;(?&lt;base&gt;\S.*)(?&lt;ext&gt;\.csv))|(?&lt;simple&gt;\S.*)(?&lt;=\S))\s*\]/i</span>;
-<span class="hljs-keyword">const</span> sectionNames = <span class="hljs-title class_">Set</span>([<span class="hljs-string">&quot;targets_output&quot;</span>, <span class="hljs-string">&quot;totresults&quot;</span>, <span class="hljs-string">&quot;calib&quot;</span>])
+<span class="hljs-keyword">const</span> sectionNames = <span class="hljs-keyword">new</span> <span class="hljs-title class_">Set</span>([<span class="hljs-string">&quot;targets_output&quot;</span>, <span class="hljs-string">&quot;totresults&quot;</span>, <span class="hljs-string">&quot;calib&quot;</span>])
 </code></pre>
 
 </div>
@@ -401,6 +413,24 @@ module.exports = class SimDataSource {
    sds.<span class="hljs-title function_">addPattern</span>(rawv, <span class="hljs-keyword">new</span> <span class="hljs-title class_">RegExp</span>(<span class="hljs-string">&quot;^&quot;</span>+v+<span class="hljs-string">&quot;[CONTENT]quot;</span>, <span class="hljs-string">&quot;i&quot;</span>));
 }
 </code></pre>
+
+</div>
+</div><h1>Top Level Stub</h1>
+<p>This is for testing and may well be discarded when <code>v4</code> is integrated into  the regular processing in <code>runSims</code>.</p>
+<div class="codefragment">
+<div class="fragmentname">&lt;&lt;TemporaryTop.*&gt;&gt;= ./bin/js/v4.js $</div>
+<div class="code">
+<pre title="<<TemporaryTop.*>>=./bin/js/v4.js $">// class definitions
+const SimDataSource = require('./v4-SimDataSource'),
+   VariableSelector = require('./v4-VariableSelector');
+
+module.exports = (yargs)=&gt; {
+   let master = {};
+   let vs = new VariableSelector(master, './py_tests/monte.conf');
+   console.log(master.sources);
+
+}
+</pre>
 
 </div>
 </div>

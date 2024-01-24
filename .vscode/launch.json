@@ -5,6 +5,7 @@
     */
     "version": "0.2.0",
     "configurations": [
+
         {
             "name": "Python: Current File",
             "type": "python",
@@ -29,6 +30,23 @@
             ],
             "console": "integratedTerminal",
             "cwd": "J:\\source\\repos\\mccli\\Mod92_YLMC_09292022"
+        },
+        {
+            "type": "node",
+            "request": "launch",
+            "name": "mc v4",
+            "skipFiles": [
+                "<node_internals>/**"
+            ],
+            "program": "J:\\source\\repos\\mccli\\bin\\mc.js",
+            "args": [
+                "v4",
+                "3",
+                "0",
+                "343"
+            ],
+            "console": "integratedTerminal",
+            "cwd": "J:\\source\\repos\\mccli"
         },
         {
             "type": "node",

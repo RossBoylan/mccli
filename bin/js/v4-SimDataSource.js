@@ -1,3 +1,4 @@
+const path = require('path');
 year = 0;
 age = 2;
 sex = 3;
@@ -59,7 +60,8 @@ module.exports = class SimDataSource {
    }
    checkLostPatterns(counts){
       let missing = [];
-      for (re, [count, vs] of counts){
+      for (const xx of counts){
+         let re, [count, vs] = xx;
          if (count==0)
             missing.push(re);
       }

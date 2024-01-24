@@ -1,6 +1,9 @@
+const nReadLines = require("n-readlines");
+
 const sectionRE = /\[\s*((?<full>(?<base>\S.*)(?<ext>\.csv))|(?<simple>\S.*)(?<=\S))\s*\]/i;
-const sectionNames = Set(["targets_output", "totresults", "calib"])
+const sectionNames = new Set(["targets_output", "totresults", "calib"])
 const sepRE = /(\s*,\s*)|(\s+)/;
+
 module.exports = class VariableSelector {
    constructor(master, configfile) {
       let i, line, match, csvname, base, ext, v, rawv, sds;

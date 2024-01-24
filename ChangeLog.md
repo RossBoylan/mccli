@@ -1,5 +1,14 @@
 Change Log for `mccli`
 
+* 4.0.0.pre1
+  * Add code to handle new output associated with Heart Failure.
+  The new handling is not limited to Heart Failure variables, and 
+  pulls data from .csv files into a database.
+  * New [User Guide](doc/UserGuide.md) describing how to use the new facilities.
+  * New dependency on `npm` libraries `n-readlines` and `better-sqlite3`.  Be sure to update your packages.
+  * Implementation Changes
+    * The master for the new code is now in `v4.literate`, using the `literate` extension to `Visual Studio Code`.  So those tools are now required to manage that code. 
+
 * 3.3.2 2022-10-18 ross.boylan@ucsf.edu
     * Fix: beta distribution can't handle vectors
     ```

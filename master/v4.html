@@ -328,8 +328,10 @@ module.exports = class SimDataSource {
 <div class="fragmentname">&lt;&lt;VariableSelector.construct from configuration file&gt;&gt;= </div>
 <div class="code">
 <pre><code><span class="hljs-title function_">constructor</span>(<span class="hljs-params">master, configfile</span>) {
-   <span class="hljs-keyword">let</span> i, line, match, csvname, base, ext, current, v, rawv;
+   <span class="hljs-keyword">let</span> i, line, match, csvname, base, ext, v, rawv, sds;
    <span class="hljs-keyword">const</span> reader = <span class="hljs-keyword">new</span> <span class="hljs-title function_">nReadLines</span>(configfile);
+   <span class="hljs-keyword">let</span> sections = <span class="hljs-keyword">new</span> <span class="hljs-title class_">Map</span>(); 
+   master.<span class="hljs-property">sources</span> = sections;
    <span class="hljs-keyword">while</span> (line=reader.<span class="hljs-title function_">next</span>()) {
       line = line.<span class="hljs-title function_">toString</span>(<span class="hljs-string">&#x27;ascii&#x27;</span>);
       
@@ -373,20 +375,17 @@ module.exports = class SimDataSource {
    
    <span class="hljs-keyword">if</span> (!sectionNames.<span class="hljs-title function_">has</span>(base.<span class="hljs-title function_">toLowerCase</span>()))
       <span class="hljs-title function_">error</span>(<span class="hljs-string">&quot;monte.conf has section for ${base}.  Unknown; expected one of ${sectionNames}.&quot;</span>);
-   current = {
-         
-         <span class="hljs-attr">varPatterns</span>: <span class="hljs-keyword">new</span> <span class="hljs-title class_">Map</span>(),
-   }
-   master.<span class="hljs-property">csvs</span>.<span class="hljs-title function_">set</span>(csvname, current);
+   sds = <span class="hljs-keyword">new</span> <span class="hljs-title class_">SimulationDataSource</span>(base, csvname);
+   sections.<span class="hljs-title function_">set</span>(base.<span class="hljs-title function_">toLowerCase</span>(), sds);
    <span class="hljs-keyword">continue</span>;
 };
 </code></pre>
 
 </div>
 </div><h3>Pattern List</h3>
-<p>Here we turn every pattern in the line into a regular expression and record it.  This implements our special interpretation of <code>*</code> at the start or end as being like shell globs.  And it requires that the pattern match the complete variable name, not just part of it, by prefixing it with <code>^</code> and suffixing with <code>$</code>.  Matching specific variable names will be case insensitive.  <strong>Is the non-RE version of the pattern handled case insensitively?  It probably should be.</strong></p>
+<p>Here we turn every pattern in the line into a regular expression and record it.  This implements our special interpretation of <code>*</code> at the start or end as being like shell globs.  And it requires that the pattern match the complete variable name, not just part of it, by prefixing it with <code>^</code> and suffixing with <code>$</code>.  Matching specific variable names will be case insensitive.</p>
 <p>This handles a single line; the pattern list may continue on additional lines.</p>
-<p>Writes values to <code>current</code> which was created when the section header was encountered, and which is already installed in <code>master.csvs</code>.</p>
+<p>Writes values to <code>sds</code> which was created when the section header was encountered, and which is already installed in <code>master.sources</code>.</p>
 <div class="codefragment">
 <div class="fragmentname">&lt;&lt;handle pattern lists&gt;&gt;= </div>
 <div class="code">
@@ -399,7 +398,7 @@ module.exports = class SimDataSource {
    <span class="hljs-keyword">if</span> (v.<span class="hljs-title function_">endsWith</span>(<span class="hljs-string">&quot;*&quot;</span>))
          v = v.<span class="hljs-title function_">slice</span>(<span class="hljs-number">0</span>, v.<span class="hljs-property">length</span>-<span class="hljs-number">1</span>)+<span class="hljs-string">&quot;.*&quot;</span>
    
-   current.<span class="hljs-property">varPatterns</span>.<span class="hljs-title function_">set</span>(rawv, <span class="hljs-keyword">new</span> <span class="hljs-title class_">RegExp</span>(<span class="hljs-string">&quot;^&quot;</span>+v+<span class="hljs-string">&quot;[CONTENT]quot;</span>, <span class="hljs-string">&quot;i&quot;</span>));
+   sds.<span class="hljs-title function_">addPattern</span>(rawv, <span class="hljs-keyword">new</span> <span class="hljs-title class_">RegExp</span>(<span class="hljs-string">&quot;^&quot;</span>+v+<span class="hljs-string">&quot;[CONTENT]quot;</span>, <span class="hljs-string">&quot;i&quot;</span>));
 }
 </code></pre>
 

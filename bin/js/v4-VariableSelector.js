@@ -3,8 +3,10 @@ const sectionNames = Set(["targets_output", "totresults", "calib"])
 const sepRE = /(\s*,\s*)|(\s+)/;
 module.exports = class VariableSelector {
    constructor(master, configfile) {
-      let i, line, match, csvname, base, ext, current, v, rawv;
+      let i, line, match, csvname, base, ext, v, rawv, sds;
       const reader = new nReadLines(configfile);
+      let sections = new Map(); // key is lowercase base name, value is a SimDataSource
+      master.sources = sections;
       while (line=reader.next()) {
          line = line.toString('ascii');
          // strip out comment
@@ -30,17 +32,11 @@ module.exports = class VariableSelector {
                ext = ".csv";
                csvname = base + ext;
             }
-            // at this poin base, ext and csvname are all set up.
+            // at this point base, ext and csvname are all set up.
             if (!sectionNames.has(base.toLowerCase()))
                error("monte.conf has section for ${base}.  Unknown; expected one of ${sectionNames}.");
-            current = {
-                  /* varPatterns has keys that are the raw text entered
-                  and values that are regular expressions.
-                  If the raw text is matched, the item will be removed.
-                  */
-                  varPatterns: new Map(),
-            }
-            master.csvs.set(csvname, current);
+            sds = new SimulationDataSource(base, csvname);
+            sections.set(base.toLowerCase(), sds);
             continue;
          };
          // handle list of variables
@@ -56,7 +52,7 @@ module.exports = class VariableSelector {
             will burden either the programmer or the user.
             So we store them both ways.
             */
-            current.varPatterns.set(rawv, new RegExp("^"+v+"$", "i"));
+            sds.addPattern(rawv, new RegExp("^"+v+"$", "i"));
          }
       };
    };

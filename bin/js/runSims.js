@@ -13,13 +13,7 @@ let INPUTS_FILENAME = path.join('MC','inputs','input_data.json');
 let PROGRESS_FILENAME = path.join('MC', '.progress')
 let SIM_FILENAME = path.join('MC', '.simStart')
 
-let error = (msg,stdout="") => {
-	process.stdout.clearLine();
-	process.stdout.cursorTo(0);
-	console.log(`${'ERR'.bgYellow} ${msg}`);
-	process.stdout.write(stdout);
-	shell.exit(1);
-};
+const error = require('./error');
 
 let outFileName = (inp_file) => {
 	let file_data = fs.readFileSync(`${inp_file}_mc0.inp`,'ascii');

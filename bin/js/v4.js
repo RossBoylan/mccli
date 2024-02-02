@@ -1,8 +1,7 @@
 'use strict';
 
 // class definitions
-const SimDataSource = require('./v4-SimDataSource'),
-   VariableSelector = require('./v4-VariableSelector');
+const VariableSelector = require('./v4-VariableSelector');
 
 module.exports = (yargs)=> {
    let master = {};

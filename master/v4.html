@@ -47,7 +47,7 @@
 <p>That said, <code>ES6</code> is probably the wave of the future, and modules are likely to be increasingly available in that format.  One of the key modules <code>mccli</code> uses, <code>inquirer</code>, is <em>only</em> available in <code>ES6</code> format for recent releases, leading this package to restrict it to earlier versions in <code>package.json</code></p>
 <p>Each file is a module, and it seems fairly conventional to put a class definition in a file so that importing the file creates the class.</p>
 <p>I haven't been able to find a clear statement about namespaces for <code>CommonJS</code> modules, in particular whether a module needs to import (via <code>require</code>) a module already present in the parent. This <a href="https://developer.mozilla.org/en-US/docs/Web/JavaScript/Guide/Modules#other_differences_between_modules_and_standard_scripts">discussion</a> of [<code>ES6</code>] seems pretty clear that the import must be done within the module, saying that only global variables are accessible from the module.  But aren't imported modules global vaiables?</p>
-<p>At any rate, redundant imports should be cheap since the results are cached.</p>
+<p>At any rate, redundant imports should be cheap since the results are cached, and experimentation shows that <code>CommonJS</code> modules, like <code>ES6</code>, must be imported separately in each file.</p>
 <h2>Classes and Types</h2>
 <p><code>JavaScript</code> now has a syntax for declaring classes, which we will use.  However, <code>JavaScript</code> <code>Object</code>s are really all of the same type, and <code>JavaScript</code> itself barely has types: variables and functions are not declared with types.</p>
 <p><code>JavaScript</code> does have a prototype system in which one object--not class--serves as a prototype for another. The class system is actually just a syntactic gloss on prototypes.</p>
@@ -89,6 +89,7 @@
 <div class="fragmentname">&lt;&lt;SimDataSource.constants&gt;&gt;= </div>
 <div class="code">
 <pre title="<<SimDataSource.constants>>=">const path = require('path');
+const error = require('./error');
 </pre>
 
 </div>
@@ -101,9 +102,9 @@
 <div class="codefragment">
 <div class="fragmentname">&lt;&lt;SimDataSource.constants&gt;&gt;=+ </div>
 <div class="code">
-<pre><code>year = <span class="hljs-number">0</span>;
-age = <span class="hljs-number">2</span>;
-sex = <span class="hljs-number">3</span>;
+<pre><code><span class="hljs-keyword">const</span> year = <span class="hljs-number">0</span>;
+<span class="hljs-keyword">const</span> age = <span class="hljs-number">2</span>;
+<span class="hljs-keyword">const</span> sex = <span class="hljs-number">3</span>;
 </code></pre>
 
 </div>
@@ -111,7 +112,7 @@ sex = <span class="hljs-number">3</span>;
 <div class="codefragment">
 <div class="fragmentname">&lt;&lt;SimDataSource.constants&gt;&gt;=+ </div>
 <div class="code">
-<pre><code>dataPath = path.<span class="hljs-title function_">join</span>(<span class="hljs-string">&quot;.&quot;</span>, <span class="hljs-string">&quot;outputs&quot;</span>)
+<pre><code><span class="hljs-keyword">const</span> dataPath = path.<span class="hljs-title function_">join</span>(<span class="hljs-string">&quot;.&quot;</span>, <span class="hljs-string">&quot;outputs&quot;</span>);
 </code></pre>
 
 </div>
@@ -140,7 +141,9 @@ sex = <span class="hljs-number">3</span>;
 constructor(basename, ifname) {
    this.basename = basename.toLowerCase();
    this.ifname = ifname;
-   this.ifpath = path.join(this.dataPath, ifname);
+   // this.dataPath does not resolve to the constant in this module
+   // so just use the constant.
+   this.ifpath = path.join(dataPath, ifname);
    this.#patterns = new Map(); // identify variables of interest
    this.#byvar = new Map(); // codebook, all variables
 }
@@ -301,6 +304,8 @@ module.exports = class SimDataSource {
 <div class="code">
 <pre><code><span class="hljs-meta">&#x27;use strict&#x27;</span>;
 <span class="hljs-keyword">const</span> nReadLines = <span class="hljs-built_in">require</span>(<span class="hljs-string">&quot;n-readlines&quot;</span>);
+<span class="hljs-keyword">const</span> error = <span class="hljs-built_in">require</span>(<span class="hljs-string">&#x27;./error&#x27;</span>);
+<span class="hljs-keyword">const</span> <span class="hljs-title class_">SimDataSource</span> = <span class="hljs-built_in">require</span>(<span class="hljs-string">&#x27;./v4-SimDataSource&#x27;</span>);
 
 <span class="literate-tag-name">&lt;&lt;VariableSelector.constants&gt;&gt;</span>
 
@@ -321,17 +326,19 @@ module.exports = class SimDataSource {
 <div class="fragmentname">&lt;&lt;VariableSelector.constants&gt;&gt;= </div>
 <div class="code">
 <pre><code><span class="hljs-keyword">const</span> sectionRE = <span class="hljs-regexp">/\[\s*((?&lt;full&gt;(?&lt;base&gt;\S.*)(?&lt;ext&gt;\.csv))|(?&lt;simple&gt;\S.*)(?&lt;=\S))\s*\]/i</span>;
-<span class="hljs-keyword">const</span> sectionNames = <span class="hljs-keyword">new</span> <span class="hljs-title class_">Set</span>([<span class="hljs-string">&quot;targets_output&quot;</span>, <span class="hljs-string">&quot;totresults&quot;</span>, <span class="hljs-string">&quot;calib&quot;</span>])
+<span class="hljs-keyword">const</span> sectionNames = <span class="hljs-keyword">new</span> <span class="hljs-title class_">Set</span>([<span class="hljs-string">&quot;targets_output&quot;</span>, <span class="hljs-string">&quot;totresults&quot;</span>, <span class="hljs-string">&quot;calib&quot;</span>]);
 </code></pre>
 
 </div>
 </div><p>For <code>sectionRE</code> I tried <code>/\[\s*(\S.*)(\.csv)?\s*\]/i</code> but, because the first group is greedy it matched <code>.csv</code> and the 2nd group was always empty.</p>
 <p>Filenames ending in <code>.csv</code> will match either side of the <code>|</code> in the <code>sectionRE</code> above, but it seems to match the first if it can.  So if the filename ends in <code>.csv</code> it will match the 2nd capture group, otherwise the third.</p>
 <h3>Separators</h3>
+<p>I tried <code>/(\s*,\s*)|(\s+)/</code> but the returned array includes the separators and <code>undefined</code> as elements!  This is the <a href="https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/String/split#splitting_with_a_regexp_to_include_parts_of_the_separator_in_the_result">documented</a> behavior.</p>
+<p>So capturing groups are out, but I wonder if my current expression binds like <code>/\s*,(\s*|\s+/)</code>, which would be unfortunate.  Usual useage suggests it picks the largest group on each side, e.g., <code>/red|blue/</code> matches red or blue but not reblue (OK, it matchest the end of reblue, but not the whole).</p>
 <div class="codefragment">
 <div class="fragmentname">&lt;&lt;VariableSelector.constants&gt;&gt;=+ </div>
 <div class="code">
-<pre><code><span class="hljs-keyword">const</span> sepRE = <span class="hljs-regexp">/(\s*,\s*)|(\s+)/</span>;
+<pre><code><span class="hljs-keyword">const</span> sepRE = <span class="hljs-regexp">/\s*,\s*|\s+/</span>;
 </code></pre>
 
 </div>
@@ -377,22 +384,25 @@ module.exports = class SimDataSource {
    
    csvname = match.<span class="hljs-property">groups</span>.<span class="hljs-property">full</span>;
    <span class="hljs-keyword">if</span> (csvname) {
-      base = match.<span class="hljs-property">group</span>.<span class="hljs-property">base</span>;
-      ext = match.<span class="hljs-property">group</span>.<span class="hljs-property">ext</span>;
+      base = match.<span class="hljs-property">groups</span>.<span class="hljs-property">base</span>;
+      ext = match.<span class="hljs-property">groups</span>.<span class="hljs-property">ext</span>;
    } <span class="hljs-keyword">else</span> {
-      base = match.<span class="hljs-property">group</span>.<span class="hljs-property">simple</span>;
+      base = match.<span class="hljs-property">groups</span>.<span class="hljs-property">simple</span>;
       <span class="hljs-keyword">if</span> (! base)
-         
          <span class="hljs-title function_">error</span>(<span class="hljs-string">&quot;monte.conf has an empty section heading.&quot;</span>);
       ext = <span class="hljs-string">&quot;.csv&quot;</span>;
       csvname = base + ext;
    }
    
    <span class="hljs-keyword">if</span> (!sectionNames.<span class="hljs-title function_">has</span>(base.<span class="hljs-title function_">toLowerCase</span>()))
-      <span class="hljs-title function_">error</span>(<span class="hljs-string">&quot;monte.conf has section for ${base}.  Unknown; expected one of ${sectionNames}.&quot;</span>);
-   sds = <span class="hljs-keyword">new</span> <span class="hljs-title class_">SimulationDataSource</span>(base, csvname);
+      <span class="hljs-title function_">error</span>(<span class="hljs-string">`monte.conf has section for <span class="hljs-subst">${base}</span>.  Unknown; expected one of <span class="hljs-subst">${[...sectionNames].join(<span class="hljs-string">&quot;, &quot;</span>)}</span>.`</span>);
+   sds = <span class="hljs-keyword">new</span> <span class="hljs-title class_">SimDataSource</span>(base, csvname);
    sections.<span class="hljs-title function_">set</span>(base.<span class="hljs-title function_">toLowerCase</span>(), sds);
    <span class="hljs-keyword">continue</span>;
+} <span class="hljs-keyword">else</span> {
+   <span class="hljs-keyword">if</span> (!sds)
+      
+      <span class="hljs-keyword">continue</span>;
 };
 </code></pre>
 
@@ -406,16 +416,39 @@ module.exports = class SimDataSource {
 <div class="code">
 <pre><code>
 <span class="hljs-keyword">for</span> (rawv <span class="hljs-keyword">of</span> line.<span class="hljs-title function_">split</span>(sepRE)){
-   v = rawv
+   
+   <span class="hljs-keyword">if</span> (!rawv)
+      <span class="hljs-keyword">continue</span>;
+   v = rawv;
    
    <span class="hljs-keyword">if</span> (v.<span class="hljs-title function_">startsWith</span>(<span class="hljs-string">&quot;*&quot;</span>))
-         v = <span class="hljs-string">&quot;.&quot;</span>+v
+         v = <span class="hljs-string">&quot;.&quot;</span>+v;
    <span class="hljs-keyword">if</span> (v.<span class="hljs-title function_">endsWith</span>(<span class="hljs-string">&quot;*&quot;</span>))
-         v = v.<span class="hljs-title function_">slice</span>(<span class="hljs-number">0</span>, v.<span class="hljs-property">length</span>-<span class="hljs-number">1</span>)+<span class="hljs-string">&quot;.*&quot;</span>
+         v = v.<span class="hljs-title function_">slice</span>(<span class="hljs-number">0</span>, v.<span class="hljs-property">length</span>-<span class="hljs-number">1</span>)+<span class="hljs-string">&quot;.*&quot;</span>;
    
    sds.<span class="hljs-title function_">addPattern</span>(rawv, <span class="hljs-keyword">new</span> <span class="hljs-title class_">RegExp</span>(<span class="hljs-string">&quot;^&quot;</span>+v+<span class="hljs-string">&quot;[CONTENT]quot;</span>, <span class="hljs-string">&quot;i&quot;</span>));
 }
 </code></pre>
+
+</div>
+</div><h1>Utilities</h1>
+<h2>Error Handling</h2>
+<p>This code is lifted directly from the original <code>runSims.js</code>.  We need it as a separate module since we are using it in several different places.</p>
+<p>Consistent with existing code, clients should name the exported function <code>error</code>.</p>
+<div class="codefragment">
+<div class="fragmentname">&lt;&lt;error.*&gt;&gt;= ./bin/js/error.js $</div>
+<div class="code">
+<pre title="<<error.*>>= ./bin/js/error.js $">'use strict'
+const shell = require(&quot;shelljs&quot;);
+
+module.exports = (msg,stdout=&quot;&quot;) =&gt; {
+	process.stdout.clearLine();
+	process.stdout.cursorTo(0);
+	console.log(`${'ERR'.bgYellow} ${msg}`);
+	process.stdout.write(stdout);
+	shell.exit(1);
+};
+</pre>
 
 </div>
 </div><h1>Top Level Stub</h1>
@@ -426,8 +459,7 @@ module.exports = class SimDataSource {
 <pre title="<<TemporaryTop.*>>=./bin/js/v4.js $">'use strict';
 
 // class definitions
-const SimDataSource = require('./v4-SimDataSource'),
-   VariableSelector = require('./v4-VariableSelector');
+const VariableSelector = require('./v4-VariableSelector');
 
 module.exports = (yargs)=&gt; {
    let master = {};

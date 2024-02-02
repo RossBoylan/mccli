@@ -1,10 +1,11 @@
 'use strict';
 
 const path = require('path');
-year = 0;
-age = 2;
-sex = 3;
-dataPath = path.join(".", "outputs")
+const error = require('./error');
+const year = 0;
+const age = 2;
+const sex = 3;
+const dataPath = path.join(".", "outputs");
 
 module.exports = class SimDataSource {
    #patterns;
@@ -12,7 +13,9 @@ module.exports = class SimDataSource {
    constructor(basename, ifname) {
       this.basename = basename.toLowerCase();
       this.ifname = ifname;
-      this.ifpath = path.join(this.dataPath, ifname);
+      // this.dataPath does not resolve to the constant in this module
+      // so just use the constant.
+      this.ifpath = path.join(dataPath, ifname);
       this.#patterns = new Map(); // identify variables of interest
       this.#byvar = new Map(); // codebook, all variables
    }

@@ -1,9 +1,11 @@
 'use strict';
 const nReadLines = require("n-readlines");
+const error = require('./error');
+const SimDataSource = require('./v4-SimDataSource');
 
 const sectionRE = /\[\s*((?<full>(?<base>\S.*)(?<ext>\.csv))|(?<simple>\S.*)(?<=\S))\s*\]/i;
-const sectionNames = new Set(["targets_output", "totresults", "calib"])
-const sepRE = /(\s*,\s*)|(\s+)/;
+const sectionNames = new Set(["targets_output", "totresults", "calib"]);
+const sepRE = /\s*,\s*|\s+/;
 
 module.exports = class VariableSelector {
    constructor(master, configfile) {
@@ -26,31 +28,37 @@ module.exports = class VariableSelector {
             // ((?<full>(?<base>\S.*)(?<ext>\.csv))|(?<simple>\S.*)
             csvname = match.groups.full;
             if (csvname) {
-               base = match.group.base;
-               ext = match.group.ext;
+               base = match.groups.base;
+               ext = match.groups.ext;
             } else {
-               base = match.group.simple;
+               base = match.groups.simple;
                if (! base)
-                  // Trying to use error() defined in runSims.js
                   error("monte.conf has an empty section heading.");
                ext = ".csv";
                csvname = base + ext;
             }
             // at this point base, ext and csvname are all set up.
             if (!sectionNames.has(base.toLowerCase()))
-               error("monte.conf has section for ${base}.  Unknown; expected one of ${sectionNames}.");
-            sds = new SimulationDataSource(base, csvname);
+               error(`monte.conf has section for ${base}.  Unknown; expected one of ${[...sectionNames].join(", ")}.`);
+            sds = new SimDataSource(base, csvname);
             sections.set(base.toLowerCase(), sds);
             continue;
+         } else {
+            if (!sds)
+               // still in preamble
+               continue;
          };
          // handle list of variables
          for (rawv of line.split(sepRE)){
-            v = rawv
+            // blanks keep slipping through
+            if (!rawv)
+               continue;
+            v = rawv;
             // convert pseudo-shell globs to RE
             if (v.startsWith("*"))
-                  v = "."+v
+                  v = "."+v;
             if (v.endsWith("*"))
-                  v = v.slice(0, v.length-1)+".*"
+                  v = v.slice(0, v.length-1)+".*";
             /* Most v will likely not be regular expressions.
             But any effort to figure out what is and isn't an RE
             will burden either the programmer or the user.

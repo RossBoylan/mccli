@@ -71,7 +71,7 @@ Each file is a module, and it seems fairly conventional to put a class definitio
 
 I haven't been able to find a clear statement about namespaces for `CommonJS` modules, in particular whether a module needs to import (via `require`) a module already present in the parent. This [discussion](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Guide/Modules#other_differences_between_modules_and_standard_scripts) of [`ES6`] seems pretty clear that the import must be done within the module, saying that only global variables are accessible from the module.  But aren't imported modules global vaiables?
 
-At any rate, redundant imports should be cheap since the results are cached.
+At any rate, redundant imports should be cheap since the results are cached, and experimentation shows that `CommonJS` modules, like `ES6`, must be imported separately in each file.
 
 ## Classes and Types
 
@@ -116,6 +116,7 @@ The information is built up in stages:
 
 ```js: <<SimDataSource.constants>>=
 const path = require('path');
+const error = require('./error');
 ```
 
 
@@ -132,14 +133,14 @@ Note there are 2 available columns with the year, one giving years since start o
 `age` and `sex` use numeric codes; their interpretation is discussed elsewhere.
 
 ```js : <<SimDataSource.constants>>=+
-year = 0;
-age = 2;
-sex = 3;
+const year = 0;
+const age = 2;
+const sex = 3;
 ```
 
 ## Location of `.csv` Files
 ```js : <<SimDataSource.constants>>=+
-dataPath = path.join(".", "outputs")
+const dataPath = path.join(".", "outputs");
 ```
 
 ## Constructor
@@ -181,7 +182,9 @@ The private variables `#patterns` and `#byvar` must be "declared" before use to 
 constructor(basename, ifname) {
    this.basename = basename.toLowerCase();
    this.ifname = ifname;
-   this.ifpath = path.join(this.dataPath, ifname);
+   // this.dataPath does not resolve to the constant in this module
+   // so just use the constant.
+   this.ifpath = path.join(dataPath, ifname);
    this.#patterns = new Map(); // identify variables of interest
    this.#byvar = new Map(); // codebook, all variables
 }
@@ -359,6 +362,8 @@ The matching procedure ignores case on the theory that differences in case are a
 ```js : <<Variable Selector class.*>>= ./bin/js/v4-VariableSelector.js $
 'use strict';
 const nReadLines = require("n-readlines");
+const error = require('./error');
+const SimDataSource = require('./v4-SimDataSource');
 
 <<VariableSelector.constants>>
 
@@ -382,7 +387,7 @@ Another possibility is to define the constants at the module level.  This should
 
 ```js : <<VariableSelector.constants>>=
 const sectionRE = /\[\s*((?<full>(?<base>\S.*)(?<ext>\.csv))|(?<simple>\S.*)(?<=\S))\s*\]/i;
-const sectionNames = new Set(["targets_output", "totresults", "calib"])
+const sectionNames = new Set(["targets_output", "totresults", "calib"]);
 ```
 
 For `sectionRE` I tried `/\[\s*(\S.*)(\.csv)?\s*\]/i` but, because the first group is greedy it matched `.csv` and the 2nd group was always empty.
@@ -391,8 +396,12 @@ Filenames ending in `.csv` will match either side of the `|` in the `sectionRE` 
 
 ### Separators
 
+I tried `/(\s*,\s*)|(\s+)/` but the returned array includes the separators and `undefined` as elements!  This is the [documented](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/String/split#splitting_with_a_regexp_to_include_parts_of_the_separator_in_the_result) behavior.
+
+So capturing groups are out, but I wonder if my current expression binds like `/\s*,(\s*|\s+/)`, which would be unfortunate.  Usual useage suggests it picks the largest group on each side, e.g., `/red|blue/` matches red or blue but not reblue (OK, it matchest the end of reblue, but not the whole).
+
 ```js : <<VariableSelector.constants>>=+
-const sepRE = /(\s*,\s*)|(\s+)/;
+const sepRE = /\s*,\s*|\s+/;
 ```
 
 The separator regular expression will consider `a,,c` as having 3 fields, one of which is empty.  An earlier version used the simpler `/[,\s]+/`, which would have treated `a,,c` as having 2 fields with `,,` as a single separator.
@@ -442,22 +451,25 @@ if (match = line.match(sectionRE)){
    // ((?<full>(?<base>\S.*)(?<ext>\.csv))|(?<simple>\S.*)
    csvname = match.groups.full;
    if (csvname) {
-      base = match.group.base;
-      ext = match.group.ext;
+      base = match.groups.base;
+      ext = match.groups.ext;
    } else {
-      base = match.group.simple;
+      base = match.groups.simple;
       if (! base)
-         // Trying to use error() defined in runSims.js
          error("monte.conf has an empty section heading.");
       ext = ".csv";
       csvname = base + ext;
    }
    // at this point base, ext and csvname are all set up.
    if (!sectionNames.has(base.toLowerCase()))
-      error("monte.conf has section for ${base}.  Unknown; expected one of ${sectionNames}.");
-   sds = new SimulationDataSource(base, csvname);
+      error(`monte.conf has section for ${base}.  Unknown; expected one of ${[...sectionNames].join(", ")}.`);
+   sds = new SimDataSource(base, csvname);
    sections.set(base.toLowerCase(), sds);
    continue;
+} else {
+   if (!sds)
+      // still in preamble
+      continue;
 };
 ```
 
@@ -472,12 +484,15 @@ Writes values to `sds` which was created when the section header was encountered
 ```js : <<handle pattern lists>>=
 // handle list of variables
 for (rawv of line.split(sepRE)){
-   v = rawv
+   // blanks keep slipping through
+   if (!rawv)
+      continue;
+   v = rawv;
    // convert pseudo-shell globs to RE
    if (v.startsWith("*"))
-         v = "."+v
+         v = "."+v;
    if (v.endsWith("*"))
-         v = v.slice(0, v.length-1)+".*"
+         v = v.slice(0, v.length-1)+".*";
    /* Most v will likely not be regular expressions.
    But any effort to figure out what is and isn't an RE
    will burden either the programmer or the user.
@@ -485,6 +500,26 @@ for (rawv of line.split(sepRE)){
    */
    sds.addPattern(rawv, new RegExp("^"+v+"$", "i"));
 }
+```
+# Utilities
+
+## Error Handling
+
+This code is lifted directly from the original `runSims.js`.  We need it as a separate module since we are using it in several different places.
+
+Consistent with existing code, clients should name the exported function `error`.
+
+```js: <<error.*>>= ./bin/js/error.js $
+'use strict'
+const shell = require("shelljs");
+
+module.exports = (msg,stdout="") => {
+	process.stdout.clearLine();
+	process.stdout.cursorTo(0);
+	console.log(`${'ERR'.bgYellow} ${msg}`);
+	process.stdout.write(stdout);
+	shell.exit(1);
+};
 ```
 # Top Level Stub
 
@@ -494,8 +529,7 @@ This is for testing and may well be discarded when `v4` is integrated into  the 
 'use strict';
 
 // class definitions
-const SimDataSource = require('./v4-SimDataSource'),
-   VariableSelector = require('./v4-VariableSelector');
+const VariableSelector = require('./v4-VariableSelector');
 
 module.exports = (yargs)=> {
    let master = {};

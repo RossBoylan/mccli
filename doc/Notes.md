@@ -315,8 +315,8 @@ Modified test code to write out iteration number.
     - [ ] identify differences between current production version on c: and interruptible version on j:
     - [ ] add new dat files. done on j: input.json, HF branch
     - [ ] create program to gather new output files and put results in db
-      - [ ] note we have less information about labels, and may not have the category info expected
-      - [ ] possibly make this selective: only some variables
+      - [x] note we have less information about labels, and may not have the category info expected.  However, we now have a full codebook with long variable descriptions.
+      - [x] possibly make this selective: only some variables
           ```
           The variables that I need for the hypertension cascade paper will be:
 
@@ -333,7 +333,13 @@ Modified test code to write out iteration number.
           •	inthstrok, 
           •	inthfinc
           ```
-      - [ ] possibly make it a long running process across simulations
+      - [ ] make it a long running process across simulations
     - [ ] maybe create command line program to extract results from db
     - [ ] maybe add option to skip generating the format files
-    - [ ] CURRENT: running tests on `v4` with config for same.  Can't load `n-readlines` even though it seems to be in `mccli\node_modules` and seems to be a CommonJS module.  However, it has no `index.js`.  It has `package.json` which points to `readlines.js`.
+    - [ ] write at least one real test case. **START WORK HERE**
+    - [ ] may need to modify design to make it more easily testable
+    - [ ] implement/test reading the codebook
+    - [ ] implement the long running code that reads csv's
+    - [ ] integrate into the main program
+    - [ ] verify that the user documentation matches actual behavior
+    - [ ] test performance

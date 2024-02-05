@@ -336,6 +336,10 @@ Modified test code to write out iteration number.
       - [ ] make it a long running process across simulations
     - [ ] maybe create command line program to extract results from db
     - [ ] maybe add option to skip generating the format files
+    - [x] set up testing system
+      - [x] selected jest
+      - [x] install it for current project
+      - [x] install associated VSCode extension.  The one the jest site points to is the most downloaded, but not the highest rated. I go with it; many of the alternatives do not target my use.
     - [ ] write at least one real test case. **START WORK HERE**
     - [ ] may need to modify design to make it more easily testable
     - [ ] implement/test reading the codebook

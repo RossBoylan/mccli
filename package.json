@@ -4,8 +4,11 @@
   "description": "cli for CVD Policy Model Montecarlo simulation",
   "main": "index.js",
   "type": "commonjs",
+  "jest": {
+    "testMatch": ["**/__tests__/*.js"]
+  },
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": "jest"
   },
   "bin": {
     "mc": "bin/mc.js",
@@ -44,5 +47,8 @@
     "CVD",
     "health policy",
     "python"
-  ]
+  ],
+  "devDependencies": {
+    "jest": "^29.7.0"
+  }
 }

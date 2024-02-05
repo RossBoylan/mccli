@@ -411,7 +411,7 @@ The separator regular expression will consider `a,,c` as having 3 fields, one of
 
 We leave it to the caller to figure out where the configuration file is.  And we retain, at least for now, the design from the test code in which results are stored in `master`.  Ultimately I might want to keep them in this class, but since other information from other sources goes into `master`, including even the data structures built here, maybe it's OK as is.
 
-`nReadLines` below is a reference to a module that is defined globally; I strongly suspect it will need to be defined in this module, but am trying without that definition as an experiment.
+`nReadLines` below is a reference to a module that is defined globally, but it still must be defined *in this module*.
 
 ```js : <<VariableSelector.construct from configuration file>>=
 constructor(master, configfile) {
@@ -508,6 +508,8 @@ for (rawv of line.split(sepRE)){
 This code is lifted directly from the original `runSims.js`.  We need it as a separate module since we are using it in several different places.
 
 Consistent with existing code, clients should name the exported function `error`.
+
+I think it might be better to throw an error--it would certainly be simpler to test--and then handle it elswhere.  But for now we stick with the original.
 
 ```js: <<error.*>>= ./bin/js/error.js $
 'use strict'

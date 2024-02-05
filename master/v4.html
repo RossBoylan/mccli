@@ -345,7 +345,7 @@ module.exports = class SimDataSource {
 </div><p>The separator regular expression will consider <code>a,,c</code> as having 3 fields, one of which is empty.  An earlier version used the simpler <code>/[,\s]+/</code>, which would have treated <code>a,,c</code> as having 2 fields with <code>,,</code> as a single separator.</p>
 <h2>Create from configuration file</h2>
 <p>We leave it to the caller to figure out where the configuration file is.  And we retain, at least for now, the design from the test code in which results are stored in <code>master</code>.  Ultimately I might want to keep them in this class, but since other information from other sources goes into <code>master</code>, including even the data structures built here, maybe it's OK as is.</p>
-<p><code>nReadLines</code> below is a reference to a module that is defined globally; I strongly suspect it will need to be defined in this module, but am trying without that definition as an experiment.</p>
+<p><code>nReadLines</code> below is a reference to a module that is defined globally, but it still must be defined <em>in this module</em>.</p>
 <div class="codefragment">
 <div class="fragmentname">&lt;&lt;VariableSelector.construct from configuration file&gt;&gt;= </div>
 <div class="code">
@@ -435,6 +435,7 @@ module.exports = class SimDataSource {
 <h2>Error Handling</h2>
 <p>This code is lifted directly from the original <code>runSims.js</code>.  We need it as a separate module since we are using it in several different places.</p>
 <p>Consistent with existing code, clients should name the exported function <code>error</code>.</p>
+<p>I think it might be better to throw an error--it would certainly be simpler to test--and then handle it elswhere.  But for now we stick with the original.</p>
 <div class="codefragment">
 <div class="fragmentname">&lt;&lt;error.*&gt;&gt;= ./bin/js/error.js $</div>
 <div class="code">

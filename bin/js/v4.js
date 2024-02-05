@@ -5,7 +5,7 @@ const VariableSelector = require('./v4-VariableSelector');
 
 module.exports = (yargs)=> {
    let master = {};
-   let vs = new VariableSelector(master, './py_tests/monte.conf');
+   let vs = new VariableSelector(master, './__tests__/monte2.conf');
    console.log(master.sources);
 
 }

@@ -15,7 +15,7 @@ working directory. Maybe test() sets the context?
 
 function newVS() {
     let master = {};
-    return new VariableSelector(master, './py_tests/monte.conf') ;
+    return new VariableSelector(master, './__tests__/monte.conf') ;
 }
 
 test("check basic run with paths", () => {

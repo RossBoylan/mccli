@@ -1,6 +1,6 @@
 'use strict';
 const nReadLines = require("n-readlines");
-const error = require('./error');
+const { error } = require('./v4-logging');
 const SimDataSource = require('./v4-SimDataSource');
 
 const sectionRE = /\[\s*((?<full>(?<base>\S.*)(?<ext>\.csv))|(?<simple>\S.*)(?<=\S))\s*\]/i;

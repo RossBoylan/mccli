@@ -1,6 +1,6 @@
 'use strict';
 const nReadLines = require("n-readlines");
-//const error = require('./error');
+const {warning} = require("./v4-logging");
 
 const lineRE = /^(\w+),(\w+\$?),\s*([^,]*)\s*,\s*$/;
 function realname(short){
@@ -14,10 +14,13 @@ module.exports = class Codebook {
       const reader = new nReadLines(codebookPath);
       let line = reader.next(); // skip first line with headers
       let x, section, vname, des;  // will hold the match
+      let lineno = 1;
       while (line=reader.next()){
-         x = line.toString('ascii').match(lineRE);
+         lineno += 1;
+         line = line.toString('ascii');
+         x = line.match(lineRE);
          if (!x){
-            line = line.toString('ascii');
+            warning(`Unrecognized line in ${codebookPath} line ${lineno}:\n  ${line}\nContinuing`);
             continue;
          }
          [x, section, vname, des] = line.toString('ascii').match(lineRE);

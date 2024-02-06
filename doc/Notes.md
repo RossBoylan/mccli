@@ -14,7 +14,7 @@ See the [README](../README) for instructions on installing and using this packag
 
 At the outer level this is a `JavaScript` package designed for `Node.js` to carry out simulations of an external `Fortran` model with externally provided data, in the form of many input files.  `mc` is the name of the top-level program. Significant parts of the work are performed by `Python` programs, mostly run automatically during and at the end of the simulation.  Some of the `Python` programs can or must be run stand-alone once the simulation is done.  The `Python` programs are shipped as part of this package, and are in `bin/python/`.  The top-level program is `bin/mc.js`, and most code it invokes is in `bin/js/`.
 
-Despite the fact the directory is labelled `bin` these are source files.  Some of the files, mostly with the `v4` prefix, are generated from `master/v4.literate` (see the description of `.literate` files below).  For the rest, the master copy is in the `bin` directory.
+Despite the fact the directory is labelled `bin` these are source files.  The files with the `v4` prefix are generated from `master/v4.literate` (see the description of `.literate` files below).  For the rest, the master copy is in the `bin` directory.
 
 There is a [ChangeLog](ChangeLog) you should keep up to date, but note it is for *user visible* changes in behavior.  Put internal changes in the [Log](#log) section of this file.
 
@@ -378,10 +378,10 @@ Modified test code to write out iteration number.
       - [x] selected jest
       - [x] install it for current project
       - [x] install associated VSCode extension.  The one the jest site points to is the most downloaded, but not the highest rated. I go with it; many of the alternatives do not target my use.
-    - [x] write at least one real test case. **START WORK HERE**
+    - [x] write at least one real test case.
     - [ ] may need to modify design to make it more easily testable
-    - [ ] implement/test reading the codebook
-    - [ ] implement the long running code that reads csv's
+    - [x] implement/test reading the codebook
+    - [ ] implement the long running code that reads csv's **START WORK HERE**
     - [ ] integrate into the main program
     - [ ] verify that the user documentation matches actual behavior
     - [ ] test performance

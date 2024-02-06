@@ -4,9 +4,15 @@ const VariableSelector = require('../bin/js/v4-VariableSelector');
 It should perhaps be throwing an error in general,
 but for now we just override it for this test.
 */
-let error = require('../bin/js/error');
-jest.mock('../bin/js/error');
-error.mockImplementation((msg) => {throw new Error(msg);});
+let error = require('../bin/js/v4-logging');
+jest.mock('../bin/js/v4-logging', ()=>{
+    const originalModule = jest.requireActual('../bin/js/v4-logging');
+    return {
+        ...originalModule,
+        error: jest.fn((msg) => {throw new Error(msg);})
+    }
+});
+
 
 /* previous line had working directory same as this test file,
 while the reference to monte.conf below seems to have the project

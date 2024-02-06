@@ -1,7 +1,7 @@
 'use strict';
 
 const path = require('path');
-const error = require('./error');
+const { error } = require('./v4-logging');
 const year = 0;
 const age = 2;
 const sex = 3;

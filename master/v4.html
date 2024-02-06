@@ -431,6 +431,94 @@ module.exports = class SimDataSource {
 </code></pre>
 
 </div>
+</div><h1>Codebook</h1>
+<p>This class reads the codebook and puts the results in <code>master</code>, more specifically in the appropriate <code>SimDataSource</code>.  The taks could probably be done as a function, though the class makes it easier to maintain state.  Creating the object does all the work. The input is drawn from the package at a fixed location, but this class will simply be handed the path for the codebook file.  It has entries that look like this:</p>
+<pre title="">file,level,label_name,
+targets,year,calendar year,
+targets,nyear,year,
+targets,agerange,age,
+targets,sex,sex,
+targets,tpopr,US population,
+</pre>
+<p>All the entries for a single data source are together.</p>
+<p>If the data source is not one mentioned in <code>monte.conf</code>, skip it.</p>
+<p>Notice that the first column is an abbreviated version of the file name, and so we need to do some mapping to interpret it.  The second column is the variable name, and the third is the variable description.</p>
+<h2>Name Mapping</h2>
+<p>First we translate the names in column 1 to the real names:</p>
+<div class="codefragment">
+<div class="fragmentname">&lt;&lt;Codebook realname&gt;&gt;= </div>
+<div class="code">
+<pre title="<<Codebook realname>>=">function realname(short){
+   if (short == &quot;targets&quot;)
+      return &quot;targets_output&quot;;
+   return short;
+}
+</pre>
+
+</div>
+</div><h2>Parsing Patterns</h2>
+<p>We need to recognize a typical line.  We could use an existing module to read <code>CSV</code> files, but that seems like overkill.</p>
+<p>Not sure why there is always a trailing <code>,</code>, but there seems to be.</p>
+<p>In <code>([^,]*)\s*,</code> the trailing <code>\s*</code> is likely to be ineffective since <code>\s</code> also matches <code>[^,]</code>, but fixing it up right while allowing the field to be empty is challenging.  Perhaps I should just strip after.</p>
+<div class="codefragment">
+<div class="fragmentname">&lt;&lt;Codebook constants&gt;&gt;= </div>
+<div class="code">
+<pre title="<<Codebook constants>>=">const lineRE = /^(\w+),(\w+\$?),\s*([^,]*)\s*,\s*$/;
+</pre>
+
+</div>
+</div><h2>Initializer</h2>
+<p>Given the <code>master</code> data structure and the string path to the codebook file, fill in the appropriate <code>SimDataSource</code>'s with the codebook information.
+Although we don't fill in information for sources that are missing from <code>master</code>, we do fill in information for all variables, even if they don't match any patterns.</p>
+<p>Once the initializer finishes, the class's work is done.</p>
+<div class="codefragment">
+<div class="fragmentname">&lt;&lt;Codebook initializer&gt;&gt;= </div>
+<div class="code">
+<pre title="<<Codebook initializer>>=">constructor(master, codebookPath){
+   const reader = new nReadLines(codebookPath);
+   let line = reader.next(); // skip first line with headers
+   let x, section, vname, des;  // will hold the match
+   while (line=reader.next()){
+      x = line.toString('ascii').match(lineRE);
+      if (!x){
+         line = line.toString('ascii');
+         continue;
+      }
+      [x, section, vname, des] = line.toString('ascii').match(lineRE);
+      if (section != this.section){
+         // New section in codebook
+         // Currently nothing to do to close previous section
+         // this.sds will be undefined if there is no entry, i.e., not of interest
+         this.section = section;
+         this.sds = master.sources.get(realname(section));
+      }
+      if (this.sds) {
+         if (! des)
+            des = vname;
+         this.sds.addVarDescription(vname, des);
+      }
+   }
+}
+</pre>
+
+</div>
+</div><h2>Codebook Top Level</h2>
+<div class="codefragment">
+<div class="fragmentname">&lt;&lt;Codebook.*&gt;&gt;= ./bin/js/v4-Codebook.js $</div>
+<div class="code">
+<pre title="<<Codebook.*>>= ./bin/js/v4-Codebook.js $">'use strict';
+const nReadLines = require(&quot;n-readlines&quot;);
+//const error = require('./error');
+
+<span class="literate-tag-name">&lt;&lt;Codebook constants&gt;&gt;</span>
+<span class="literate-tag-name">&lt;&lt;Codebook realname&gt;&gt;</span>
+
+module.exports = class Codebook {
+   <span class="literate-tag-name">&lt;&lt;Codebook initializer&gt;&gt;</span>
+}
+</pre>
+
+</div>
 </div><h1>Utilities</h1>
 <h2>Error Handling</h2>
 <p>This code is lifted directly from the original <code>runSims.js</code>.  We need it as a separate module since we are using it in several different places.</p>
@@ -461,10 +549,12 @@ module.exports = (msg,stdout=&quot;&quot;) =&gt; {
 
 // class definitions
 const VariableSelector = require('./v4-VariableSelector');
+const Codebook = require('./v4-Codebook');
 
 module.exports = (yargs)=&gt; {
    let master = {};
    let vs = new VariableSelector(master, './__tests__/monte2.conf');
+   let cb = new Codebook(master, './data/CVDPM_HF_Variable_List.csv');
    console.log(master.sources);
 
 }

@@ -14,13 +14,44 @@ See the [README](../README) for instructions on installing and using this packag
 
 At the outer level this is a `JavaScript` package designed for `Node.js` to carry out simulations of an external `Fortran` model with externally provided data, in the form of many input files.  `mc` is the name of the top-level program. Significant parts of the work are performed by `Python` programs, mostly run automatically during and at the end of the simulation.  Some of the `Python` programs can or must be run stand-alone once the simulation is done.  The `Python` programs are shipped as part of this package, and are in `bin/python/`.  The top-level program is `bin/mc.js`, and most code it invokes is in `bin/js/`.
 
-Despite the fact the directory is labelled `bin` these are source files.  Currently, they do not come from anywhere else, though that is about to change (see the description of `.literate` files below).
+Despite the fact the directory is labelled `bin` these are source files.  Some of the files, mostly with the `v4` prefix, are generated from `master/v4.literate` (see the description of `.literate` files below).  For the rest, the master copy is in the `bin` directory.
 
 There is a [ChangeLog](ChangeLog) you should keep up to date, but note it is for *user visible* changes in behavior.  Put internal changes in the [Log](#log) section of this file.
 
 `package.json` describes the package--but note that doing a standard `npm install` is *not* recommended.
 
 ## File Extensions and Tools
+
+### Node.js (.js)
+Much of the system is in JavaScript, intended to be run under [Node.js](https://nodejs.org/).  We recommend the latest stable release.
+
+`Node` has had many security problems; be careful where you install it, and keep current with updates.
+
+### Python (.py)
+The rest is written in [Python](https://www.python.org/).  Use `Python` 3, not the deprecated 2.
+
+This package requires many additional packages in `Node` and `Python`; if you follow the installation instructions you will pick them up.
+
+### Visual Studio Code
+Lately we have been using [VSCode](https://code.visualstudio.com/) to do development, and since some of the code uses the `literate` extension (see below) it is close to a requirement to do development.  Here are all the relevant extensions we have added, along with their extension ids.  Most are optional, but make things easier:
+  * Literate Programming (.literate files)
+    * `literate` (jesterking.literate) literate programming. Essential if you work with the `v4` aka Heart Failure code.
+    * `markdown AutoTOC` (wibblemonkey.markdown-auto-toc) this helps literate produce documentation
+  * JavaScript (.js)
+    * `jest`(Orta.vscode-jest) helps running our jest-based tests of `JavaScript`.
+    * `Node extension pack` (Swellaby.node-pack) pulls in various extensions to help with `javascript` and `npm`.
+    * `npm` (idered.npm) helps with the Node Package Manager.
+    * `npm dependency` (howardzuo.vscode-npm-dependency) sidebar tool for `npm`
+  * Python (.py)
+    * `python` (ms-python.python)
+    * `pylance` (ms-python.vscode-pylance)
+    * `python debugger` (ms-python.debugpy)
+  * Markdown (.md) Documentation
+    * `markdown` (yzhang.markdown-all-in-one) help with documentation and notes
+    * `markdown math` (koehlma.markdown-math)
+    * `markdown pdf` (yzane.markdown-pdf) used to produce pdf versions of some of the docs
+
+`VSCode` provides some level of support for most of these languages without extensions: `VSCode` is written (mostly?) in `TypeScript` which is a `JavaScript` variant, so there is a lot of support built in.  `VSCode` handles markown natively, and some or all of the `Python` extensions may be built in.
 
 ### `.md` 
 is for files such as this one that are in [markdown](https://commonmark.org/).  You may find this [cheat sheet](https://www.markdownguide.org/cheat-sheet/) helpful.  Markdown is intended to be readable and editable as plain text, but also convertible to other, richer formats such as `HTML` or `pdf`.  [Visual Studio Code](https://code.visualstudio.com/) has built-in markdown support that includes preview capabilities, and some extensions provide further support.
@@ -40,7 +71,10 @@ are the master files for the literate programming extension to `VSCode`, [`liter
 
 As in other literate programming systems, chunks of code are identified by `<<name or description>>`; the `literate` extension refers to these as `fragments` and provides a fragment explorer to let you see and navigate among them.  If the description ends in `.*` (literally, e.g., `<<manage everything.*>>`) then it is a top-level fragment that can be assigned to an output file, listed after it on the same line.  So running `literate: Process` will produce all the output files named in such lines and an `.html` file with the same root name as the `.literate` file.  It does this for all `.literate` files in the same directory.
 
-The `literate` extension is completely distinct the `literate` system for literate programming; the former requires `VSCode` and should run wherever it does, while the latter does not need `VSCode`, should in principle run "anywhere", but has no readily available `MS-Windows` binaries and has its own required toolchain.
+The `literate` extension is completely distinct from the `literate` system for literate programming; the former requires `VSCode` and should run wherever it does, while the latter does not need `VSCode`, should in principle run "anywhere", but has no readily available `MS-Windows` binaries and has its own required toolchain.
+
+### Jest
+This package uses  the [Jest](https://jestjs.io/) testing framework for `JavaScript`.  It looks under `__tests__` directories anywhere in the project for tests.  I have been using the `VSCode` `Orta.vscode-jest` extension to help run the tests, and set some options for it in `package.json`.
 
 ## Other Files
 
@@ -53,6 +87,10 @@ Captured the exact level of the packages at one point for a known working config
 ### `bin/input_data.json`
 one of the basic inputs to the monte-carlo simulation.  Automatically installed as needed.
 
+### `data/`
+
+Data files for use by the program.  Currently holds the codebook of variables for Heart Failure, which includes most standard variables as well.
+
 ### `doc/`
 This directory includes user documentation and internal notes.  In general the `.md` and `.dia` files are the masters, to which edits should be made, while `.svg`, `.pdf` and `.html` files are derived from them.  Among the figures, `Process.dia` is mostly the master of the other 2 `Process*.dia` files (created by removing some elements in `Process.dia`), though I think I added a bit to `ProcessNew.dia`.   After conversion to `.svg` the figures appear in `UserGuide`.
 
@@ -64,8 +102,8 @@ This directory holds the `.literate` files that are the masters for some of the 
 ## Build System
 There isn't one, though maybe there should be.  The core of the application has been a bunch of `.js` and `.py` files that had no need to be built.  But things are getting more complex.  Typically, the developer will need to do these steps:
    1. Modify the code in its master place, either a `.literate`, `.py`, or `.js` file.
-   2. Generate revised output from the literate files if any of them changed.
-   3. Test.  There is currently a small amount of automated tests for the `Python` code.  More would be good!
+   2. Generate revised output from the literate files if any of them changed.  The `literate` extension should do this automatically.
+   3. Test.  There is currently a small amount of automated tests, both for `Python` and `JavaScript`.  More would be good!
    4. Update `README.md`, `UserGuide.md`, and `Notes.md` if needed
    5. Generate additional documentation as desired.  At the moment, `UserGuide.pdf` comes from using the [`Markdown PDF`](https://marketplace.visualstudio.com/items?itemName=yzane.markdown-pdf) extension to generate it while viewing `UserGuide.md`.  I modified the default coloring because it made stuff in code format `like this` too hard to see.  One could also run html to pdf converters.
    6. Review `package.json` and `requirements.txt` to see they are still appropriate.

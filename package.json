@@ -5,7 +5,8 @@
   "main": "index.js",
   "type": "commonjs",
   "jest": {
-    "testMatch": ["**/__tests__/*.js"]
+    "testMatch": ["**/__tests__/*.js"],
+    "testPathIgnorePatterns": ["/\\.git/", "/Mod92_.*/", "/mod92_.*/", "/\\.pytest_cache/", "/\\.vs*/", "/node_modules/", "/py_tests/", "/pyenv/"]
   },
   "scripts": {
     "test": "jest"

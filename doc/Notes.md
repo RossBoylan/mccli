@@ -381,7 +381,7 @@ Modified test code to write out iteration number.
     - [x] write at least one real test case.
     - [ ] may need to modify design to make it more easily testable
     - [x] implement/test reading the codebook
-    - [ ] implement the long running code that reads csv's **START WORK HERE**
+    - [ ] implement the long running code that reads csv's **START WORK HERE** See line 346 v4.literate.
     - [ ] `Jest` scans directories I tell it to ignore and takes > 1 minute
       - [ ] See my [question](https://stackoverflow.com/questions/77951697/how-to-stop-jest-from-scanning-directories) asked 2/6/24
       - [ ] Temporary solution: move `[Mm]od92_*` directories to `mccli-models`.

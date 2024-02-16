@@ -382,6 +382,9 @@ Modified test code to write out iteration number.
     - [ ] may need to modify design to make it more easily testable
     - [x] implement/test reading the codebook
     - [ ] implement the long running code that reads csv's **START WORK HERE** See line 346 v4.literate.
+    - [ ] name of output db.  Allow run-time selection. `hfmc_results` might be a good default,  Or embed time stamp in it.  Or use name in existing python code, `MC\results\breakdown\allData.db`
+    - [ ] directory of output db: `MC\results\`
+    - [ ] remember there may be a scenario, with multiple ones per run
     - [ ] `Jest` scans directories I tell it to ignore and takes > 1 minute
       - [ ] See my [question](https://stackoverflow.com/questions/77951697/how-to-stop-jest-from-scanning-directories) asked 2/6/24
       - [ ] Temporary solution: move `[Mm]od92_*` directories to `mccli-models`.

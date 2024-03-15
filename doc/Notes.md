@@ -18,7 +18,7 @@ Despite the fact the directory is labelled `bin` these are source files.  The fi
 
 There is a [ChangeLog](ChangeLog) you should keep up to date, but note it is for *user visible* changes in behavior.  Put internal changes in the [Log](#log) section of this file.
 
-`package.json` describes the package--but note that doing a standard `npm install` is *not* recommended.
+`package.json` describes this package--but note that doing a standard `npm install` is *not* recommended.
 
 ## File Extensions and Tools
 
@@ -51,7 +51,7 @@ Lately we have been using [VSCode](https://code.visualstudio.com/) to do develop
     * `markdown math` (koehlma.markdown-math)
     * `markdown pdf` (yzane.markdown-pdf) used to produce pdf versions of some of the docs
 
-`VSCode` provides some level of support for most of these languages without extensions: `VSCode` is written (mostly?) in `TypeScript` which is a `JavaScript` variant, so there is a lot of support built in.  `VSCode` handles markown natively, and some or all of the `Python` extensions may be built in.
+`VSCode` provides some level of support for most of these languages without extensions: `VSCode` is written (mostly?) in `TypeScript` which is a `JavaScript` variant, so there is a lot of support built in.  `VSCode` handles markdown natively, and some or all of the `Python` extensions may be built in.
 
 ### `.md` 
 is for files such as this one that are in [markdown](https://commonmark.org/).  You may find this [cheat sheet](https://www.markdownguide.org/cheat-sheet/) helpful.  Markdown is intended to be readable and editable as plain text, but also convertible to other, richer formats such as `HTML` or `pdf`.  [Visual Studio Code](https://code.visualstudio.com/) has built-in markdown support that includes preview capabilities, and some extensions provide further support.
@@ -65,9 +65,9 @@ is for diagrams made with the free software diagramming tool [`Dia`](https://sou
 is for "Scalable Vector Graphics", one of many standard formats for graphics. Vector graphics allow arbitrary enlargement while preserving resolution, which may be helpful with the somewhat cramped diagrams. These files are exported by `Dia` for inclusion in the User Guide.  markdown does not, AFAIK, directly support `.dia` files.
 
 ### `.literate`
-are the master files for the literate programming extension to `VSCode`, [`literate`](https://github.com/jesterKing/literate).  [Literate programming](https://en.wikipedia.org/wiki/Literate_programming) is a general term for the creation of documents that are intended primarily to be read describing computer code.  The same source (`.literate` file in this case) can generate either documentation for humans or code for the computer.
+are the master files for the literate programming extension to `VSCode`, [`literate`](https://github.com/jesterKing/literate).  [Literate programming](https://en.wikipedia.org/wiki/Literate_programming) is a general term for the creation of documents that are intended primarily for humans describing computer code.  The same source (`.literate` file in this case) can generate either documentation for humans or code for the computer.
 
-`.literate` files are basically markdown, and for now you need to tell `VSCode` that they are markdown.  See [this](https://stackoverflow.com/a/51228725/4409451) for how to set that up.  This generates previews as you work (provided you issue a command in `VSCode` to show the preview), but to generate code files and `html` documentation you must run the `VSCode` command `literate: Process`.
+`.literate` files are basically markdown, and for now you need to tell `VSCode` that they are markdown.  See [this](https://stackoverflow.com/a/51228725/4409451) for how to set that up.  This generates previews as you work (provided you issue a command in `VSCode` to show the preview), but to generate code files and `html` documentation you may need to run the `VSCode` command `literate: Process`--although the extension tries to do that automatically as you edit the source files.
 
 As in other literate programming systems, chunks of code are identified by `<<name or description>>`; the `literate` extension refers to these as `fragments` and provides a fragment explorer to let you see and navigate among them.  If the description ends in `.*` (literally, e.g., `<<manage everything.*>>`) then it is a top-level fragment that can be assigned to an output file, listed after it on the same line.  So running `literate: Process` will produce all the output files named in such lines and an `.html` file with the same root name as the `.literate` file.  It does this for all `.literate` files in the same directory.
 
@@ -374,16 +374,40 @@ Modified test code to write out iteration number.
       - [ ] make it a long running process across simulations
     - [ ] maybe create command line program to extract results from db
     - [ ] maybe add option to skip generating the format files
-    - [x] set up testing system
+    - [x] set up testing system for javascript
       - [x] selected jest
       - [x] install it for current project
       - [x] install associated VSCode extension.  The one the jest site points to is the most downloaded, but not the highest rated. I go with it; many of the alternatives do not target my use.
     - [x] write at least one real test case.
     - [ ] may need to modify design to make it more easily testable
     - [x] implement/test reading the codebook
-    - [ ] implement the long running code that reads csv's **START WORK HERE** See line 346 v4.literate.
-    - [ ] name of output db.  Allow run-time selection. `hfmc_results` might be a good default,  Or embed time stamp in it.  Or use name in existing python code, `MC\results\breakdown\allData.db`
-    - [ ] directory of output db: `MC\results\`
+    - [ ] learn about async code + database **START WORK HERE**
+      - [ ] what guarantees does the sqlite3 make about async and multithreaded behavior?
+        - [ ] the javascript library `better-sqlite3`
+              According to docs "Transaction functions do not work with async functions" and
+              "because SQLite3 serializes all transactions, it's generally a very bad idea to keep a transaction open across event loop ticks anyways."
+              The library is synchronous, i.e., the javascript functions it exposes are synchronous.
+              Multiple worker threads each open the db and manipulate it.
+        - [ ] the underlying sqlite engine
+            * multiple process can open the same database at once
+            * only one can modify the database at a time.  This is enforced with locks, which are not totally reliable on some systems (e.g., NFS).  Multiple processes can write to db, but they will be serialized by the lock.
+            * is threadsafe (if compiled iwth appropriate options, which it is on MS-Windows binaries), but threads are discouraged
+            * I find no explicit documentation about opening multiple connections from the same process, but presumably the thread safety means this will work too.
+      - [ ] learn about async operations generally in `javascript` and `node.js`
+        - [x] can I put synchronous calls inside an async function? Yes.
+        - [ ] can I use more than one thread? how?
+        - [ ] multiple "threads" (i.e., or async processes) and Promises
+            https://stackoverflow.com/questions/18217640/what-happens-if-i-reject-resolve-multiple-times-in-kriskowals-q/18218542#18218542 offers somewhat contradictory info on what happens if multiple threads try to resolve the same Promise.  It seems it is resolved only once, but later callers can still retrieve the value.  See also https://stackoverflow.com/questions/20328073/is-it-safe-to-resolve-a-promise-multiple-times?rq=3.  https://262.ecma-international.org/6.0/#sec-promise.resolve is authoritative, but cryptic.
+    - [ ] initial database setup
+      - [ ] move most of it out of `SimDataSource` where it currently lives into a separate, and probably async, function.  This is the first 2 items on the list I made in `### Set Up Database` in `v4.literate`.
+      - [ ] then something needs to invoke the function
+      - [ ] it needs to check that
+        - [ ] `monte.conf` processed
+        - [ ] there is at least one `SimDataSource`
+        - [ ] that the directory exists/`mc init` has been run (with default preferences)
+      - [x] name of output db.  Allow run-time selection. `hfmc_results` might be a good default,  Or embed time stamp in it.  Or use name in existing python code, `MC\results\breakdown\allData.db`
+      - [x] directory of output db: `MC\results\`
+    - [ ] implement the long running code that reads `csv`'s.  Even apart from the database setup, the code is a work in progress.
     - [ ] remember there may be a scenario, with multiple ones per run
     - [ ] `Jest` scans directories I tell it to ignore and takes > 1 minute
       - [ ] See my [question](https://stackoverflow.com/questions/77951697/how-to-stop-jest-from-scanning-directories) asked 2/6/24

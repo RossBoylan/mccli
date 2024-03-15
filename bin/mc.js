@@ -1,8 +1,10 @@
 #!/usr/bin/env node
 'use strict';
+// The yargs documentation shows require('yargs/yargs').
 const yargs = require("yargs"),
 		init = require('./js/init'),
 		runSims = require('./js/runSims'),
+        path = require('node:path'),
         v4 = require('./js/v4')
 
 let argv = yargs
@@ -53,6 +55,16 @@ let argv = yargs
     describe: "continue interrupted run, using parameters from before, not from the command line.",
     alias: ['resume', 'cont'],
     boolean: true  /* RB: Docs unclear what the value does */
+})
+.option('dbfile', {
+    describe: "name of database file to record simulation results. Use with run.",
+    default: 'hfmc_results.sqlite',
+    type: 'string'
+})
+.option('dbpath', {
+    describe: "directory in which to put database. Use with run.",
+    default: path.join(".", "MC", "results"),
+    type: "string"
 })
 .help()
 .argv

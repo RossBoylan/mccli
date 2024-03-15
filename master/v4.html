@@ -88,13 +88,23 @@
 <div class="codefragment">
 <div class="fragmentname">&lt;&lt;SimDataSource.constants&gt;&gt;= </div>
 <div class="code">
-<pre title="<<SimDataSource.constants>>=">const path = require('path');
+<pre title="<<SimDataSource.constants>>=">const nReadLines = require('n-readlines'),
+   path = require('path'),
+   sqlite = require('better-sqlite3');
 const { error } = require('./v4-logging');
 </pre>
 
 </div>
+</div><h2>Other Constants</h2>
+<div class="codefragment">
+<div class="fragmentname">&lt;&lt;SimDataSource.constants&gt;&gt;=+ </div>
+<div class="code">
+<pre title="<<SimDataSource.constants>>=+">const sep = &quot;,&quot;; // used to split csv lines
+</pre>
+
+</div>
 </div><h2>Fixed Column Definitions</h2>
-<p>These give the locations of fixed demographic columns.  We could look them up each time, but the locations are fixed.  If we wanted to be fancy we could put them in a prototype to be shared among instances.</p>
+<p>These give the locations of fixed demographic columns in the <code>.csv</code> files.  We could look them up each time, but the locations are fixed.  If we wanted to be fancy we could put them in a prototype to be shared among instances.</p>
 <p>The values are <code>const</code> but <code>JavaScript</code> does not permit that in a class definition.</p>
 <p>The demographic columns are most of the index for the data values that go in the database.</p>
 <p>Note there are 2 available columns with the year, one giving years since start of simulation and the other calendar year. The choice below is calendar year.  Set <code>year = 1</code> to get simulation years, which are 1-based (the two 1's are completely different uses).</p>
@@ -105,6 +115,7 @@ const { error } = require('./v4-logging');
 <pre><code><span class="hljs-keyword">const</span> year = <span class="hljs-number">0</span>;
 <span class="hljs-keyword">const</span> age = <span class="hljs-number">2</span>;
 <span class="hljs-keyword">const</span> sex = <span class="hljs-number">3</span>;
+<span class="hljs-keyword">const</span> keyCols = [year, age, sex];
 </code></pre>
 
 </div>
@@ -256,6 +267,195 @@ constructor(basename, ifname) {
 </pre>
 
 </div>
+</div><h2>Prepare for Main Run</h2>
+<p>Once we have loaded the patterns and variable definition, but before seeing a <code>.csv</code> file, we summarize the data and do some sanity checks.</p>
+<p>We don't currently do anything with <code>master</code> but it seems more general to include it.</p>
+<div class="codefragment">
+<div class="fragmentname">&lt;&lt;SimDataSource.prepare&gt;&gt;= </div>
+<div class="code">
+<pre title="<<SimDataSource.prepare>>=">prepare(master){
+   this.counts = concretePatternMatches();
+   checkLostPatterns(this.counts);
+   this.allMatchingVars = concreteVars(this.counts);
+}
+</pre>
+
+</div>
+</div><h2>Main Repeated Action</h2>
+<p>At each iteration this function is called with the iteration number. On the first read we record the header and calculate which columns are of interest.  On later reads we merely verify the header matches what is expected.  Then we read the actual data lines.</p>
+<div class="codefragment">
+<div class="fragmentname">&lt;&lt;SimDataSource.read&gt;&gt;= </div>
+<div class="code">
+<pre title="<<SimDataSource.read>>=">
+read(master, iter, scenario){
+   this.reader = nReadLines(this.ifpath);
+   readHeader(master);
+   readBody(iter);
+}
+
+readLine() {
+   return this.reader.next().toString('ascii');
+}
+readHeader(master) {
+   line = readLine();
+   if (this.header){
+      // we have already seen this file
+      if (this.header != line){
+         warning(`${this.ifpath} original header was ${this.header}`);
+         warning(`But current file header is ${line}`);
+         error(&quot;Mismatch.  Can not proceed safely.&quot;);
+      }
+   } else
+      setupForHeader(master, line);
+}
+</pre>
+
+</div>
+</div><h2>First Encounter With Data (<code>.csv</code>) File</h2>
+<p>After this step the <code>SimDataSource</code> has <code>header</code> with the column headers for the file and <code>interest</code> a <code>Map</code> whose keys are individual variables of interest in the file and values are the column index of that variable.  <code>readCols</code> is an array of the column indices of interest in the <code>.csv</code>.  Both variables explicitly mentioned in <code>monte.conf</code> and the key identifiers (demographics, simulation year) are &quot;of interest&quot;.</p>
+<h3>First Encounter with Header</h3>
+<p>It is the caller's responsibility to assure this is only called once in the run and that subsequent headers match the initial one.</p>
+<p><strong>TODO</strong> I may also need the column index in the abbreviated list. I do need to setup the database.</p>
+<div class="codefragment">
+<div class="fragmentname">&lt;&lt;SimDataSource.setupForHeader&gt;&gt;= </div>
+<div class="code">
+<pre title="<<SimDataSource.setupForHeader>>=">setupForHeader(master, line){
+   this.header = line;
+   this.interest = new Map();
+   this.readCols = [];
+   vs = line.split(sep);
+   for (const [i, v] of vs.entries() ){
+      if (keyCols.has(i) || this.allMatchingVars.has(v)) {
+         this.interest.set(v, i);
+         this.readCols.push(i);
+      }
+   }
+   setupDatabase(master);
+}
+</pre>
+
+</div>
+</div><p>This is the first point when we know which specific variables we will be saving in the database, and so we can do the initial setup of the database</p>
+<h3>Set Up Database</h3>
+<p>&quot;Setting up&quot; the database involves 3 separate steps:</p>
+<ol>
+<li>check if it already exists and create it if not.</li>
+<li>build the desired structure of tables and indices in the empty db.</li>
+<li>populate the tables with information about the variables of interest.
+Only after doing all those things is the database ready to recieve simulation results.  Notice that steps 1 and 2 only need to be done once per run, while the 3rd step is done once for each <code>SimDataSource</code>.</li>
+</ol>
+<p>1 and 2 should probably be in a separate function, which could be run asynchronously at the start of <code>runSims</code>, or perhaps after <code>monte.conf</code> has been scanned to determine if <em>anything</em> is to be written to the database.</p>
+<p>At the end of this function <code>master.db</code> will hold a handle to a database initialized with appropriate tables with all the variables for this <code>SimDataSource</code> having descriptive entries.</p>
+<p>There are some issues.</p>
+<h4>Database Name and Location</h4>
+<p><code>SQLite</code>, which we are currently using, stores all information in a single file.  So we need to know where to put it and what to call it.  The top-level program, <code>mc</code> (not in this document or directory) provides command-line options <code>--dbfile</code> and <code>--dbpath</code> to specify either or both; the default is <code>MC/results/hfmc_results.sqlite</code>.  Note that the directory <code>MC/results</code> ordinarily does not exist until <code>mc init</code> has been run.</p>
+<h4>Existing Database</h4>
+<p>It may be that the database file already exists.  Since it may have results, simply deleting it seems undesirable.  We could refuse to run, but that would make it impossible to resume interrupted runs (not currently supported, but hopefully someday) or to add simulations of more scenarios.  So we will allow it to proceed.  Note this does carry the risk that the database will end up with the same information twice--actually, that might cause a duplicate key error on attempted insert--or even with 2 different values for the same keys.</p>
+<p>We could potentially check that the database is valid, or even that it is consistent with the run we are doing.  But for now we simply assume that if we find the file it is in the correct format, both that it is a <code>SQLite</code> database and the necessary tables have been defined.  If we have new variables, they will be added if they are not already present.</p>
+<h4>Many <code>SimDataSource</code>'s, One Database</h4>
+<p>The code to setup the database, in the sense of creating the file, defining the tables, and creating the in-process representation of the database, is here  on the <code>SimDataSource</code>, but there may be several such sources.  The initial setup should only happen once.  The main approach is to check if <code>master</code> shows the database has been set up and skip those other steps.</p>
+<p>I think that part of the code is sequential and that should be adequate, but given <code>Node.js</code>'s asyncronous default, and the fact that I might want to optimize by handling each data source in parallel, some more robust protection against a race may be necessary.</p>
+<p>One potential problem is in the  3rd step mentioned earlier, inserting information about specific variables (e.g., name, description) into the database.  We know that the key variables, e.g., sex, will appear in multiple files.  Other variables might appear in more than one file or, as mentioned above, have already been defined in a previous run.  The procedure checks if a variable is already defined, and only inserts it if it isn't.  That should protect agains all those potential problem.</p>
+<h4><code>setupDatabase()</code></h4>
+<div class="codefragment">
+<div class="fragmentname">&lt;&lt;SimDataSource.setupForHeader&gt;&gt;=+ </div>
+<div class="code">
+<pre title="<<SimDataSource.setupForHeader>>=+">setupDatabase(master){
+   if (!master.db)
+      createSkeletonDB(master);
+}
+</pre>
+
+</div>
+</div><h4>Make empty database or reuse existing one</h4>
+<div class="codefragment">
+<div class="fragmentname">&lt;&lt;SimDataSource.setupForHeader&gt;&gt;=+ </div>
+<div class="code">
+<pre title="<<SimDataSource.setupForHeader>>=+">createSkeletonDB(master){
+   this.dbFullPath = path.join(master.dbpath, master.dbfile);
+   if (fs.existsSync(this.dbFullPath)){
+      master.db = new sqlite(this.dbFullPath);
+      // To Do: check if it has appropriate tables
+      return;
+   }
+   master.db = new sqlite(this.dbFullPath);
+   master.db.pragma('journal_mode = WAL');  //better-sqlite3 recommends this for performance
+   makeDBTables(master);
+   fillDemographicTables(master);
+}
+</pre>
+
+</div>
+</div><h4>Define All Tables in DB</h4>
+<div class="codefragment">
+<div class="fragmentname">&lt;&lt;SimDataSource.setupForHeader&gt;&gt;=+ </div>
+<div class="code">
+<pre title="<<SimDataSource.setupForHeader>>=+">makeDBTables(master) {
+   const db = master.db;
+   db.transaction(() =&gt; {
+        const design =  [
+            [&quot;variable&quot;, &quot;varid integer primary key, name text, description text&quot;],
+            [&quot;fullvar&quot;, &quot;fullvarid integer primary key, varid references variable(varid), subCat text&quot;],
+            [&quot;demo&quot;, &quot;demoid integer primary key, label text, sex text, ageStart integer, ageEnd integer&quot;],
+            [&quot;data&quot;, &quot;scenario text, iSim integer, fullvarid references fullvar(fullvarid), &quot;+
+            &quot;year integer, demoid references demo(demoid), value real&quot;]
+            ];
+        for (const [tbl, cols] of design)
+            db.exec(`CREATE TABLE IF NOT EXISTS ${tbl} (${cols});`);
+        // serialization essential to ensure all tables exist before next step
+        for (const indexStr of [&quot;fullindex ON fullvar (varid, subCat)&quot;,
+                                &quot;varindex ON variable (name)&quot;,
+                                &quot;demoindex ON demo (label)&quot;,
+                                &quot;demoid ON demo (demoid)&quot;])
+            db.exec(`CREATE UNIQUE INDEX IF NOT EXISTS ${indexStr};`);
+    })();  //invoke transaction
+}
+</pre>
+
+</div>
+</div><h4>Supporting Demographic Tables</h4>
+<p>These tables translate from numeric codes to interpretable sex and age ranges.  This may potentially vary from study to study, or even run to run, but for now we treat it as eternal truth.</p>
+<p>Note the handling of demographics is much different in the inputs to this program
+than those of the <code>Python</code> program.  The <code>Python</code> inputs had columns labelled with demographics;
+in our inputs different demographic groups are in different rows, with numbers indicating
+the age and sex group.  We need to get the meaning of the numbers from an external source.
+That information is incorporated into the following code.</p>
+<p>From Sue Hennessay email 6/29/23, about the format of our input.
+Code for agerange:
+1=35-44,
+2=45-54,
+3=55-64,
+4=65-74,
+5=75-84,
+6=85-94.
+Code for sex:
+1=male,
+2=female.</p>
+<div class="codefragment">
+<div class="fragmentname">&lt;&lt;SimDataSource.setupForHeader&gt;&gt;=+ </div>
+<div class="code">
+<pre title="<<SimDataSource.setupForHeader>>=+">fillDemographics(master) {
+   // setup demographics
+   const db = master.db;
+   let demoid, ageEnd, label;
+   let sql = db.prepare(&quot;INSERT INTO demo /*(demoid, label, sex, ageStart, ageEnd)*/ VALUES (?, ?, ?, ?, ?)&quot;);
+   db.transaction(() =&gt; {
+      // let not const in for() because I change the i* variables
+      for (let [isex, sexname] of [&quot;M&quot;, &quot;F&quot;].entries()) {
+         // javascript is 0-based indexing, but we use 1 based
+         isex += 1
+         for (let [iage, ageStart] of [35, 45, 55, 65, 75, 85].entries()) {
+               iage += 1
+               demoid = 10*isex+iage;  // to ease future lookup
+               ageEnd = ageStart+9;
+               label = sexname+ageStart+&quot;-&quot;+ageEnd
+               sql.run(demoid, label, sexname, ageStart, ageEnd);
+         }
+      }})();  // () to run the function db.transaction produced
+};
+</pre>
+
+</div>
 </div><h2>The Whole McGilla</h2>
 <div class="codefragment">
 <div class="fragmentname">&lt;&lt;SimDataSource.*&gt;&gt;= ./bin/js/v4-SimDataSource.js $</div>
@@ -271,6 +471,10 @@ module.exports = class SimDataSource {
    <span class="literate-tag-name">&lt;&lt;SimDataSource.countPatternMatches&gt;&gt;</span>
    <span class="literate-tag-name">&lt;&lt;SimDataSource.checkLostPatterns&gt;&gt;</span>
    <span class="literate-tag-name">&lt;&lt;SimDataSource.concreteVars&gt;&gt;</span>
+
+   <span class="literate-tag-name">&lt;&lt;SimDataSource.prepare&gt;&gt;</span>
+   <span class="literate-tag-name">&lt;&lt;SimDataSource.read&gt;&gt;</span>
+   <span class="literate-tag-name">&lt;&lt;SimDataSource.setupForHeader&gt;&gt;</span> 
 }
 </pre>
 
@@ -345,6 +549,7 @@ module.exports = class SimDataSource {
 </div><p>The separator regular expression will consider <code>a,,c</code> as having 3 fields, one of which is empty.  An earlier version used the simpler <code>/[,\s]+/</code>, which would have treated <code>a,,c</code> as having 2 fields with <code>,,</code> as a single separator.</p>
 <h2>Create from configuration file</h2>
 <p>We leave it to the caller to figure out where the configuration file is.  And we retain, at least for now, the design from the test code in which results are stored in <code>master</code>.  Ultimately I might want to keep them in this class, but since other information from other sources goes into <code>master</code>, including even the data structures built here, maybe it's OK as is.</p>
+<p>When this is done <code>master.sources</code> is a <code>Map</code> with csv filenames (lowercase, just the basename) as keys and <code>SimDataSource</code> objects as values.</p>
 <p><code>nReadLines</code> below is a reference to a module that is defined globally, but it still must be defined <em>in this module</em>.</p>
 <div class="codefragment">
 <div class="fragmentname">&lt;&lt;VariableSelector.construct from configuration file&gt;&gt;= </div>
@@ -579,7 +784,10 @@ const VariableSelector = require('./v4-VariableSelector');
 const Codebook = require('./v4-Codebook');
 
 module.exports = (yargs)=&gt; {
-   let master = {};
+   let master = {
+      dbpath: yargs.dbpath,
+      dbfile: yargs.dbfile
+   };
    let vs = new VariableSelector(master, './__tests__/monte2.conf');
    let cb = new Codebook(master, './data/CVDPM_HF_Variable_List.csv');
    console.log(master.sources);

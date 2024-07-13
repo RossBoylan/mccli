@@ -1,5 +1,6 @@
 node_modules
 pyenv
+pyenv-3.9.5
 *.DS_Store
 .vs
 __pycache__

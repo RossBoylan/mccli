@@ -382,22 +382,29 @@ Modified test code to write out iteration number.
     - [ ] may need to modify design to make it more easily testable
     - [x] implement/test reading the codebook
     - [ ] learn about async code + database **START WORK HERE**
-      - [ ] what guarantees does the sqlite3 make about async and multithreaded behavior?
-        - [ ] the javascript library `better-sqlite3`
-              According to docs "Transaction functions do not work with async functions" and
+      - [x] what guarantees does the sqlite3 make about async and multithreaded behavior?
+        - [x] the javascript library `better-sqlite3`
+            *  According to docs "Transaction functions do not work with async functions" and
               "because SQLite3 serializes all transactions, it's generally a very bad idea to keep a transaction open across event loop ticks anyways."
-              The library is synchronous, i.e., the javascript functions it exposes are synchronous.
-              Multiple worker threads each open the db and manipulate it.
-        - [ ] the underlying sqlite engine
-            * multiple process can open the same database at once
+            * Surrounding discussion suggests the meaning is that the function passed to `Database.transaction()` must be synchronous, i.e., must be all done when it exits.
+            *  The library is synchronous, i.e., the javascript functions it exposes are synchronous.
+            *  Multiple worker threads each open the db and manipulate it.
+        - [x] the underlying sqlite engine
+            * multiple processes can open the same database at once
             * only one can modify the database at a time.  This is enforced with locks, which are not totally reliable on some systems (e.g., NFS).  Multiple processes can write to db, but they will be serialized by the lock.
-            * is threadsafe (if compiled iwth appropriate options, which it is on MS-Windows binaries), but threads are discouraged
+            * is threadsafe (if compiled with appropriate options, which it is in MS-Windows binaries), but threads are discouraged
             * I find no explicit documentation about opening multiple connections from the same process, but presumably the thread safety means this will work too.
       - [ ] learn about async operations generally in `javascript` and `node.js`
         - [x] can I put synchronous calls inside an async function? Yes.
-        - [ ] can I use more than one thread? how?
-        - [ ] multiple "threads" (i.e., or async processes) and Promises
+        - [x] can I use more than one thread? Information seems contradictory, depending partly on the definition of "use".
+          + In the OS sense of  thread, No, except that some tasks in C++ (called from certain `javascript` functions) run on additional  threads in the "Worker Pool".  From the standpoint of the `javascript` code I write, which is all in the main thread aka "Event Loop", there is only one thread.  But the code will execute in async fashion.
+          +  `Node.js` website: "JavaScript execution in Node.js is single threaded". But it also says "Node.js uses a small number of threads to handle many clients. In Node.js there are two types of threads: one Event Loop (aka the main loop, main thread ...), and a pool of k Workers in a Worker Pool (aka the threadpool)."  Worker threads are for `libuv` and handle I/O and CPU intensive tasks like compression and crypto.
+          +  But it looks if [getting a task on a worker](https://developer.mozilla.org/en-US/docs/Learn/JavaScript/Asynchronous/Introducing_workers) can be done fairly easily, without using `C++`.  Technically that gets a function on a `Worker`, but the same source says this uses different threads.
+        - [ ] multiple "threads" (including async processes on the same thread) and Promises
             https://stackoverflow.com/questions/18217640/what-happens-if-i-reject-resolve-multiple-times-in-kriskowals-q/18218542#18218542 offers somewhat contradictory info on what happens if multiple threads try to resolve the same Promise.  It seems it is resolved only once, but later callers can still retrieve the value.  See also https://stackoverflow.com/questions/20328073/is-it-safe-to-resolve-a-promise-multiple-times?rq=3.  https://262.ecma-international.org/6.0/#sec-promise.resolve is authoritative, but cryptic.
+        - [x] `await` can only be used in an `async` function or at module level.
+        - [x] callback API has better performance (memory, time) than Promise-based API, at least for `fs` module.
+        - [x] `await` can be viewed as an easier way to sequence operations than `.then()` chaining Promises, which in turn are easier then the callback approach. 
     - [ ] initial database setup
       - [ ] move most of it out of `SimDataSource` where it currently lives into a separate, and probably async, function.  This is the first 2 items on the list I made in `### Set Up Database` in `v4.literate`.
       - [ ] then something needs to invoke the function

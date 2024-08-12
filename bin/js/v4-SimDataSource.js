@@ -95,7 +95,7 @@ module.exports = class SimDataSource {
    read(master, iter, scenario){
       this.reader = nReadLines(this.ifpath);
       readHeader(master);
-      readBody(iter);
+      readBody(master, iter);
    }
    
    readLine() {
@@ -115,13 +115,11 @@ module.exports = class SimDataSource {
    }
    setupForHeader(master, line){
       this.header = line;
-      this.interest = new Map();
-      this.readCols = [];
+      this.interest = [];
       vs = line.split(sep);
       for (const [i, v] of vs.entries() ){
-         if (keyCols.has(i) || this.allMatchingVars.has(v)) {
-            this.interest.set(v, i);
-            this.readCols.push(i);
+         if (this.allMatchingVars.has(v)) {
+            this.interest.push({name: v, icol: i});
          }
       }
       setupDatabase(master);
@@ -129,16 +127,17 @@ module.exports = class SimDataSource {
    setupDatabase(master){
       if (!master.db)
          createSkeletonDB(master);
+      defineVariablesInDB(master);
    }
    createSkeletonDB(master){
       this.dbFullPath = path.join(master.dbpath, master.dbfile);
-      if (fs.existsSync(this.dbFullPath)){
-         master.db = new sqlite(this.dbFullPath);
+      existingDB = fs.existsSync(this.dbFullPath)
+      master.db = new sqlite(this.dbFullPath);
+      master.db.pragma('journal_mode = WAL');  //better-sqlite3 recommends this for performance
+      if (existingDB) {
          // To Do: check if it has appropriate tables
          return;
       }
-      master.db = new sqlite(this.dbFullPath);
-      master.db.pragma('journal_mode = WAL');  //better-sqlite3 recommends this for performance
       makeDBTables(master);
       fillDemographicTables(master);
    }
@@ -180,5 +179,52 @@ module.exports = class SimDataSource {
                   sql.run(demoid, label, sexname, ageStart, ageEnd);
             }
          }})();  // () to run the function db.transaction produced
-   }; 
+   };
+   defineVariablesInDB(master){
+      const hasVarSQL = master.db.prepare("SELECT varid FROM variable WHERE name=?")
+      const hasFullVarSQL = master.db.prepare("SELECT fullvarid FROM fullvar WHERE varid=?")
+      const insertVarSQL = master.db.prepare("INSERT INTO variable (name, description) VALUES (?, ?)")
+      const insertFullVarSQL = master.db.prepare("INSERT INTO fullvar (varid) VALUES (?)")
+      for (const varinfo of this.interest){
+         if (r = hasVarSQL.get(v)){
+            //already defined. assume OK
+            varinfo.varid = r.varid;
+            r = hasFullVarSQL.get(varinfo.varid);
+            varinfo.fullvarid = r.fullvarid
+            continue;
+         }
+         info = insertVarSQL.run(v, this.#byvar.get(v.toLowerCase()))
+         if (info.changes != 1)
+            // API says it throws errors if something goes wrong
+            // so I don't know if this is necessary
+            error(`Error inserting ${v} into table named variable`)
+         varinfo.varid = info.lastInsertRowid
+   
+         // assume that if there is no entry in variable there is none in fullvar
+         info = insertFullVarSQL.run(varinfo.varid)
+         if (info.changes != 1)
+            error(`Error inserting ${v} into table named fullvar`)
+         varinfo.fullvarid = info.lastInsertRowid
+      }
+   }
+   readBody(master, iteration){
+      // skip scenario column since I have nothing for it
+      const sql = master.db.prepare(`INSERT INTO data (iSim, fullvarid,
+           year, demoid, value) VALUES (?, ?, ?, ?, ?)`);
+      let line;
+      while (line = readLine().trim()){
+         // strip trailing ,
+         if (line.at(-1)==',')
+               line = line.slice(0, -1);
+         const xs = line.split(/\s*,\s*|\s+/);
+         // without parseInt the next line does string appends
+         const demoid = parseInt(xs[age]) + 10*parseInt(xs[sex]);
+         const iyr =  parseInt(xs[year]);
+         for (const varinfo of this.interest) {
+               // parseFloat probably makes no difference because of SQLite `type affinity`
+               // will attempt to convert an input string to a float for this column
+            sql.run(iteration, varinfo.fullvarid, iyr, demoid, xs[varinfo.icol]); // parseFloat(xs[varinfo.icol]));
+            }
+      }
+   }
 }

@@ -7,5 +7,6 @@
     "python.analysis.extraPaths": [
         "bin\\python"
     ],
-    "cmake.configureOnOpen": false
+    "cmake.configureOnOpen": false,
+    "markdown.extension.extraLangIds": []
 }

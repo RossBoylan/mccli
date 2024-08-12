@@ -1,5 +1,74 @@
 Version 4 of `mccli` uses new `Fortran` code for the Heart Failure model.  As explained more fully in the [User Guide](../doc/UserGuide), the older versions emited a bunch of human-friendly formatted files, which `mccli` processed using various `Python` programs.  The new `Fortran` model continues to emit all those files, and we continue to process them exactly as before, at least for now.  But the new code also emits 3 `.csv` files with all of the new and most of the old variables.  The code developed here adds the ability to cope with this to `mccli`.
 
+- [Tools](#tools)
+- [Big Picture](#big-picture)
+  - [First Decision: Language Choice](#first-decision-language-choice)
+  - [Splitting the Problem Up](#splitting-the-problem-up)
+- [Some Notes on `JavaScript`](#some-notes-on-javascript)
+  - [Module Systems](#module-systems)
+  - [Classes and Types](#classes-and-types)
+  - [Synchronicity ](#synchronicity-)
+- [Design of Access to `SQLite3`](#design-of-access-to-sqlite3)
+- [Simulation Data Source](#simulation-data-source)
+  - [Required Libraries](#required-libraries)
+  - [Other Constants](#other-constants)
+  - [Fixed Column Definitions](#fixed-column-definitions)
+  - [Location of `.csv` Files](#location-of-csv-files)
+  - [Constructor](#constructor)
+    - [Case](#case)
+    - [Extension](#extension)
+    - [Validation](#validation)
+    - [Timing](#timing)
+    - [Code](#code)
+  - [Adding Variables of Interest](#adding-variables-of-interest)
+  - [Adding Codebook information](#adding-codebook-information)
+  - [From Patterns to Variables](#from-patterns-to-variables)
+  - [Prepare for Main Run](#prepare-for-main-run)
+  - [Main Repeated Action](#main-repeated-action)
+  - [First Encounter With Data (`.csv`) File](#first-encounter-with-data-csv-file)
+    - [First Encounter with Header](#first-encounter-with-header)
+    - [Set Up Database](#set-up-database)
+      - [Database Name and Location](#database-name-and-location)
+      - [Existing Database](#existing-database)
+      - [Many `SimDataSource`'s, One Database](#many-simdatasources-one-database)
+      - [`setupDatabase()`](#setupdatabase)
+      - [Make empty database or reuse existing one](#make-empty-database-or-reuse-existing-one)
+      - [Define All Tables in DB](#define-all-tables-in-db)
+        - [Tall vs Wide Tables](#tall-vs-wide-tables)
+        - [Handling of Variables](#handling-of-variables)
+        - [Schema, graphically](#schema-graphically)
+        - [Schema, code](#schema-code)
+      - [Supporting Demographic Tables](#supporting-demographic-tables)
+      - [Add Definition of Variables for this `SimDataSource`](#add-definition-of-variables-for-this-simdatasource)
+  - [Reading the Data](#reading-the-data)
+  - [The Whole McGilla](#the-whole-mcgilla)
+- [`monte.conf`](#monteconf)
+  - [Roads Not Taken](#roads-not-taken)
+    - [Missing file](#missing-file)
+    - [`JSON`](#json)
+    - [Allow full paths in section headers](#allow-full-paths-in-section-headers)
+    - [Queries](#queries)
+    - [Skip the file sections](#skip-the-file-sections)
+    - [Case sensitivity](#case-sensitivity)
+  - [Top Level Definition of `VariableSelector`](#top-level-definition-of-variableselector)
+  - [Regular Expressions](#regular-expressions)
+    - [Section Headers](#section-headers)
+    - [Separators](#separators)
+  - [Create from configuration file](#create-from-configuration-file)
+    - [Sections](#sections)
+    - [Pattern List](#pattern-list)
+- [Codebook](#codebook)
+  - [Name Mapping](#name-mapping)
+  - [Parsing Patterns](#parsing-patterns)
+  - [Initializer](#initializer)
+  - [Codebook Top Level](#codebook-top-level)
+- [Utilities](#utilities)
+  - [Warnings](#warnings)
+  - [Error Handling](#error-handling)
+  - [Logging Module](#logging-module)
+- [Top Level Stub](#top-level-stub)
+
+
 # Tools
 
 This file, `v4.literate`, is designed to be processed by the [`literate`](https://marketplace.visualstudio.com/items?itemName=jesterking.literate) extension to [Visual Studio Code](https://code.visualstudio.com/).  To work with it you will need to install `VSCode` and then, from within it, install the `literate` extension.
@@ -69,7 +138,7 @@ That said, `ES6` is probably the wave of the future, and modules are likely to b
 
 Each file is a module, and it seems fairly conventional to put a class definition in a file so that importing the file creates the class.
 
-I haven't been able to find a clear statement about namespaces for `CommonJS` modules, in particular whether a module needs to import (via `require`) a module already present in the parent. This [discussion](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Guide/Modules#other_differences_between_modules_and_standard_scripts) of [`ES6`] seems pretty clear that the import must be done within the module, saying that only global variables are accessible from the module.  But aren't imported modules global vaiables?
+I haven't been able to find a clear statement about namespaces for `CommonJS` modules, in particular whether a module needs to import (via `require`) a module already present in the parent. This [discussion](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Guide/Modules#other_differences_between_modules_and_standard_scripts) of `ES6` seems pretty clear that the import must be done within the module, saying that only global variables are accessible from the module.  But aren't imported modules global vaiables?
 
 At any rate, redundant imports should be cheap since the results are cached, and experimentation shows that `CommonJS` modules, like `ES6`, must be imported separately in each file.
 
@@ -93,6 +162,31 @@ Practical implications:
    1. If you're used to a conventional, synchronous, language, be aware that in `JavaScript` things may happen asynchronously unless you take special steps, like calling variant function names or using `JavaScript`'s native sequencing constructs, to prevent it.
    2. If some operations can run in parallel, consider doing so.  It's easier in `JavaScript` than in most other languages.
 
+# Design of Access to `SQLite3`
+
+Because we are reading in data from up to 3 different files and putting them all in the same database, and because `javascript` is asyncronous, it seems natural to have separate functions reading from each file and writing to the database.  For the underlying database, i.e., independent of the interface, the following considerations matter:
+   1. `SQLite`'s default mode serializes all access to the database. So multiple programs, processes and threads are safe, albeit not necessarily fast.  This may fail in some circumstances, e.g., `NFS` lacks proper locking semantics.
+   2. 2 less safe but lower overhead [modes](https://www.sqlite.org/threadsafe.html) are available.  It's unclear to me how asynchronous but single OS threaded code fits into this.  See also [FAQS](https://www.sqlite.org/faq.html#q5)
+   3. Opening and closing database transactions is relatively [slow](https://www.sqlite.org/faq.html#q19).  Since the default is one transaction per insert, the default will be slow.  Wrapping a whole bunch of actions in a single transaction (or using other mechanisms for  bulk insert) is much faster.  On a conventional disk the limit is about 60 transactions/second even though 50,000 `INSERTS` a second are feasible (assuming wrapped in a single transaction).
+
+For the `better-sqlite3` package we use 
+   1. All the functions are synchronous.
+   2. [Transaction functions do not work with async functions](https://github.com/WiseLibs/better-sqlite3/blob/60763a0742690c8bae1db43d838f418cfc83b656/docs/api.mddocs/api.md). The apparent meaning is that the function that is passed to `Database.transaction()` can not be an `async` function.  And "because SQLite3 serializes all transactions, it's generally a very bad idea to keep a transaction open across event loop ticks anyways."  So it is not just formally `async` functions but any function with asynchronous behavior (e.g., using callbacks or `Promise`s) that won't work.
+
+The first  part of getting the data is reading a file; the `n-readlines` package is my preferred tool.  It is also synchronous and only reads a line at a time.
+
+Finally, note that `javascript` `async` functions can only be called from within other `async` functions.
+
+**One alternative is to use synchronous code only**; in that case we would go through each simulation data source at a time, first reading the csv and then creating or updating the database.  There is no need for locks since there is only a single thread of execution in my code.  It may block, but it is not a web server that needs to be responsive.  And `SQLite` can ran in its most dangerous, lockless, mode: `Single-thread`.
+
+At one point I was concerned that even apparently synchronous code could operate out of sequence, e.g., if it was blocked on a read other `javascript` code might run.  But the language appears to guarantee that [can't happen](https://nodejs.org/en/learn/asynchronous-work/dont-block-the-event-loop).
+
+The downside of the synchronous approach is that reading the csv files and writing to the database, activities that could be done in parallel, are all done serially and may be slower.
+
+But it's simpler and less error-prone; so that's what I'll do.  Another advantage is that a more parallel approach would likely require holding all input csv files in memory at once.
+
+We could explore asynchronous approaches later, being sure to test to see if they make any material difference in performance.
+
 # Simulation Data Source
 Concretely, a data source is one particular named `.csv` file that holds data from a run of the `Fortran` model.  In the future it may also be a particular named pipe whose contents are in the same format.  This class collects all relevant information from all files about one of those data sources, and knows how to read the data source and store the relevant results.
 
@@ -114,14 +208,14 @@ The information is built up in stages:
 
 ## Required Libraries
 
-```js: <<SimDataSource.constants>>=
+```js : <<SimDataSource.constants>>=
 const nReadLines = require('n-readlines'),
    path = require('path'),
    sqlite = require('better-sqlite3');
 const { error } = require('./v4-logging');
 ```
 ## Other Constants
-```js: <<SimDataSource.constants>>=+
+```js : <<SimDataSource.constants>>=+
 const sep = ","; // used to split csv lines
 ```
 
@@ -174,7 +268,7 @@ It is the responsibility of the code that creates an instance of this class to a
 **To Do** This will not catch case-only differences.  Should they, or various other problems arise, we should abort the simulations, rather than letting the same error occur for each one.
 
 ### Timing
-This is instantiated while scanning `monte.conf` before the `.csv` files it describes have even been created.  So the information in here is built up gradually: first the variable patterns of interest, then the specific variables and locations (columns) of those variables on first encounter with the data, and finally subsequent reads of the file will verify the columns match and pull out the data.
+This is instantiated while scanning `monte.conf` before the `.csv` files it describes have been created.  So the information in here is built up gradually: first the variable patterns of interest, then the specific variables and locations (columns) of those variables on first encounter with the data, and finally subsequent reads of the file will verify the columns match and pull out the data.
 
 ### Code
 
@@ -182,7 +276,7 @@ The argument is a filename including an extension.  This class is responsible fo
 
 The private variables `#patterns` and `#byvar` must be "declared" before use to avoid the error "private field #xx must be declared in enclosing class".
 
-```js: <<SimDataSource.constructor>>=
+```js : <<SimDataSource.constructor>>=
 #patterns;
 #byvar;
 constructor(basename, ifname) {
@@ -201,13 +295,15 @@ A `#` as the first character in a variable name make it private to the class, no
 
 `#byvar` will eventually have variable names as keys and a  description as a value.  That is built up later, when reading the codebook file.  It includes all possible variables, not just those of interest.
 
+The keys in both `Map`'s are always converted to lowercase.
+
 ## Adding Variables of Interest
 
-In `monte.conf` a user  specifies a list of variables, and patterns for variables, to preserve in the database.  Here is where they are preserved.  `text` is the plain text representation for the common case in which the "pattern" is just a variable name; `regex` is a regular expression object that corresponds to it.
+In `monte.conf` a user  specifies a list of variables, and patterns for variables, to preserve in the database.  The next method is used to record those choices.  `text` is the plain text representation for the common case in which the "pattern" is just a variable name; `regex` is a regular expression object that corresponds to it.
 
 We convert the key to lowercase to simplifying matching on it; this means the key may not match the case known to the user.
 
-```js: <<SimDataSource.addPattern>>=
+```js : <<SimDataSource.addPattern>>=
 addPattern(text, regex) {
    this.#patterns.set(text.toLowerCase(), regex);
 }
@@ -215,7 +311,7 @@ addPattern(text, regex) {
 
 ## Adding Codebook information
 
-```js: <<SimDataSource.addVariableWithDescription>>=
+```js : <<SimDataSource.addVariableWithDescription>>=
 addVarDescription(varname, description){
    this.#byvar.set(varname.toLowerCase(), description);
 }
@@ -227,7 +323,7 @@ Once the complete list of variables is  loaded in `#byvar` we check that every p
 
 The result of this function is a `Map` with regex's as keys and a value which is  a count of the number of variables it matches and a list of concrete variable names.
 
-```js: <<SimDataSource.countPatternMatches>>=
+```js : <<SimDataSource.countPatternMatches>>=
 countPatternMatches() {
    let pats = new Map(this.#patterns); // so deletions don't affect original;
    let result = new Map();
@@ -272,7 +368,7 @@ One thing we can do with the result is to check if any patterns don't match any 
 
 The argument to the next function is the `Map` output by the previous function.
 
-```js: <<SimDataSource.checkLostPatterns>>=
+```js : <<SimDataSource.checkLostPatterns>>=
 checkLostPatterns(counts){
    let missing = [];
    for (const xx of counts){
@@ -288,11 +384,11 @@ checkLostPatterns(counts){
 ```
 
 
-Finally, get the list of concrete variables that matched.  Note that all such variables may not be in the `.csv` file, but it seems easier to test against this list the specification with regular expressions.
+Finally, get the list of concrete variables that matched.  Note that all such variables may not be in the `.csv` file, but it seems easier to test against this list than against the specification with regular expressions.
 
 Returns a `Set` of variable names.
 
-```js: <<SimDataSource.concreteVars>>=
+```js : <<SimDataSource.concreteVars>>=
 concreteVars(counts){
    let result = new Set();
    // likely the iterator will not support foreach
@@ -307,7 +403,7 @@ Once we have loaded the patterns and variable definition, but before seeing a `.
 
 We don't currently do anything with `master` but it seems more general to include it.
 
-```js: <<SimDataSource.prepare>>=
+```js : <<SimDataSource.prepare>>=
 prepare(master){
    this.counts = concretePatternMatches();
    checkLostPatterns(this.counts);
@@ -318,12 +414,17 @@ prepare(master){
 ## Main Repeated Action
 
 At each iteration this function is called with the iteration number. On the first read we record the header and calculate which columns are of interest.  On later reads we merely verify the header matches what is expected.  Then we read the actual data lines.
-```js: <<SimDataSource.read>>=
+
+This opens the input file at each iteration, which should be robust against the `Fortran` program creating the file on each run.  It's possible the `Fortran` program overwrites the file in place, in which case there might be some efficiencies in keeping the file open and simply seeking to the start.
+
+If the data source is a pipe, the logic here might need to be different; the pipe almost certainly is persistent.
+
+```js : <<SimDataSource.read>>=
 
 read(master, iter, scenario){
    this.reader = nReadLines(this.ifpath);
    readHeader(master);
-   readBody(iter);
+   readBody(master, iter);
 }
 
 readLine() {
@@ -350,20 +451,20 @@ After this step the `SimDataSource` has `header` with the column headers for the
 
 ### First Encounter with Header
 
-It is the caller's responsibility to assure this is only called once in the run and that subsequent headers match the initial one.
+It is the caller's responsibility to assure this is only called once  for each `SimDataSource` and that subsequent headers match the initial one.
 
-**TODO** I may also need the column index in the abbreviated list. I do need to setup the database.
+Creates `this.header` with the header line, for use as a check when reading later iterations, and `this.interest`, an `Array` of objects describing the data columns of interest.  Those objects contain `name`, the variable name, `icol`, the index of the column with the value, and, eventually, `fullvarid`, the id  of the variable `name` in the database.
 
-```js: <<SimDataSource.setupForHeader>>=
+The `interest` list does not include any of the index values (e.g., demographics, year).
+
+```js : <<SimDataSource.setupForHeader>>=
 setupForHeader(master, line){
    this.header = line;
-   this.interest = new Map();
-   this.readCols = [];
+   this.interest = [];
    vs = line.split(sep);
    for (const [i, v] of vs.entries() ){
-      if (keyCols.has(i) || this.allMatchingVars.has(v)) {
-         this.interest.set(v, i);
-         this.readCols.push(i);
+      if (this.allMatchingVars.has(v)) {
+         this.interest.push({name: v, icol: i});
       }
    }
    setupDatabase(master);
@@ -405,32 +506,102 @@ I think that part of the code is sequential and that should be adequate, but giv
 One potential problem is in the  3rd step mentioned earlier, inserting information about specific variables (e.g., name, description) into the database.  We know that the key variables, e.g., sex, will appear in multiple files.  Other variables might appear in more than one file or, as mentioned above, have already been defined in a previous run.  The procedure checks if a variable is already defined, and only inserts it if it isn't.  That should protect agains all those potential problem.
 
 #### `setupDatabase()`
-```js: <<SimDataSource.setupForHeader>>=+
+```js : <<SimDataSource.setupForHeader>>=+
 setupDatabase(master){
    if (!master.db)
       createSkeletonDB(master);
+   defineVariablesInDB(master);
 }
 ```
 #### Make empty database or reuse existing one
 
+Given the current, single-threaded, synchronous, design, opening the database in `Single-Thread` [mode](https://www.sqlite.org/threadsafe.html) is safe and most performant.  The `better-sqlite3` [docs](https://github.com/WiseLibs/better-sqlite3/blob/60763a0742690c8bae1db43d838f418cfc83b656/docs/compilation.md) say it builds `SQLite` with `SQLITE_THREADSAFE=2`, which is `Multi-thread` mode.
+`SQLITE_THREADSAFE=0`, `Single-Thread` mode, is the fastest.
 
-```js: <<SimDataSource.setupForHeader>>=+
+While the underlying `SQLite` allows setting the threading mode at compile, startup, or run time (provided the compilation did not specify `Single-Thread` mode, which it didn't), `better-sqlite3` does not appear to offer any run-time hooks to change it.  The run-time interface in `C` allows threading mode to be specified as an argument to `sqlite3_open_vs()`, but the `better-sqlite3` `Database` constructor does not offer it as an option.  Start-time specification in `C` is via `sqlite3_config()`, which also is not exposed by `better-sqlite3`.
+
+Since there is no good way to do otherwise, we will go with the default `Multi-thread` mode, which is safe and robust against design changes in this program, but not as fast as possible.
+
+```js : <<SimDataSource.setupForHeader>>=+
 createSkeletonDB(master){
    this.dbFullPath = path.join(master.dbpath, master.dbfile);
-   if (fs.existsSync(this.dbFullPath)){
-      master.db = new sqlite(this.dbFullPath);
+   existingDB = fs.existsSync(this.dbFullPath)
+   master.db = new sqlite(this.dbFullPath);
+   master.db.pragma('journal_mode = WAL');  //better-sqlite3 recommends this for performance
+   if (existingDB) {
       // To Do: check if it has appropriate tables
       return;
    }
-   master.db = new sqlite(this.dbFullPath);
-   master.db.pragma('journal_mode = WAL');  //better-sqlite3 recommends this for performance
    makeDBTables(master);
    fillDemographicTables(master);
 }
 ```
 
 #### Define All Tables in DB
-```js: <<SimDataSource.setupForHeader>>=+
+
+##### Tall vs Wide Tables
+
+Here's a small part of a typical formatted table of results:
+
+|CHD DEATHS | | |
+|---------|-------------------|---------------|
+| |Age/Sex Breakdown|
+|Year    | M35-44   |          M45-54 |
+|2018    | 4138     |           15267  |             
+|2019    |  4154    |           14963 |
+
+The interpretation of each number depends on its position in the grid.  Call this a "wide" representation of the data.
+
+In contrast the database uses a "tall" represention of the data.  Conceptually it might look like this:
+
+|variable|Year|Sex|Age|Sim #|Value
+|--------|----|---|------|-------|--------|
+|CHD DEATHS|2018|M|35-44|10|4138|
+|CHD DEATHS|2018|M|45-54|10|15267|
+|CHD DEATHS|2019|M|35-44|10|4154|
+|CHD DEATHS|2019|M|45-54|10|14963|
+
+This offers several advantages.  
+  1. It is easy to extend it with other identifying information; the "tall" table has already been extended relative to the wide one by the addition of the simulation number. In the previous approach the simulation number was embedded in the file name.
+  2. It is easy to extend to additional variables.  Often, variables are represented as different columns in a table, which might lead to a table like this:
+
+   |Year|CHDM35-44|CHDM45-54|
+   |----|------|---------|
+   |2018| 4138 | 15267 |
+   |2019| 4154 | 14963 |
+
+But that means columns must be defined for every variable, and there are hundreds of possible variables---even without making year or demographic category part of the name.  In contrast, the approach taken extends easily as one adds variables, and it only requires the database to hold the variables used.  
+
+  3. Embedding identifying information in the variable names makes many forms of analysis harder than they need to be.
+
+The obvious drawback of the "tall" format is that each index value (e.g., variable name, year, sex, age, simulation number in the above example) must be repeated for each observation.  Depending on how clever the database is, this may or may not take up as much space on disk as one would expect: strings may be compressed or shared between rows, for example.  Another problem is that the indices themselves may have some internal structure.  For example, if a demographic category like `M45-54` is the index, it may have several associated values, for example `sexcode=M, sex=Male, agerange=45-54, youngest=45, oldest=54, widthInYears=10, label="middle-aged men"`.  Variables can be even more complex with short and long names, descriptions, and relations between variables.
+
+To help with the problems associated with bulky or complex index values, we create auxiliary tables that give the full information on the index values, and simply refer to them with an id in the main `data` table.
+
+So each row in the `data` table looks conceptually like this:
+
+| fullvarid | demoid | year | value | other stuff |
+
+`fullvarid` indicates which variable the `value` is for; `fullvarid` is the index of a row in the `fullvar` table. Similarly, `demoid` indicates which demographic group in the `demo` table the `value` is for.  `year` and other variables indicate more precisely exactly which `value` is reported in this row. 
+
+##### Handling of Variables
+
+The database is designed to accomodate groups of variables that have the same name, but represent different things; the formatted reports often show the breakdown as subheads.  For example, a table for "CHD Deaths (Bridge)" is broken into columns for "Case Fatality Rate (%)" and "Population".  Hence there is a distinction between potentially non-unique variable names like "CHD Deaths (Bridge)" in the `variable` table and the name/category like "CHD Deaths (Bridge)"/"Population" in the `fullvar` table.
+
+In the context of the intermediate `.csv` files we are reading, variables *are* unique and are identified only by brief names like "CVDPOP17".  That is, the same variable may occur in several files, but it always refers to the same thing, and should have the same value.  The `.csv` files contain no descriptive information, but we have a fuller description of each variable from the codebook, recorded in `#byvar`.  For example, "BrDH hs" is the description of "CVDPOP17".  That may not seem like much help, but the cognoscenti find that it is.
+
+To allow our downstream tools like `frmtReport.py` to continue to work we retain the previous schema, although the problem it was designed to solve does not exist with our inputs.  Since the original scheme uses `fullvarid` to indicate variable; we continue to use that even though the category (column name `subCat`) is always empty.
+
+##### Schema, graphically
+Each box is a table, with its columns and their types listed below it.  The primary key, if any, is underlined, and arrows indicate inter-table relationships.  With `SQLite` the types are really just hints; it stores almost everything as a string.
+
+![schema](../doc/schema.svg)
+
+There are some additional indices (in the database sense) to speed queries, as shown in the code.
+
+##### Schema, code
+
+```js : <<SimDataSource.setupForHeader>>=+
 makeDBTables(master) {
    const db = master.db;
    db.transaction(() => {
@@ -475,7 +646,7 @@ Code for sex:
 1=male,
 2=female.
 
-```js: <<SimDataSource.setupForHeader>>=+
+```js : <<SimDataSource.setupForHeader>>=+
 fillDemographics(master) {
    // setup demographics
    const db = master.db;
@@ -497,8 +668,79 @@ fillDemographics(master) {
 };
 ```
 
+#### Add Definition of Variables for this `SimDataSource`
+
+The responsibility of the code here is to ensure that the variable definitions for this `SimDataSource` are present in the database. It also updates the `this.interest` information to have the `fullvarid` and `varid` asssociated with each variable.  We need the `fullvarid` to write data values to the database; `varid` is strictly informational.  See the earlier discussion of the  database schema for more context.
+
+Some or all of the variables may already have been defined, either by other `SimDataSource`s in this monte-carlo run or in earlier runs.  The demographic variables are shared across all data sources, and there may be some other variables that appear in more than one output file.
+
+If the definitions are from previous runs it's possible that some of them will be out of date.  Because it's unlikely, we do not check for that possibility.
+
+Finally, `SQLite` has a feature that automatically creates a `rowid` for each table.  If the table has a single `PRIMARY KEY` with `INTEGER` type, then the `rowid` is just an alias for that key.  This lets me get the `varid` and `fullvarid` without needing to requery the database (which the `Python` code in `frmtReport.py` does.)
+
+```js : <<SimDataSource.setupForHeader>>=+
+defineVariablesInDB(master){
+   const hasVarSQL = master.db.prepare("SELECT varid FROM variable WHERE name=?")
+   const hasFullVarSQL = master.db.prepare("SELECT fullvarid FROM fullvar WHERE varid=?")
+   const insertVarSQL = master.db.prepare("INSERT INTO variable (name, description) VALUES (?, ?)")
+   const insertFullVarSQL = master.db.prepare("INSERT INTO fullvar (varid) VALUES (?)")
+   for (const varinfo of this.interest){
+      if (r = hasVarSQL.get(v)){
+         //already defined. assume OK
+         varinfo.varid = r.varid;
+         r = hasFullVarSQL.get(varinfo.varid);
+         varinfo.fullvarid = r.fullvarid
+         continue;
+      }
+      info = insertVarSQL.run(v, this.#byvar.get(v.toLowerCase()))
+      if (info.changes != 1)
+         // API says it throws errors if something goes wrong
+         // so I don't know if this is necessary
+         error(`Error inserting ${v} into table named variable`)
+      varinfo.varid = info.lastInsertRowid
+
+      // assume that if there is no entry in variable there is none in fullvar
+      info = insertFullVarSQL.run(varinfo.varid)
+      if (info.changes != 1)
+         error(`Error inserting ${v} into table named fullvar`)
+      varinfo.fullvarid = info.lastInsertRowid
+   }
+}
+```
+
+## Reading the Data
+
+At each monte-carlo iteration we read in the data, which usually is spread across many lines.  When we get here, the header line has already been read and processed. `this.interest` gives variables to extract, and the columns from which to extract them.
+
+We should be in a transaction at this point.
+
+`year`, `age` and `sex` are column indices defined as constants for this class.  We'll see if they are accessible simply by naming them...
+
+```js : <<SimDataSource.readBody>>=
+readBody(master, iteration){
+   // skip scenario column since I have nothing for it
+   const sql = master.db.prepare(`INSERT INTO data (iSim, fullvarid,
+        year, demoid, value) VALUES (?, ?, ?, ?, ?)`);
+   let line;
+   while (line = readLine().trim()){
+      // strip trailing ,
+      if (line.at(-1)==',')
+            line = line.slice(0, -1);
+      const xs = line.split(/\s*,\s*|\s+/);
+      // without parseInt the next line does string appends
+      const demoid = parseInt(xs[age]) + 10*parseInt(xs[sex]);
+      const iyr =  parseInt(xs[year]);
+      for (const varinfo of this.interest) {
+            // parseFloat probably makes no difference because of SQLite `type affinity`
+            // will attempt to convert an input string to a float for this column
+         sql.run(iteration, varinfo.fullvarid, iyr, demoid, xs[varinfo.icol]); // parseFloat(xs[varinfo.icol]));
+         }
+   }
+}
+```
+
 ## The Whole McGilla
-```js: <<SimDataSource.*>>= ./bin/js/v4-SimDataSource.js $
+```js : <<SimDataSource.*>>= ./bin/js/v4-SimDataSource.js $
 'use strict';
 
 <<SimDataSource.constants>>
@@ -513,7 +755,8 @@ module.exports = class SimDataSource {
 
    <<SimDataSource.prepare>>
    <<SimDataSource.read>>
-   <<SimDataSource.setupForHeader>> 
+   <<SimDataSource.setupForHeader>>
+   <<SimDataSource.readBody>>
 }
 ```
 
@@ -712,7 +955,7 @@ for (rawv of line.split(sepRE)){
 
 # Codebook
 
-This class reads the codebook and puts the results in `master`, more specifically in the appropriate `SimDataSource`.  The taks could probably be done as a function, though the class makes it easier to maintain state.  Creating the object does all the work. The input is drawn from the package at a fixed location, but this class will simply be handed the path for the codebook file.  It has entries that look like this:
+This class reads the codebook and puts the results in `master`, more specifically in the appropriate `SimDataSource`.  The task could probably be done as a function, though the class makes it easier to maintain state.  Creating the object does all the work. The input is drawn from the package at a fixed location, but this class will simply be handed the path for the codebook file.  It has entries that look like this:
 ```
 file,level,label_name,
 targets,year,calendar year,
@@ -730,7 +973,7 @@ Notice that the first column is an abbreviated version of the file name, and so 
 ## Name Mapping
 First we translate the names in column 1 to the real names:
 
-```js: <<Codebook realname>>=
+```js : <<Codebook realname>>=
 function realname(short){
    if (short == "targets")
       return "targets_output";
@@ -745,7 +988,7 @@ Not sure why there is always a trailing `,`, but there seems to be.
 
 In `([^,]*)\s*,` the trailing `\s*` is likely to be ineffective since `\s` also matches `[^,]`, but fixing it up right while allowing the field to be empty is challenging.  Perhaps I should just strip after.
 
-```js: <<Codebook constants>>=
+```js : <<Codebook constants>>=
 const lineRE = /^(\w+),(\w+\$?),\s*([^,]*)\s*,\s*$/;
 ```
 
@@ -755,7 +998,7 @@ Although we don't fill in information for sources that are missing from `master`
 
 Once the initializer finishes, the class's work is done.
 
-```js: <<Codebook initializer>>=
+```js : <<Codebook initializer>>=
 constructor(master, codebookPath){
    const reader = new nReadLines(codebookPath);
    let line = reader.next(); // skip first line with headers
@@ -787,7 +1030,7 @@ constructor(master, codebookPath){
 ```
 
 ## Codebook Top Level
-```js: <<Codebook.*>>= ./bin/js/v4-Codebook.js $
+```js : <<Codebook.*>>= ./bin/js/v4-Codebook.js $
 'use strict';
 const nReadLines = require("n-readlines");
 const {warning} = require("./v4-logging");
@@ -805,7 +1048,7 @@ module.exports = class Codebook {
 ## Warnings
 Warnings print a notice and continue.
 
-```js: <<warning>>=
+```js : <<warning>>=
 function warning(msg) {
    console.log("WARNING: "+msg);
 }
@@ -818,7 +1061,7 @@ Consistent with existing code, clients should name the exported function `error`
 
 I think it might be better to throw an error--it would certainly be simpler to test--and then handle it elswhere.  But for now we stick with the original.
 
-```js: <<error>>=
+```js : <<error>>=
 function error(msg,stdout=""){
 	process.stdout.clearLine();
 	process.stdout.cursorTo(0);
@@ -829,7 +1072,7 @@ function error(msg,stdout=""){
 ```
 ## Logging Module
 
-```js: <<logging.*>>= ./bin/js/v4-logging.js $
+```js : <<logging.*>>= ./bin/js/v4-logging.js $
 'use strict'
 const shell = require("shelljs");
 
@@ -844,7 +1087,7 @@ exports.warning = warning;
 
 This is for testing and may well be discarded when `v4` is integrated into  the regular processing in `runSims`.
 
-```js: <<TemporaryTop.*>>=./bin/js/v4.js $
+```js : <<TemporaryTop.*>>=./bin/js/v4.js $
 'use strict';
 
 // class definitions

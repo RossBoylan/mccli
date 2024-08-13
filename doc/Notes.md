@@ -381,7 +381,7 @@ Modified test code to write out iteration number.
     - [x] write at least one real test case.
     - [ ] may need to modify design to make it more easily testable
     - [x] implement/test reading the codebook
-    - [ ] learn about async code + database **START WORK HERE**
+    - [ ] learn about async code + database
       - [x] what guarantees does the sqlite3 make about async and multithreaded behavior?
         - [x] the javascript library `better-sqlite3`
             *  According to docs "Transaction functions do not work with async functions" and
@@ -406,15 +406,12 @@ Modified test code to write out iteration number.
         - [x] callback API has better performance (memory, time) than Promise-based API, at least for `fs` module.
         - [x] `await` can be viewed as an easier way to sequence operations than `.then()` chaining Promises, which in turn are easier then the callback approach. 
     - [ ] initial database setup
-      - [ ] move most of it out of `SimDataSource` where it currently lives into a separate, and probably async, function.  This is the first 2 items on the list I made in `### Set Up Database` in `v4.literate`.
-      - [ ] then something needs to invoke the function
-      - [ ] it needs to check that
-        - [ ] `monte.conf` processed
-        - [ ] there is at least one `SimDataSource`
-        - [ ] that the directory exists/`mc init` has been run (with default preferences)
       - [x] name of output db.  Allow run-time selection. `hfmc_results` might be a good default,  Or embed time stamp in it.  Or use name in existing python code, `MC\results\breakdown\allData.db`
       - [x] directory of output db: `MC\results\`
+      - [ ] embed in transaction **START HERE**
     - [ ] implement the long running code that reads `csv`'s.  Even apart from the database setup, the code is a work in progress.
+      - [ ] embed in transaction
+    - [ ] create top-level flow that waits for iteration to complete an launches processing of all `SimDataSource`s
     - [ ] remember there may be a scenario, with multiple ones per run
     - [ ] `Jest` scans directories I tell it to ignore and takes > 1 minute
       - [ ] See my [question](https://stackoverflow.com/questions/77951697/how-to-stop-jest-from-scanning-directories) asked 2/6/24

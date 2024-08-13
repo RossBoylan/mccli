@@ -586,7 +586,7 @@ So each row in the `data` table looks conceptually like this:
 
 ##### Handling of Variables
 
-The database is designed to accomodate groups of variables that have the same name, but represent different things; the formatted reports often show the breakdown as subheads.  For example, a table for "CHD Deaths (Bridge)" is broken into columns for "Case Fatality Rate (%)" and "Population".  Hence there is a distinction between potentially non-unique variable names like "CHD Deaths (Bridge)" in the `variable` table and the name/category like "CHD Deaths (Bridge)"/"Population" in the `fullvar` table.
+The database is designed to accommodate groups of variables that have the same name, but represent different things; the formatted reports often show the breakdown as subheads.  For example, a table for "CHD Deaths (Bridge)" is broken into columns for "Case Fatality Rate (%)" and "Population".  Hence there is a distinction between potentially non-unique variable names like "CHD Deaths (Bridge)" in the `variable` table and the name/category like "CHD Deaths (Bridge)"/"Population" in the `fullvar` table.
 
 In the context of the intermediate `.csv` files we are reading, variables *are* unique and are identified only by brief names like "CVDPOP17".  That is, the same variable may occur in several files, but it always refers to the same thing, and should have the same value.  The `.csv` files contain no descriptive information, but we have a fuller description of each variable from the codebook, recorded in `#byvar`.  For example, "BrDH hs" is the description of "CVDPOP17".  That may not seem like much help, but the cognoscenti find that it is.
 

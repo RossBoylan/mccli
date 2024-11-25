@@ -399,9 +399,11 @@ Modified test code to write out iteration number.
         - [x] can I use more than one thread? Information seems contradictory, depending partly on the definition of "use".
           + In the OS sense of  thread, No, except that some tasks in C++ (called from certain `javascript` functions) run on additional  threads in the "Worker Pool".  From the standpoint of the `javascript` code I write, which is all in the main thread aka "Event Loop", there is only one thread.  But the code will execute in async fashion.
           +  `Node.js` website: "JavaScript execution in Node.js is single threaded". But it also says "Node.js uses a small number of threads to handle many clients. In Node.js there are two types of threads: one Event Loop (aka the main loop, main thread ...), and a pool of k Workers in a Worker Pool (aka the threadpool)."  Worker threads are for `libuv` and handle I/O and CPU intensive tasks like compression and crypto.
-          +  But it looks if [getting a task on a worker](https://developer.mozilla.org/en-US/docs/Learn/JavaScript/Asynchronous/Introducing_workers) can be done fairly easily, without using `C++`.  Technically that gets a function on a `Worker`, but the same source says this uses different threads.
+          +  But it appears [getting a task on a worker](https://developer.mozilla.org/en-US/docs/Learn/JavaScript/Asynchronous/Introducing_workers) can be done fairly easily, without using `C++`.  Technically that gets a function on a `Worker`, but the same source says this uses different threads.
         - [ ] multiple "threads" (including async processes on the same thread) and Promises
-            https://stackoverflow.com/questions/18217640/what-happens-if-i-reject-resolve-multiple-times-in-kriskowals-q/18218542#18218542 offers somewhat contradictory info on what happens if multiple threads try to resolve the same Promise.  It seems it is resolved only once, but later callers can still retrieve the value.  See also https://stackoverflow.com/questions/20328073/is-it-safe-to-resolve-a-promise-multiple-times?rq=3.  https://262.ecma-international.org/6.0/#sec-promise.resolve is authoritative, but cryptic.
+          *  https://stackoverflow.com/questions/18217640/what-happens-if-i-reject-resolve-multiple-times-in-kriskowals-q/18218542#18218542 offers somewhat contradictory info on what happens if multiple threads try to resolve the same Promise.  It seems it is resolved only once, but later callers can still retrieve the value.
+          *  See also https://stackoverflow.com/questions/20328073/is-it-safe-to-resolve-a-promise-multiple-times?rq=3.
+          *  https://262.ecma-international.org/6.0/#sec-promise.resolve is authoritative, but cryptic.
         - [x] `await` can only be used in an `async` function or at module level.
         - [x] callback API has better performance (memory, time) than Promise-based API, at least for `fs` module.
         - [x] `await` can be viewed as an easier way to sequence operations than `.then()` chaining Promises, which in turn are easier then the callback approach. 
@@ -411,8 +413,8 @@ Modified test code to write out iteration number.
       - [ ] embed in transaction **START HERE**
     - [ ] implement the long running code that reads `csv`'s.  Even apart from the database setup, the code is a work in progress.
       - [ ] embed in transaction
-    - [ ] create top-level flow that waits for iteration to complete an launches processing of all `SimDataSource`s
-    - [ ] remember there may be a scenario, with multiple ones per run
+    - [ ] create top-level flow that waits for iteration to complete and launches processing of all `SimDataSources`
+    - [ ] remember there may be a scenario, with multiple scenarios per run
     - [ ] `Jest` scans directories I tell it to ignore and takes > 1 minute
       - [ ] See my [question](https://stackoverflow.com/questions/77951697/how-to-stop-jest-from-scanning-directories) asked 2/6/24
       - [ ] Temporary solution: move `[Mm]od92_*` directories to `mccli-models`.

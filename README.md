@@ -77,7 +77,7 @@ To ensure setup, you should change to the top directory for `mccli`, e.g. `Docum
 
 *Danger!* Simply using `npm install` will also install the packages. But it also updates the system, including the shortcuts `mc` to invoke the program, and possibly some libraries:
    * If you have the old version installed running `npm install` with the new version will likely trash the old installation.
-   * The shorcuts established by the installation are almost certainly ignorant of the python virtual environment which we recommend creating below.
+   * The shortcuts established by the installation are almost certainly ignorant of the python virtual environment which we recommend creating below.
 
 *Do not use the `-g` option to npm,* since the package, as part of the general behavior of `Node`, does not load packages from the global environment (!).
 
@@ -86,9 +86,9 @@ You *must pin the version of `inquirer` at 8*; version 9 and later do not work w
 ### Python Setup
 If you don't already have Python3 on your system, install [python](https://www.python.org/downloads/).  If you install it system-wide, which requires administrative rights, and add python to your PATH, life will be easier later.
 
-Although using a [Python virtual environment](https://docs.python.org/3/library/venv.html) takes a little more setup, it separates this project more cleanly from others.  In particular, it reduces the chances you will break unrelated programs.  So that's what we describe here; you can skip the virtual environment steps if you're feeling lucky.  So there's one question you've got to ask yourself: "Do I feeling lucky?" Well, do you, punk?
+Although using a [Python virtual environment](https://docs.python.org/3/library/venv.html) takes a little more setup, it separates this project more cleanly from others.  In particular, it reduces the chances you will break unrelated programs.  So that's what we describe here; you can skip the virtual environment steps if you're feeling lucky.  So there's one question you've got to ask yourself: "Do I feel lucky?" Well, do you, punk?
 
-The careful reader will have noticed the word *reduces* in "reduces the chances you will break unrelated programs".  It did not say it *eliminates* the risk.  If you install a python module, like PySide2, that depends on non-python libraries like `Qt`, they may still end up being installed system-wide and cause trouble.
+The careful reader will have noticed the word *reduces* in "reduces the chances you will break unrelated programs".  It did not say it *eliminates* the risk.  If you install a python module, like `PySide2`, that depends on non-python libraries like `Qt`, they may still end up being installed system-wide and cause trouble.
 
 From the `mccli` root (you should already be there) create a virtual environment with
 ```shell

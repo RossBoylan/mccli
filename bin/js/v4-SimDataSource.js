@@ -125,89 +125,34 @@ module.exports = class SimDataSource {
       setupDatabase(master);
    }
    setupDatabase(master){
-      if (!master.db)
-         createSkeletonDB(master);
       defineVariablesInDB(master);
    }
-   createSkeletonDB(master){
-      this.dbFullPath = path.join(master.dbpath, master.dbfile);
-      existingDB = fs.existsSync(this.dbFullPath)
-      master.db = new sqlite(this.dbFullPath);
-      master.db.pragma('journal_mode = WAL');  //better-sqlite3 recommends this for performance
-      if (existingDB) {
-         // To Do: check if it has appropriate tables
-         return;
-      }
-      makeDBTables(master);
-      fillDemographicTables(master);
-   }
-   makeDBTables(master) {
-      const db = master.db;
-      db.transaction(() => {
-           const design =  [
-               ["variable", "varid integer primary key, name text, description text"],
-               ["fullvar", "fullvarid integer primary key, varid references variable(varid), subCat text"],
-               ["demo", "demoid integer primary key, label text, sex text, ageStart integer, ageEnd integer"],
-               ["data", "scenario text, iSim integer, fullvarid references fullvar(fullvarid), "+
-               "year integer, demoid references demo(demoid), value real"]
-               ];
-           for (const [tbl, cols] of design)
-               db.exec(`CREATE TABLE IF NOT EXISTS ${tbl} (${cols});`);
-           // serialization essential to ensure all tables exist before next step
-           for (const indexStr of ["fullindex ON fullvar (varid, subCat)",
-                                   "varindex ON variable (name)",
-                                   "demoindex ON demo (label)",
-                                   "demoid ON demo (demoid)"])
-               db.exec(`CREATE UNIQUE INDEX IF NOT EXISTS ${indexStr};`);
-       })();  //invoke transaction
-   }
-   fillDemographics(master) {
-      // setup demographics
-      const db = master.db;
-      let demoid, ageEnd, label;
-      let sql = db.prepare("INSERT INTO demo /*(demoid, label, sex, ageStart, ageEnd)*/ VALUES (?, ?, ?, ?, ?)");
-      db.transaction(() => {
-         // let not const in for() because I change the i* variables
-         for (let [isex, sexname] of ["M", "F"].entries()) {
-            // javascript is 0-based indexing, but we use 1 based
-            isex += 1
-            for (let [iage, ageStart] of [35, 45, 55, 65, 75, 85].entries()) {
-                  iage += 1
-                  demoid = 10*isex+iage;  // to ease future lookup
-                  ageEnd = ageStart+9;
-                  label = sexname+ageStart+"-"+ageEnd
-                  sql.run(demoid, label, sexname, ageStart, ageEnd);
-            }
-         }})();  // () to run the function db.transaction produced
-   };
    defineVariablesInDB(master){
       const hasVarSQL = master.db.prepare("SELECT varid FROM variable WHERE name=?")
       const hasFullVarSQL = master.db.prepare("SELECT fullvarid FROM fullvar WHERE varid=?")
       const insertVarSQL = master.db.prepare("INSERT INTO variable (name, description) VALUES (?, ?)")
       const insertFullVarSQL = master.db.prepare("INSERT INTO fullvar (varid) VALUES (?)")
-      master.db.transaction(() => {
-         for (const varinfo of this.interest){
-            if (r = hasVarSQL.get(v)){
-               //already defined. assume OK
-               varinfo.varid = r.varid;
-               r = hasFullVarSQL.get(varinfo.varid);
-               varinfo.fullvarid = r.fullvarid
-               continue;
-            }
-            info = insertVarSQL.run(v, this.#byvar.get(v.toLowerCase()))
-            if (info.changes != 1)
-               // API says it throws errors if something goes wrong
-               // so I don't know if this is necessary
-               error(`Error inserting ${v} into table named variable`)
-            varinfo.varid = info.lastInsertRowid
-   
-            // assume that if there is no entry in variable there is none in fullvar
-            info = insertFullVarSQL.run(varinfo.varid)
-            if (info.changes != 1)
-               error(`Error inserting ${v} into table named fullvar`)
-            varinfo.fullvarid = info.lastInsertRowid
+      for (const varinfo of this.interest){
+         if (r = hasVarSQL.get(v)){
+            //already defined. assume OK
+            varinfo.varid = r.varid;
+            r = hasFullVarSQL.get(varinfo.varid);
+            varinfo.fullvarid = r.fullvarid
+            continue;
          }
-      })();
+         info = insertVarSQL.run(v, this.#byvar.get(v.toLowerCase()))
+         if (info.changes != 1)
+            // API says it throws errors if something goes wrong
+            // so I don't know if this is necessary
+            error(`Error inserting ${v} into table named variable`)
+         varinfo.varid = info.lastInsertRowid
+   
+         // assume that if there is no entry in variable there is none in fullvar
+         info = insertFullVarSQL.run(varinfo.varid)
+         if (info.changes != 1)
+            error(`Error inserting ${v} into table named fullvar`)
+         varinfo.fullvarid = info.lastInsertRowid
+      }
    }
    readBody(master, iteration, scenario){
       // skip scenario column since I have nothing for it
@@ -227,16 +172,6 @@ module.exports = class SimDataSource {
                // will attempt to convert an input string to a float for this column
             sql.run(iteration, scenario, varinfo.fullvarid, iyr, demoid, xs[varinfo.icol]); // parseFloat(xs[varinfo.icol]));
             }
-      }
-   }
-   
-   static done(master){
-      let db = master.db;
-      if (db === undefined){
-         return;
-      db.close();
-      master.db
-      delete master.db;
       }
    }
 }

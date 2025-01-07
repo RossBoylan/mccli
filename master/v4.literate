@@ -27,21 +27,7 @@ Version 4 of `mccli` uses new `Fortran` code for the Heart Failure model.  As ex
   - [Main Repeated Action](#main-repeated-action)
   - [First Encounter With Data (`.csv`) File](#first-encounter-with-data-csv-file)
     - [First Encounter with Header](#first-encounter-with-header)
-    - [Set Up Database](#set-up-database)
-      - [Database Name and Location](#database-name-and-location)
-      - [Existing Database](#existing-database)
-      - [Many `SimDataSource`'s, One Database](#many-simdatasources-one-database)
-      - [`setupDatabase()`](#setupdatabase)
-      - [Make empty database or reuse existing one](#make-empty-database-or-reuse-existing-one)
-      - [Define All Tables in DB](#define-all-tables-in-db)
-        - [Tall vs Wide Tables](#tall-vs-wide-tables)
-        - [Handling of Variables](#handling-of-variables)
-        - [Schema, graphically](#schema-graphically)
-        - [Schema, code](#schema-code)
-      - [Supporting Demographic Tables](#supporting-demographic-tables)
-      - [Add Definition of Variables for this `SimDataSource`](#add-definition-of-variables-for-this-simdatasource)
   - [Reading the Data](#reading-the-data)
-  - [Done Reading the Data](#done-reading-the-data)
   - [The Whole McGilla](#the-whole-mcgilla)
 - [`monte.conf`](#monteconf)
   - [Roads Not Taken](#roads-not-taken)
@@ -69,8 +55,19 @@ Version 4 of `mccli` uses new `Fortran` code for the Heart Failure model.  As ex
   - [Logging Module](#logging-module)
 - [Master](#master)
   - [Constructor](#constructor-1)
+  - [Set Up Database](#set-up-database)
+    - [Database Name and Location](#database-name-and-location)
+    - [Existing Database](#existing-database)
+    - [`setupDatabase()`](#setupdatabase)
+    - [Make empty database or reuse existing one](#make-empty-database-or-reuse-existing-one)
+    - [Define All Tables in DB](#define-all-tables-in-db)
+      - [Tall vs Wide Tables](#tall-vs-wide-tables)
+      - [Handling of Variables](#handling-of-variables)
+      - [Schema, graphically](#schema-graphically)
+      - [Schema, code](#schema-code)
+      - [Supporting Demographic Tables](#supporting-demographic-tables)
   - [Iterate](#iterate)
-  - [Done](#done)
+  - [Done Reading the Data](#done-reading-the-data)
 - [Top Level Stub](#top-level-stub)
 
 
@@ -476,204 +473,23 @@ setupForHeader(master, line){
 }
 ```
 
-This is the first point when we know which specific variables we will be saving in the database, and so we can do the initial setup of the database
+This is the first point when we know which specific variables we will be saving in the database, and so we 
+can do the second part of initial setup of the database.  The first part, done by master, created the database file and the `master.db`
+handle for it, and inserted the necessary table definitions.
 
-### Set Up Database
-
-"Setting up" the database involves 3 separate steps:
-   1. check if it already exists and create it if not.
-   2. build the desired structure of tables and indices in the empty db.
-   3. populate the tables with information about the variables of interest.
-Only after doing all those things is the database ready to recieve simulation results.  Notice that steps 1 and 2 only need to be done once per run, while the 3rd step is done once for each `SimDataSource`.
-
-1 and 2 should probably be in a separate function, which could be run asynchronously at the start of `runSims`, or perhaps after `monte.conf` has been scanned to determine if *anything* is to be written to the database.
+What remains is to  populate the variable definition tables with the variables of interest--not the data values of those 
+variables, but the metadata about them.
 
 At the end of this function `master.db` will hold a handle to a database initialized with appropriate tables with all the variables for this `SimDataSource` having descriptive entries.
 
-There are some issues.
+OK, this isn't much.  It used to do more; preserving it until the design stabilizes.
 
-#### Database Name and Location
-
-`SQLite`, which we are currently using, stores all information in a single file.  So we need to know where to put it and what to call it.  The top-level program, `mc` (not in this document or directory) provides command-line options `--dbfile` and `--dbpath` to specify either or both; the default is `MC/results/hfmc_results.sqlite`.  Note that the directory `MC/results` ordinarily does not exist until `mc init` has been run.
-
-#### Existing Database
-
-It may be that the database file already exists.  Since it may have results, simply deleting it seems undesirable.  We could refuse to run, but that would make it impossible to resume interrupted runs (not currently supported, but hopefully someday) or to add simulations of more scenarios.  So we will allow it to proceed.  Note this does carry the risk that the database will end up with the same information twice--actually, that might cause a duplicate key error on attempted insert--or even with 2 different values for the same keys.
-
-We could potentially check that the database is valid, or even that it is consistent with the run we are doing.  But for now we simply assume that if we find the file it is in the correct format, both that it is a `SQLite` database and the necessary tables have been defined.  If we have new variables, they will be added if they are not already present.
-
-#### Many `SimDataSource`'s, One Database
-
-The code to setup the database, in the sense of creating the file, defining the tables, and creating the in-process representation of the database, is here  on the `SimDataSource`, but there may be several such sources.  The initial setup should only happen once.  The main approach is to check if `master` shows the database has been set up and skip those other steps.
-
-I think that part of the code is sequential and that should be adequate, but given `Node.js`'s asyncronous default, and the fact that I might want to optimize by handling each data source in parallel, some more robust protection against a race may be necessary.
-
-One potential problem is in the  3rd step mentioned earlier, inserting information about specific variables (e.g., name, description) into the database.  We know that the key variables, e.g., sex, will appear in multiple files.  Other variables might appear in more than one file or, as mentioned above, have already been defined in a previous run.  The procedure checks if a variable is already defined, and only inserts it if it isn't.  That should protect agains all those potential problem.
-
-#### `setupDatabase()`
 ```js : <<SimDataSource.setupForHeader>>=+
 setupDatabase(master){
-   if (!master.db)
-      createSkeletonDB(master);
    defineVariablesInDB(master);
 }
 ```
-#### Make empty database or reuse existing one
 
-Given the current, single-threaded, synchronous, design, opening the database in `Single-Thread` [mode](https://www.sqlite.org/threadsafe.html) is safe and most performant.  The `better-sqlite3` [docs](https://github.com/WiseLibs/better-sqlite3/blob/60763a0742690c8bae1db43d838f418cfc83b656/docs/compilation.md) say it builds `SQLite` with `SQLITE_THREADSAFE=2`, which is `Multi-thread` mode.
-`SQLITE_THREADSAFE=0`, `Single-Thread` mode, is the fastest.
-
-While the underlying `SQLite` allows setting the threading mode at compile, startup, or run time (provided the compilation did not specify `Single-Thread` mode, which it didn't), `better-sqlite3` does not appear to offer any run-time hooks to change it.  The run-time interface in `C` allows threading mode to be specified as an argument to `sqlite3_open_vs()`, but the `better-sqlite3` `Database` constructor does not offer it as an option.  Start-time specification in `C` is via `sqlite3_config()`, which also is not exposed by `better-sqlite3`.
-
-Since there is no good way to do otherwise, we will go with the default `Multi-thread` mode, which is safe and robust against design changes in this program, but not as fast as possible.
-
-```js : <<SimDataSource.setupForHeader>>=+
-createSkeletonDB(master){
-   this.dbFullPath = path.join(master.dbpath, master.dbfile);
-   existingDB = fs.existsSync(this.dbFullPath)
-   master.db = new sqlite(this.dbFullPath);
-   master.db.pragma('journal_mode = WAL');  //better-sqlite3 recommends this for performance
-   if (existingDB) {
-      // To Do: check if it has appropriate tables
-      return;
-   }
-   makeDBTables(master);
-   fillDemographicTables(master);
-}
-```
-
-#### Define All Tables in DB
-
-##### Tall vs Wide Tables
-
-Here's a small part of a typical formatted table of results:
-
-|CHD DEATHS | | |
-|---------|-------------------|---------------|
-| |Age/Sex Breakdown|
-|Year    | M35-44   |          M45-54 |
-|2018    | 4138     |           15267  |             
-|2019    |  4154    |           14963 |
-
-The interpretation of each number depends on its position in the grid.  Call this a "wide" representation of the data.
-
-In contrast the database uses a "tall" represention of the data.  Conceptually it might look like this:
-
-|variable|Year|Sex|Age|Sim #|Value
-|--------|----|---|------|-------|--------|
-|CHD DEATHS|2018|M|35-44|10|4138|
-|CHD DEATHS|2018|M|45-54|10|15267|
-|CHD DEATHS|2019|M|35-44|10|4154|
-|CHD DEATHS|2019|M|45-54|10|14963|
-
-This offers several advantages.  
-  1. It is easy to extend it with other identifying information; the "tall" table has already been extended relative to the wide one by the addition of the simulation number. In the previous approach the simulation number was embedded in the file name.
-  2. It is easy to extend to additional variables.  Often, variables are represented as different columns in a table, which might lead to a table like this:
-
-   |Year|CHDM35-44|CHDM45-54|
-   |----|------|---------|
-   |2018| 4138 | 15267 |
-   |2019| 4154 | 14963 |
-
-But that means columns must be defined for every variable, and there are hundreds of possible variables---even without making year or demographic category part of the name.  In contrast, the approach taken extends easily as one adds variables, and it only requires the database to hold the variables used.  
-
-  3. Embedding identifying information in the variable names makes many forms of analysis harder than they need to be.
-
-The obvious drawback of the "tall" format is that each index value (e.g., variable name, year, sex, age, simulation number in the above example) must be repeated for each observation.  Depending on how clever the database is, this may or may not take up as much space on disk as one would expect: strings may be compressed or shared between rows, for example.  Another problem is that the indices themselves may have some internal structure.  For example, if a demographic category like `M45-54` is the index, it may have several associated values, for example `sexcode=M, sex=Male, agerange=45-54, youngest=45, oldest=54, widthInYears=10, label="middle-aged men"`.  Variables can be even more complex with short and long names, descriptions, and relations between variables.
-
-To help with the problems associated with bulky or complex index values, we create auxiliary tables that give the full information on the index values, and simply refer to them with an id in the main `data` table.
-
-So each row in the `data` table looks conceptually like this:
-
-| fullvarid | demoid | year | value | other stuff |
-
-`fullvarid` indicates which variable the `value` is for; `fullvarid` is the index of a row in the `fullvar` table. Similarly, `demoid` indicates which demographic group in the `demo` table the `value` is for.  `year` and other variables indicate more precisely exactly which `value` is reported in this row. 
-
-##### Handling of Variables
-
-The database is designed to accommodate groups of variables that have the same name, but represent different things; the formatted reports often show the breakdown as subheads.  For example, a table for "CHD Deaths (Bridge)" is broken into columns for "Case Fatality Rate (%)" and "Population".  Hence there is a distinction between potentially non-unique variable names like "CHD Deaths (Bridge)" in the `variable` table and the name/category like "CHD Deaths (Bridge)"/"Population" in the `fullvar` table.
-
-In the context of the intermediate `.csv` files we are reading, variables *are* unique and are identified only by brief names like "CVDPOP17".  That is, the same variable may occur in several files, but it always refers to the same thing, and should have the same value.  The `.csv` files contain no descriptive information, but we have a fuller description of each variable from the codebook, recorded in `#byvar`.  For example, "BrDH hs" is the description of "CVDPOP17".  That may not seem like much help, but the cognoscenti find that it is.
-
-To allow our downstream tools like `frmtReport.py` to continue to work we retain the previous schema, although the problem it was designed to solve does not exist with our inputs.  Since the original scheme uses `fullvarid` to indicate variable; we continue to use that even though the category (column name `subCat`) is always empty.
-
-##### Schema, graphically
-Each box is a table, with its columns and their types listed below it.  The primary key, if any, is underlined, and arrows indicate inter-table relationships.  With `SQLite` the types are really just hints; it stores almost everything as a string.
-
-![schema](../doc/schema.svg)
-
-There are some additional indices (in the database sense) to speed queries, as shown in the code.
-
-##### Schema, code
-
-```js : <<SimDataSource.setupForHeader>>=+
-makeDBTables(master) {
-   const db = master.db;
-   db.transaction(() => {
-        const design =  [
-            ["variable", "varid integer primary key, name text, description text"],
-            ["fullvar", "fullvarid integer primary key, varid references variable(varid), subCat text"],
-            ["demo", "demoid integer primary key, label text, sex text, ageStart integer, ageEnd integer"],
-            ["data", "scenario text, iSim integer, fullvarid references fullvar(fullvarid), "+
-            "year integer, demoid references demo(demoid), value real"]
-            ];
-        for (const [tbl, cols] of design)
-            db.exec(`CREATE TABLE IF NOT EXISTS ${tbl} (${cols});`);
-        // serialization essential to ensure all tables exist before next step
-        for (const indexStr of ["fullindex ON fullvar (varid, subCat)",
-                                "varindex ON variable (name)",
-                                "demoindex ON demo (label)",
-                                "demoid ON demo (demoid)"])
-            db.exec(`CREATE UNIQUE INDEX IF NOT EXISTS ${indexStr};`);
-    })();  //invoke transaction
-}
-```
-
-#### Supporting Demographic Tables
-
-These tables translate from numeric codes to interpretable sex and age ranges.  This may potentially vary from study to study, or even run to run, but for now we treat it as eternal truth.
-
-Note the handling of demographics is much different in the inputs to this program
-than those of the `Python` program.  The `Python` inputs had columns labelled with demographics;
-in our inputs different demographic groups are in different rows, with numbers indicating
-the age and sex group.  We need to get the meaning of the numbers from an external source.
-That information is incorporated into the following code.
-
-From Sue Hennessay email 6/29/23, about the format of our input.
-        Code for agerange:
-1=35-44,
-2=45-54,
-3=55-64,
-4=65-74,
-5=75-84,
-6=85-94.
-Code for sex:
-1=male,
-2=female.
-
-```js : <<SimDataSource.setupForHeader>>=+
-fillDemographics(master) {
-   // setup demographics
-   const db = master.db;
-   let demoid, ageEnd, label;
-   let sql = db.prepare("INSERT INTO demo /*(demoid, label, sex, ageStart, ageEnd)*/ VALUES (?, ?, ?, ?, ?)");
-   db.transaction(() => {
-      // let not const in for() because I change the i* variables
-      for (let [isex, sexname] of ["M", "F"].entries()) {
-         // javascript is 0-based indexing, but we use 1 based
-         isex += 1
-         for (let [iage, ageStart] of [35, 45, 55, 65, 75, 85].entries()) {
-               iage += 1
-               demoid = 10*isex+iage;  // to ease future lookup
-               ageEnd = ageStart+9;
-               label = sexname+ageStart+"-"+ageEnd
-               sql.run(demoid, label, sexname, ageStart, ageEnd);
-         }
-      }})();  // () to run the function db.transaction produced
-};
-```
-
-#### Add Definition of Variables for this `SimDataSource`
 
 The responsibility of the code here is to ensure that the variable definitions for this `SimDataSource` are present in the database. It also updates the `this.interest` information to have the `fullvarid` and `varid` asssociated with each variable.  We need the `fullvarid` to write data values to the database; `varid` is strictly informational.  See the earlier discussion of the  database schema for more context.
 
@@ -685,35 +501,35 @@ Here, and probably elsewhere, the codes refers to `this` from inside a `() => {.
 
 Finally, `SQLite` has a feature that automatically creates a `rowid` for each table.  If the table has a single `PRIMARY KEY` with `INTEGER` type, then the `rowid` is just an alias for that key.  This lets me get the `varid` and `fullvarid` without needing to requery the database (which the `Python` code in `frmtReport.py` does.)
 
+The activity here is wrapped in a transaction at a higher level.
+
 ```js : <<SimDataSource.setupForHeader>>=+
 defineVariablesInDB(master){
    const hasVarSQL = master.db.prepare("SELECT varid FROM variable WHERE name=?")
    const hasFullVarSQL = master.db.prepare("SELECT fullvarid FROM fullvar WHERE varid=?")
    const insertVarSQL = master.db.prepare("INSERT INTO variable (name, description) VALUES (?, ?)")
    const insertFullVarSQL = master.db.prepare("INSERT INTO fullvar (varid) VALUES (?)")
-   master.db.transaction(() => {
-      for (const varinfo of this.interest){
-         if (r = hasVarSQL.get(v)){
-            //already defined. assume OK
-            varinfo.varid = r.varid;
-            r = hasFullVarSQL.get(varinfo.varid);
-            varinfo.fullvarid = r.fullvarid
-            continue;
-         }
-         info = insertVarSQL.run(v, this.#byvar.get(v.toLowerCase()))
-         if (info.changes != 1)
-            // API says it throws errors if something goes wrong
-            // so I don't know if this is necessary
-            error(`Error inserting ${v} into table named variable`)
-         varinfo.varid = info.lastInsertRowid
-
-         // assume that if there is no entry in variable there is none in fullvar
-         info = insertFullVarSQL.run(varinfo.varid)
-         if (info.changes != 1)
-            error(`Error inserting ${v} into table named fullvar`)
-         varinfo.fullvarid = info.lastInsertRowid
+   for (const varinfo of this.interest){
+      if (r = hasVarSQL.get(v)){
+         //already defined. assume OK
+         varinfo.varid = r.varid;
+         r = hasFullVarSQL.get(varinfo.varid);
+         varinfo.fullvarid = r.fullvarid
+         continue;
       }
-   })();
+      info = insertVarSQL.run(v, this.#byvar.get(v.toLowerCase()))
+      if (info.changes != 1)
+         // API says it throws errors if something goes wrong
+         // so I don't know if this is necessary
+         error(`Error inserting ${v} into table named variable`)
+      varinfo.varid = info.lastInsertRowid
+
+      // assume that if there is no entry in variable there is none in fullvar
+      info = insertFullVarSQL.run(varinfo.varid)
+      if (info.changes != 1)
+         error(`Error inserting ${v} into table named fullvar`)
+      varinfo.fullvarid = info.lastInsertRowid
+   }
 }
 ```
 
@@ -748,27 +564,6 @@ readBody(master, iteration, scenario){
 }
 ```
 
-## Done Reading the Data
-When we know there is no more data to be written, call this method to cleanup.  Because it only needs to be done once, not once per `SimDataSource`, make this a `static`, i.e., class, method.
-
-Call this **only** when there are no more iterations, not at the end of an individual iteration.
-
-Also note it is conceivable that we have collected no data at all and never opened the database.  The first test protects against that.
-
-All transactions should already have been committed.
-
-```js : <<SimDataSource.done>>=
-static done(master){
-   let db = master.db;
-   if (db === undefined){
-      return;
-   db.close();
-   master.db
-   delete master.db;
-   }
-}
-```
-
 ## The Whole McGilla
 ```js : <<SimDataSource.*>>= ./bin/js/v4-SimDataSource.js $
 'use strict';
@@ -787,8 +582,6 @@ module.exports = class SimDataSource {
    <<SimDataSource.read>>
    <<SimDataSource.setupForHeader>>
    <<SimDataSource.readBody>>
-   
-   <<SimDataSource.done>>
 }
 ```
 
@@ -1133,6 +926,7 @@ I am unsure if the use of `this` will work correctly if the functions are handed
 ```js : <<Master>>=
 class Master {
    <<Master.constructor>>
+   <<Master.setupDatabase>>
    <<Master.iterate>>
    <<Master.done>>
 }
@@ -1150,9 +944,199 @@ constructor(yargs) {
    this.dbfile = yargs.dbfile;
    let vs = new VariableSelector(this, './__tests__/monte2.conf');
    let cb = new Codebook(this, './data/CVDPM_HF_Variable_List.csv');
+   setupDatabase();
    console.log(this.sources);
 }
 ```
+
+## Set Up Database
+
+"Setting up" the database involves 3 separate steps:
+   1. check if it already exists and create it if not.
+   2. build the desired structure of tables and indices in the empty db.
+   3. populate the tables with information about the variables of interest.
+Only after doing all those things is the database ready to recieve simulation results.  Notice that steps 1 and 2 only need to be done once per run, while the 3rd step is done once for each `SimDataSource`.  So the first 2 happen in `Master`.
+
+1 and 2 should probably be in a separate function, which could be run asynchronously at the start of `runSims`, or perhaps after `monte.conf` has been scanned to determine if *anything* is to be written to the database.  The current approach *always* creates the database, even if there will be nothing to put in it.
+
+At the end of this function `master.db` will hold a handle to a database initialized with appropriate tables.
+
+There are some issues.
+
+### Database Name and Location
+
+`SQLite`, which we are currently using, stores all information in a single file.  So we need to know where to put it and what to call it.  The top-level program, `mc` (not in this document or directory) provides command-line options `--dbfile` and `--dbpath` to specify either or both; the default is `MC/results/hfmc_results.sqlite`.  Note that the directory `MC/results` ordinarily does not exist until `mc init` has been run.
+
+### Existing Database
+
+It may be that the database file already exists.  Since it may have results, simply deleting it seems undesirable.  We could refuse to run, but that would make it impossible to resume interrupted runs (not currently supported, but hopefully someday) or to add simulations of more scenarios.  So we will allow it to proceed.  Note this does carry the risk that the database will end up with the same information twice--actually, that might cause a duplicate key error on attempted insert--or even with 2 different values for the same keys.
+
+We could potentially check that the database is valid, or even that it is consistent with the run we are doing.  But for now we simply assume that if we find the file it is in the correct format, both that it is a `SQLite` database and the necessary tables have been defined.  If we have new variables, they will be added if they are not already present.
+
+After this function runs the database exists on disk; `master.db` is a handle to it; and the basic table structure is defined in it.
+
+### `setupDatabase()`
+```js : <<Master.setupDatabase>>=
+setupDatabase(){
+   // this should only be called once, but just in case
+   if (!this.db)
+      createSkeletonDB();
+}
+```
+### Make empty database or reuse existing one
+
+Given the current, single-threaded, synchronous, design, opening the database in `Single-Thread` [mode](https://www.sqlite.org/threadsafe.html) is safe and most performant.  The `better-sqlite3` [docs](https://github.com/WiseLibs/better-sqlite3/blob/60763a0742690c8bae1db43d838f418cfc83b656/docs/compilation.md) say it builds `SQLite` with `SQLITE_THREADSAFE=2`, which is `Multi-thread` mode.
+`SQLITE_THREADSAFE=0`, `Single-Thread` mode, is the fastest.
+
+While the underlying `SQLite` allows setting the threading mode at compile, startup, or run time (provided the compilation did not specify `Single-Thread` mode, which it didn't), `better-sqlite3` does not appear to offer any run-time hooks to change it.  The run-time interface in `C` allows threading mode to be specified as an argument to `sqlite3_open_vs()`, but the `better-sqlite3` `Database` constructor does not offer it as an option.  Start-time specification in `C` is via `sqlite3_config()`, which also is not exposed by `better-sqlite3`.
+
+Since there is no good way to do otherwise, we will go with the default `Multi-thread` mode, which is safe and robust against design changes in this program, but not as fast as possible.
+
+```js : <<Master.setupDatabase>>=+
+createSkeletonDB(){
+   this.dbFullPath = path.join(this.dbpath, this.dbfile);
+   existingDB = fs.existsSync(this.dbFullPath)
+   this.db = new sqlite(this.dbFullPath);
+   this.db.pragma('journal_mode = WAL');  //better-sqlite3 recommends this for performance
+   if (existingDB) {
+      // To Do: check if it has appropriate tables
+      return;
+   }
+   this.db.transaction( () => {
+      makeDBTables();
+      fillDemographicTables();
+   }).();
+}
+```
+
+### Define All Tables in DB
+
+#### Tall vs Wide Tables
+
+Here's a small part of a typical formatted table of results:
+
+|CHD DEATHS | | |
+|---------|-------------------|---------------|
+| |Age/Sex Breakdown|
+|Year    | M35-44   |          M45-54 |
+|2018    | 4138     |           15267  |             
+|2019    |  4154    |           14963 |
+
+The interpretation of each number depends on its position in the grid.  Call this a "wide" representation of the data.
+
+In contrast the database uses a "tall" represention of the data.  Conceptually it might look like this:
+
+|variable|Year|Sex|Age|Sim #|Value
+|--------|----|---|------|-------|--------|
+|CHD DEATHS|2018|M|35-44|10|4138|
+|CHD DEATHS|2018|M|45-54|10|15267|
+|CHD DEATHS|2019|M|35-44|10|4154|
+|CHD DEATHS|2019|M|45-54|10|14963|
+
+This offers several advantages.  
+  1. It is easy to extend it with other identifying information; the "tall" table has already been extended relative to the wide one by the addition of the simulation number. In the previous approach the simulation number was embedded in the file name.
+  2. It is easy to extend to additional variables.  Often, variables are represented as different columns in a table, which might lead to a table like this:
+
+   |Year|CHDM35-44|CHDM45-54|
+   |----|------|---------|
+   |2018| 4138 | 15267 |
+   |2019| 4154 | 14963 |
+
+But that means columns must be defined for every variable, and there are hundreds of possible variables---even without making year or demographic category part of the name.  In contrast, the approach taken extends easily as one adds variables, and it only requires the database to hold the variables used.  
+
+  3. Embedding identifying information in the variable names makes many forms of analysis harder than they need to be.
+
+The obvious drawback of the "tall" format is that each index value (e.g., variable name, year, sex, age, simulation number in the above example) must be repeated for each observation.  Depending on how clever the database is, this may or may not take up as much space on disk as one would expect: strings may be compressed or shared between rows, for example.  Another problem is that the indices themselves may have some internal structure.  For example, if a demographic category like `M45-54` is the index, it may have several associated values, for example `sexcode=M, sex=Male, agerange=45-54, youngest=45, oldest=54, widthInYears=10, label="middle-aged men"`.  Variables can be even more complex with short and long names, descriptions, and relations between variables.
+
+To help with the problems associated with bulky or complex index values, we create auxiliary tables that give the full information on the index values, and simply refer to them with an id in the main `data` table.
+
+So each row in the `data` table looks conceptually like this:
+
+| fullvarid | demoid | year | value | other stuff |
+
+`fullvarid` indicates which variable the `value` is for; `fullvarid` is the index of a row in the `fullvar` table. Similarly, `demoid` indicates which demographic group in the `demo` table the `value` is for.  `year` and other variables indicate more precisely exactly which `value` is reported in this row. 
+
+#### Handling of Variables
+
+The database is designed to accommodate groups of variables that have the same name, but represent different things; the formatted reports often show the breakdown as subheads.  For example, a table for "CHD Deaths (Bridge)" is broken into columns for "Case Fatality Rate (%)" and "Population".  Hence there is a distinction between potentially non-unique variable names like "CHD Deaths (Bridge)" in the `variable` table and the name/category like "CHD Deaths (Bridge)"/"Population" in the `fullvar` table.
+
+In the context of the intermediate `.csv` files we are reading, variables *are* unique and are identified only by brief names like "CVDPOP17".  That is, the same variable may occur in several files, but it always refers to the same thing, and should have the same value.  The `.csv` files contain no descriptive information, but we have a fuller description of each variable from the codebook, recorded in `SimDataSource.#byvar`.  For example, "BrDH hs" is the description of "CVDPOP17".  That may not seem like much help, but the cognoscenti find that it is.
+
+To allow our downstream tools like `frmtReport.py` to continue to work we retain the previous schema, although the problem it was designed to solve does not exist with our inputs.  Since the original scheme uses `fullvarid` to indicate variable; we continue to use that even though the category (column name `subCat`) is always empty.
+
+#### Schema, graphically
+Each box is a table, with its columns and their types listed below it.  The primary key, if any, is underlined, and arrows indicate inter-table relationships.  With `SQLite` the types are really just hints; it stores almost everything as a string.
+
+![schema](../doc/schema.svg)
+
+There are some additional indices (in the database sense) to speed queries, as shown in the code.
+
+#### Schema, code
+
+```js : <<Master.setupDatabase>>=+
+makeDBTables() {
+   const db = this.db;
+   const design =  [
+      ["variable", "varid integer primary key, name text, description text"],
+      ["fullvar", "fullvarid integer primary key, varid references variable(varid), subCat text"],
+      ["demo", "demoid integer primary key, label text, sex text, ageStart integer, ageEnd integer"],
+      ["data", "scenario text, iSim integer, fullvarid references fullvar(fullvarid), "+
+      "year integer, demoid references demo(demoid), value real"]
+      ];
+   for (const [tbl, cols] of design)
+      db.exec(`CREATE TABLE IF NOT EXISTS ${tbl} (${cols});`);
+   // serialization essential to ensure all tables exist before next step
+   for (const indexStr of ["fullindex ON fullvar (varid, subCat)",
+                           "varindex ON variable (name)",
+                           "demoindex ON demo (label)",
+                           "demoid ON demo (demoid)"])
+      db.exec(`CREATE UNIQUE INDEX IF NOT EXISTS ${indexStr};`);
+}
+```
+
+#### Supporting Demographic Tables
+
+These tables translate from numeric codes to interpretable sex and age ranges.  This may potentially vary from study to study, or even run to run, but for now we treat it as eternal truth.
+
+Note the handling of demographics is much different in the inputs to this program
+than those of the `Python` program.  The `Python` inputs had columns labelled with demographics;
+in our inputs different demographic groups are in different rows, with numbers indicating
+the age and sex group.  We need to get the meaning of the numbers from an external source.
+That information is incorporated into the following code.
+
+From Sue Hennessay email 6/29/23, about the format of our input.
+        Code for agerange:
+1=35-44,
+2=45-54,
+3=55-64,
+4=65-74,
+5=75-84,
+6=85-94.
+Code for sex:
+1=male,
+2=female.
+
+```js : <<Master.setupDatabase>>=+
+fillDemographics() {
+   // setup demographics
+   const db = this.db;
+   let demoid, ageEnd, label;
+   let sql = db.prepare("INSERT INTO demo /*(demoid, label, sex, ageStart, ageEnd)*/ VALUES (?, ?, ?, ?, ?)");
+   // let not const in for() because I change the i* variables
+   for (let [isex, sexname] of ["M", "F"].entries()) {
+      // javascript is 0-based indexing, but we use 1 based
+      isex += 1
+      for (let [iage, ageStart] of [35, 45, 55, 65, 75, 85].entries()) {
+            iage += 1
+            demoid = 10*isex+iage;  // to ease future lookup
+            ageEnd = ageStart+9;
+            label = sexname+ageStart+"-"+ageEnd
+            sql.run(demoid, label, sexname, ageStart, ageEnd);
+      }
+   }
+};
+```
+
 
 ## Iterate
 
@@ -1161,16 +1145,15 @@ it should call this method with the iteration number and, optionally, a string
 giving the scenario.
 
 This wraps the entire operation in a database transaction.  Lower level code does not need to worry about
-transactions, yet some of the setup code (that in some cases is triggered from here on the first time through)
-does use transactions.  `better-sqlite3` docs say nesting transactions is OK; the inner ones create save points.
-They also say *not* to mix their tranactions with raw `SQL` (e.g., `BEGIN`, `COMMIT`)
-that starts and end transactions.  None of this code uses the raw `SQL`.
-
-I could remove some of the other uses of `db.transaction()`.
+transactions.
 
 Arguably it would be better to do the transactions at the individual `SimDataSource` level
 since one must actually open and read all the "interesting" `.csv` files, making the 
-transaction relatively long-lived.
+transaction relatively long-lived.  Also, the `better-sqlite3` 
+[docs](https://github.com/WiseLibs/better-sqlite3/blob/HEAD/docs/api.md#caveats)
+say "it's generally a very bad idea to keep a transaction open across event loop ticks". 
+It's not clear why, but it seems quite likely the file I/O involved in reading the `.csv`
+files creates such ticks.
 
 ```js: <<Master.iterate>>=
 iterate(i, scenario=""){
@@ -1182,17 +1165,23 @@ iterate(i, scenario=""){
 }
 ```
 
-## Done
+## Done Reading the Data
+When we know there is no more data to be written, call this method to cleanup.
 
-There is no more data to write out.  Clean up.
+Call this **only** when there are no more iterations, not at the end of an individual iteration.
 
-This is a bit awkward; `SimDataSource` actually created the database,
-and should be responsible for cleanup.  But it's only created once.
-Delegate to a static method on that class.
+Also note it is conceivable that we have collected no data at all and never opened the database (well, not with current code, but being defensive).  The first test protects against that.
+
+All transactions should already have been committed.
 
 ```js : <<Master.done>>=
-done() {
-   SimDataSource.done(this)
+done(){
+   let db = this.db;
+   if (db === undefined){
+      return;
+   }
+   db.close();
+   delete this.db;
 }
 ```
 # Top Level Stub

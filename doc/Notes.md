@@ -407,13 +407,20 @@ Modified test code to write out iteration number.
         - [x] `await` can only be used in an `async` function or at module level.
         - [x] callback API has better performance (memory, time) than Promise-based API, at least for `fs` module.
         - [x] `await` can be viewed as an easier way to sequence operations than `.then()` chaining Promises, which in turn are easier then the callback approach. 
-    - [ ] initial database setup
+    - [x] initial database setup
       - [x] name of output db.  Allow run-time selection. `hfmc_results` might be a good default,  Or embed time stamp in it.  Or use name in existing python code, `MC\results\breakdown\allData.db`
       - [x] directory of output db: `MC\results\`
       - [x] embed in transaction
+      - [x] fix: current code will try to make a database transaction the first time--before there is a database!
+            Literally, `master.db` will not exist.  Likely solution:
+            - [x] make database creation part of master
+            - [x] that will mean we might create the database when there is no output
+            - [x] move the done code to Master as well (from `SimDataSource`)
+      - [x] remove the nested transactions, and the accompanying comments
+    - [ ] check location of codebook info.  It seems it goes in `SimDataSource.#byvar`, but it's only read once for all `.csv`'s.
     - [ ] implement the long running code that reads `csv`'s.  Even apart from the database setup, the code is a work in progress.
       - [x] embed in transaction
-    - [ ] create top-level flow that waits for iteration to complete and launches processing of all `SimDataSources`
+    - [x] create top-level flow that waits for iteration to complete and launches processing of all `SimDataSources`
     - [x] remember there may be a scenario, with multiple scenarios per run
     - [ ] `Jest` scans directories I tell it to ignore and takes > 1 minute
       - [ ] See my [question](https://stackoverflow.com/questions/77951697/how-to-stop-jest-from-scanning-directories) asked 2/6/24

@@ -47,29 +47,9 @@
 <li><a href="#first-encounter-with-data-csv-file">First Encounter With Data (<code>.csv</code>) File</a>
 <ul>
 <li><a href="#first-encounter-with-header">First Encounter with Header</a></li>
-<li><a href="#set-up-database">Set Up Database</a>
-<ul>
-<li><a href="#database-name-and-location">Database Name and Location</a></li>
-<li><a href="#existing-database">Existing Database</a></li>
-<li><a href="#many-simdatasources-one-database">Many <code>SimDataSource</code>'s, One Database</a></li>
-<li><a href="#setupdatabase"><code>setupDatabase()</code></a></li>
-<li><a href="#make-empty-database-or-reuse-existing-one">Make empty database or reuse existing one</a></li>
-<li><a href="#define-all-tables-in-db">Define All Tables in DB</a>
-<ul>
-<li><a href="#tall-vs-wide-tables">Tall vs Wide Tables</a></li>
-<li><a href="#handling-of-variables">Handling of Variables</a></li>
-<li><a href="#schema-graphically">Schema, graphically</a></li>
-<li><a href="#schema-code">Schema, code</a></li>
-</ul>
-</li>
-<li><a href="#supporting-demographic-tables">Supporting Demographic Tables</a></li>
-<li><a href="#add-definition-of-variables-for-this-simdatasource">Add Definition of Variables for this <code>SimDataSource</code></a></li>
-</ul>
-</li>
 </ul>
 </li>
 <li><a href="#reading-the-data">Reading the Data</a></li>
-<li><a href="#done-reading-the-data">Done Reading the Data</a></li>
 <li><a href="#the-whole-mcgilla">The Whole McGilla</a></li>
 </ul>
 </li>
@@ -118,8 +98,25 @@
 <li><a href="#master">Master</a>
 <ul>
 <li><a href="#constructor-1">Constructor</a></li>
+<li><a href="#set-up-database">Set Up Database</a>
+<ul>
+<li><a href="#database-name-and-location">Database Name and Location</a></li>
+<li><a href="#existing-database">Existing Database</a></li>
+<li><a href="#setupdatabase"><code>setupDatabase()</code></a></li>
+<li><a href="#make-empty-database-or-reuse-existing-one">Make empty database or reuse existing one</a></li>
+<li><a href="#define-all-tables-in-db">Define All Tables in DB</a>
+<ul>
+<li><a href="#tall-vs-wide-tables">Tall vs Wide Tables</a></li>
+<li><a href="#handling-of-variables">Handling of Variables</a></li>
+<li><a href="#schema-graphically">Schema, graphically</a></li>
+<li><a href="#schema-code">Schema, code</a></li>
+<li><a href="#supporting-demographic-tables">Supporting Demographic Tables</a></li>
+</ul>
+</li>
+</ul>
+</li>
 <li><a href="#iterate">Iterate</a></li>
-<li><a href="#done">Done</a></li>
+<li><a href="#done-reading-the-data">Done Reading the Data</a></li>
 </ul>
 </li>
 <li><a href="#top-level-stub">Top Level Stub</a></li>
@@ -472,263 +469,28 @@
 </code></pre>
 
 </div>
-</div><p>This is the first point when we know which specific variables we will be saving in the database, and so we can do the initial setup of the database</p>
-<h3>Set Up Database</h3>
-<p>&quot;Setting up&quot; the database involves 3 separate steps:</p>
-<ol>
-<li>check if it already exists and create it if not.</li>
-<li>build the desired structure of tables and indices in the empty db.</li>
-<li>populate the tables with information about the variables of interest.
-Only after doing all those things is the database ready to recieve simulation results.  Notice that steps 1 and 2 only need to be done once per run, while the 3rd step is done once for each <code>SimDataSource</code>.</li>
-</ol>
-<p>1 and 2 should probably be in a separate function, which could be run asynchronously at the start of <code>runSims</code>, or perhaps after <code>monte.conf</code> has been scanned to determine if <em>anything</em> is to be written to the database.</p>
+</div><p>This is the first point when we know which specific variables we will be saving in the database, and so we
+can do the second part of initial setup of the database.  The first part, done by master, created the database file and the <code>master.db</code>
+handle for it, and inserted the necessary table definitions.</p>
+<p>What remains is to  populate the variable definition tables with the variables of interest--not the data values of those
+variables, but the metadata about them.</p>
 <p>At the end of this function <code>master.db</code> will hold a handle to a database initialized with appropriate tables with all the variables for this <code>SimDataSource</code> having descriptive entries.</p>
-<p>There are some issues.</p>
-<h4>Database Name and Location</h4>
-<p><code>SQLite</code>, which we are currently using, stores all information in a single file.  So we need to know where to put it and what to call it.  The top-level program, <code>mc</code> (not in this document or directory) provides command-line options <code>--dbfile</code> and <code>--dbpath</code> to specify either or both; the default is <code>MC/results/hfmc_results.sqlite</code>.  Note that the directory <code>MC/results</code> ordinarily does not exist until <code>mc init</code> has been run.</p>
-<h4>Existing Database</h4>
-<p>It may be that the database file already exists.  Since it may have results, simply deleting it seems undesirable.  We could refuse to run, but that would make it impossible to resume interrupted runs (not currently supported, but hopefully someday) or to add simulations of more scenarios.  So we will allow it to proceed.  Note this does carry the risk that the database will end up with the same information twice--actually, that might cause a duplicate key error on attempted insert--or even with 2 different values for the same keys.</p>
-<p>We could potentially check that the database is valid, or even that it is consistent with the run we are doing.  But for now we simply assume that if we find the file it is in the correct format, both that it is a <code>SQLite</code> database and the necessary tables have been defined.  If we have new variables, they will be added if they are not already present.</p>
-<h4>Many <code>SimDataSource</code>'s, One Database</h4>
-<p>The code to setup the database, in the sense of creating the file, defining the tables, and creating the in-process representation of the database, is here  on the <code>SimDataSource</code>, but there may be several such sources.  The initial setup should only happen once.  The main approach is to check if <code>master</code> shows the database has been set up and skip those other steps.</p>
-<p>I think that part of the code is sequential and that should be adequate, but given <code>Node.js</code>'s asyncronous default, and the fact that I might want to optimize by handling each data source in parallel, some more robust protection against a race may be necessary.</p>
-<p>One potential problem is in the  3rd step mentioned earlier, inserting information about specific variables (e.g., name, description) into the database.  We know that the key variables, e.g., sex, will appear in multiple files.  Other variables might appear in more than one file or, as mentioned above, have already been defined in a previous run.  The procedure checks if a variable is already defined, and only inserts it if it isn't.  That should protect agains all those potential problem.</p>
-<h4><code>setupDatabase()</code></h4>
+<p>OK, this isn't much.  It used to do more; preserving it until the design stabilizes.</p>
 <div class="codefragment">
 <div class="fragmentname">&lt;&lt;SimDataSource.setupForHeader&gt;&gt;=+ </div>
 <div class="code">
 <pre><code><span class="hljs-title function_">setupDatabase</span>(<span class="hljs-params">master</span>){
-   <span class="hljs-keyword">if</span> (!master.<span class="hljs-property">db</span>)
-      <span class="hljs-title function_">createSkeletonDB</span>(master);
    <span class="hljs-title function_">defineVariablesInDB</span>(master);
 }
 </code></pre>
 
 </div>
-</div><h4>Make empty database or reuse existing one</h4>
-<p>Given the current, single-threaded, synchronous, design, opening the database in <code>Single-Thread</code> <a href="https://www.sqlite.org/threadsafe.html">mode</a> is safe and most performant.  The <code>better-sqlite3</code> <a href="https://github.com/WiseLibs/better-sqlite3/blob/60763a0742690c8bae1db43d838f418cfc83b656/docs/compilation.md">docs</a> say it builds <code>SQLite</code> with <code>SQLITE_THREADSAFE=2</code>, which is <code>Multi-thread</code> mode.
-<code>SQLITE_THREADSAFE=0</code>, <code>Single-Thread</code> mode, is the fastest.</p>
-<p>While the underlying <code>SQLite</code> allows setting the threading mode at compile, startup, or run time (provided the compilation did not specify <code>Single-Thread</code> mode, which it didn't), <code>better-sqlite3</code> does not appear to offer any run-time hooks to change it.  The run-time interface in <code>C</code> allows threading mode to be specified as an argument to <code>sqlite3_open_vs()</code>, but the <code>better-sqlite3</code> <code>Database</code> constructor does not offer it as an option.  Start-time specification in <code>C</code> is via <code>sqlite3_config()</code>, which also is not exposed by <code>better-sqlite3</code>.</p>
-<p>Since there is no good way to do otherwise, we will go with the default <code>Multi-thread</code> mode, which is safe and robust against design changes in this program, but not as fast as possible.</p>
-<div class="codefragment">
-<div class="fragmentname">&lt;&lt;SimDataSource.setupForHeader&gt;&gt;=+ </div>
-<div class="code">
-<pre><code><span class="hljs-title function_">createSkeletonDB</span>(<span class="hljs-params">master</span>){
-   <span class="hljs-variable language_">this</span>.<span class="hljs-property">dbFullPath</span> = path.<span class="hljs-title function_">join</span>(master.<span class="hljs-property">dbpath</span>, master.<span class="hljs-property">dbfile</span>);
-   existingDB = fs.<span class="hljs-title function_">existsSync</span>(<span class="hljs-variable language_">this</span>.<span class="hljs-property">dbFullPath</span>)
-   master.<span class="hljs-property">db</span> = <span class="hljs-keyword">new</span> <span class="hljs-title function_">sqlite</span>(<span class="hljs-variable language_">this</span>.<span class="hljs-property">dbFullPath</span>);
-   master.<span class="hljs-property">db</span>.<span class="hljs-title function_">pragma</span>(<span class="hljs-string">&#x27;journal_mode = WAL&#x27;</span>);  
-   <span class="hljs-keyword">if</span> (existingDB) {
-      
-      <span class="hljs-keyword">return</span>;
-   }
-   <span class="hljs-title function_">makeDBTables</span>(master);
-   <span class="hljs-title function_">fillDemographicTables</span>(master);
-}
-</code></pre>
-
-</div>
-</div><h4>Define All Tables in DB</h4>
-<h5>Tall vs Wide Tables</h5>
-<p>Here's a small part of a typical formatted table of results:</p>
-<table>
-<thead>
-<tr>
-<th>CHD DEATHS</th>
-<th></th>
-<th></th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td></td>
-<td>Age/Sex Breakdown</td>
-<td></td>
-</tr>
-<tr>
-<td>Year</td>
-<td>M35-44</td>
-<td>M45-54</td>
-</tr>
-<tr>
-<td>2018</td>
-<td>4138</td>
-<td>15267</td>
-</tr>
-<tr>
-<td>2019</td>
-<td>4154</td>
-<td>14963</td>
-</tr>
-</tbody>
-</table>
-<p>The interpretation of each number depends on its position in the grid.  Call this a &quot;wide&quot; representation of the data.</p>
-<p>In contrast the database uses a &quot;tall&quot; represention of the data.  Conceptually it might look like this:</p>
-<table>
-<thead>
-<tr>
-<th>variable</th>
-<th>Year</th>
-<th>Sex</th>
-<th>Age</th>
-<th>Sim #</th>
-<th>Value</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td>CHD DEATHS</td>
-<td>2018</td>
-<td>M</td>
-<td>35-44</td>
-<td>10</td>
-<td>4138</td>
-</tr>
-<tr>
-<td>CHD DEATHS</td>
-<td>2018</td>
-<td>M</td>
-<td>45-54</td>
-<td>10</td>
-<td>15267</td>
-</tr>
-<tr>
-<td>CHD DEATHS</td>
-<td>2019</td>
-<td>M</td>
-<td>35-44</td>
-<td>10</td>
-<td>4154</td>
-</tr>
-<tr>
-<td>CHD DEATHS</td>
-<td>2019</td>
-<td>M</td>
-<td>45-54</td>
-<td>10</td>
-<td>14963</td>
-</tr>
-</tbody>
-</table>
-<p>This offers several advantages.</p>
-<ol>
-<li>It is easy to extend it with other identifying information; the &quot;tall&quot; table has already been extended relative to the wide one by the addition of the simulation number. In the previous approach the simulation number was embedded in the file name.</li>
-<li>It is easy to extend to additional variables.  Often, variables are represented as different columns in a table, which might lead to a table like this:</li>
-</ol>
-<table>
-<thead>
-<tr>
-<th>Year</th>
-<th>CHDM35-44</th>
-<th>CHDM45-54</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td>2018</td>
-<td>4138</td>
-<td>15267</td>
-</tr>
-<tr>
-<td>2019</td>
-<td>4154</td>
-<td>14963</td>
-</tr>
-</tbody>
-</table>
-<p>But that means columns must be defined for every variable, and there are hundreds of possible variables---even without making year or demographic category part of the name.  In contrast, the approach taken extends easily as one adds variables, and it only requires the database to hold the variables used.</p>
-<ol start="3">
-<li>Embedding identifying information in the variable names makes many forms of analysis harder than they need to be.</li>
-</ol>
-<p>The obvious drawback of the &quot;tall&quot; format is that each index value (e.g., variable name, year, sex, age, simulation number in the above example) must be repeated for each observation.  Depending on how clever the database is, this may or may not take up as much space on disk as one would expect: strings may be compressed or shared between rows, for example.  Another problem is that the indices themselves may have some internal structure.  For example, if a demographic category like <code>M45-54</code> is the index, it may have several associated values, for example <code>sexcode=M, sex=Male, agerange=45-54, youngest=45, oldest=54, widthInYears=10, label=&quot;middle-aged men&quot;</code>.  Variables can be even more complex with short and long names, descriptions, and relations between variables.</p>
-<p>To help with the problems associated with bulky or complex index values, we create auxiliary tables that give the full information on the index values, and simply refer to them with an id in the main <code>data</code> table.</p>
-<p>So each row in the <code>data</code> table looks conceptually like this:</p>
-<p>| fullvarid | demoid | year | value | other stuff |</p>
-<p><code>fullvarid</code> indicates which variable the <code>value</code> is for; <code>fullvarid</code> is the index of a row in the <code>fullvar</code> table. Similarly, <code>demoid</code> indicates which demographic group in the <code>demo</code> table the <code>value</code> is for.  <code>year</code> and other variables indicate more precisely exactly which <code>value</code> is reported in this row.</p>
-<h5>Handling of Variables</h5>
-<p>The database is designed to accommodate groups of variables that have the same name, but represent different things; the formatted reports often show the breakdown as subheads.  For example, a table for &quot;CHD Deaths (Bridge)&quot; is broken into columns for &quot;Case Fatality Rate (%)&quot; and &quot;Population&quot;.  Hence there is a distinction between potentially non-unique variable names like &quot;CHD Deaths (Bridge)&quot; in the <code>variable</code> table and the name/category like &quot;CHD Deaths (Bridge)&quot;/&quot;Population&quot; in the <code>fullvar</code> table.</p>
-<p>In the context of the intermediate <code>.csv</code> files we are reading, variables <em>are</em> unique and are identified only by brief names like &quot;CVDPOP17&quot;.  That is, the same variable may occur in several files, but it always refers to the same thing, and should have the same value.  The <code>.csv</code> files contain no descriptive information, but we have a fuller description of each variable from the codebook, recorded in <code>#byvar</code>.  For example, &quot;BrDH hs&quot; is the description of &quot;CVDPOP17&quot;.  That may not seem like much help, but the cognoscenti find that it is.</p>
-<p>To allow our downstream tools like <code>frmtReport.py</code> to continue to work we retain the previous schema, although the problem it was designed to solve does not exist with our inputs.  Since the original scheme uses <code>fullvarid</code> to indicate variable; we continue to use that even though the category (column name <code>subCat</code>) is always empty.</p>
-<h5>Schema, graphically</h5>
-<p>Each box is a table, with its columns and their types listed below it.  The primary key, if any, is underlined, and arrows indicate inter-table relationships.  With <code>SQLite</code> the types are really just hints; it stores almost everything as a string.</p>
-<p><img src="../doc/schema.svg" alt="schema"></p>
-<p>There are some additional indices (in the database sense) to speed queries, as shown in the code.</p>
-<h5>Schema, code</h5>
-<div class="codefragment">
-<div class="fragmentname">&lt;&lt;SimDataSource.setupForHeader&gt;&gt;=+ </div>
-<div class="code">
-<pre><code><span class="hljs-title function_">makeDBTables</span>(<span class="hljs-params">master</span>) {
-   <span class="hljs-keyword">const</span> db = master.<span class="hljs-property">db</span>;
-   db.<span class="hljs-title function_">transaction</span>(<span class="hljs-function">() =&gt;</span> {
-        <span class="hljs-keyword">const</span> design =  [
-            [<span class="hljs-string">&quot;variable&quot;</span>, <span class="hljs-string">&quot;varid integer primary key, name text, description text&quot;</span>],
-            [<span class="hljs-string">&quot;fullvar&quot;</span>, <span class="hljs-string">&quot;fullvarid integer primary key, varid references variable(varid), subCat text&quot;</span>],
-            [<span class="hljs-string">&quot;demo&quot;</span>, <span class="hljs-string">&quot;demoid integer primary key, label text, sex text, ageStart integer, ageEnd integer&quot;</span>],
-            [<span class="hljs-string">&quot;data&quot;</span>, <span class="hljs-string">&quot;scenario text, iSim integer, fullvarid references fullvar(fullvarid), &quot;</span>+
-            <span class="hljs-string">&quot;year integer, demoid references demo(demoid), value real&quot;</span>]
-            ];
-        <span class="hljs-keyword">for</span> (<span class="hljs-keyword">const</span> [tbl, cols] <span class="hljs-keyword">of</span> design)
-            db.<span class="hljs-title function_">exec</span>(<span class="hljs-string">`CREATE TABLE IF NOT EXISTS <span class="hljs-subst">${tbl}</span> (<span class="hljs-subst">${cols}</span>);`</span>);
-        
-        <span class="hljs-keyword">for</span> (<span class="hljs-keyword">const</span> indexStr <span class="hljs-keyword">of</span> [<span class="hljs-string">&quot;fullindex ON fullvar (varid, subCat)&quot;</span>,
-                                <span class="hljs-string">&quot;varindex ON variable (name)&quot;</span>,
-                                <span class="hljs-string">&quot;demoindex ON demo (label)&quot;</span>,
-                                <span class="hljs-string">&quot;demoid ON demo (demoid)&quot;</span>])
-            db.<span class="hljs-title function_">exec</span>(<span class="hljs-string">`CREATE UNIQUE INDEX IF NOT EXISTS <span class="hljs-subst">${indexStr}</span>;`</span>);
-    })();  
-}
-</code></pre>
-
-</div>
-</div><h4>Supporting Demographic Tables</h4>
-<p>These tables translate from numeric codes to interpretable sex and age ranges.  This may potentially vary from study to study, or even run to run, but for now we treat it as eternal truth.</p>
-<p>Note the handling of demographics is much different in the inputs to this program
-than those of the <code>Python</code> program.  The <code>Python</code> inputs had columns labelled with demographics;
-in our inputs different demographic groups are in different rows, with numbers indicating
-the age and sex group.  We need to get the meaning of the numbers from an external source.
-That information is incorporated into the following code.</p>
-<p>From Sue Hennessay email 6/29/23, about the format of our input.
-Code for agerange:
-1=35-44,
-2=45-54,
-3=55-64,
-4=65-74,
-5=75-84,
-6=85-94.
-Code for sex:
-1=male,
-2=female.</p>
-<div class="codefragment">
-<div class="fragmentname">&lt;&lt;SimDataSource.setupForHeader&gt;&gt;=+ </div>
-<div class="code">
-<pre><code><span class="hljs-title function_">fillDemographics</span>(<span class="hljs-params">master</span>) {
-   
-   <span class="hljs-keyword">const</span> db = master.<span class="hljs-property">db</span>;
-   <span class="hljs-keyword">let</span> demoid, ageEnd, label;
-   <span class="hljs-keyword">let</span> sql = db.<span class="hljs-title function_">prepare</span>(<span class="hljs-string">&quot;INSERT INTO demo /*(demoid, label, sex, ageStart, ageEnd)*/ VALUES (?, ?, ?, ?, ?)&quot;</span>);
-   db.<span class="hljs-title function_">transaction</span>(<span class="hljs-function">() =&gt;</span> {
-      
-      <span class="hljs-keyword">for</span> (<span class="hljs-keyword">let</span> [isex, sexname] <span class="hljs-keyword">of</span> [<span class="hljs-string">&quot;M&quot;</span>, <span class="hljs-string">&quot;F&quot;</span>].<span class="hljs-title function_">entries</span>()) {
-         
-         isex += <span class="hljs-number">1</span>
-         <span class="hljs-keyword">for</span> (<span class="hljs-keyword">let</span> [iage, ageStart] <span class="hljs-keyword">of</span> [<span class="hljs-number">35</span>, <span class="hljs-number">45</span>, <span class="hljs-number">55</span>, <span class="hljs-number">65</span>, <span class="hljs-number">75</span>, <span class="hljs-number">85</span>].<span class="hljs-title function_">entries</span>()) {
-               iage += <span class="hljs-number">1</span>
-               demoid = <span class="hljs-number">10</span>*isex+iage;  
-               ageEnd = ageStart+<span class="hljs-number">9</span>;
-               label = sexname+ageStart+<span class="hljs-string">&quot;-&quot;</span>+ageEnd
-               sql.<span class="hljs-title function_">run</span>(demoid, label, sexname, ageStart, ageEnd);
-         }
-      }})();  
-};
-</code></pre>
-
-</div>
-</div><h4>Add Definition of Variables for this <code>SimDataSource</code></h4>
-<p>The responsibility of the code here is to ensure that the variable definitions for this <code>SimDataSource</code> are present in the database. It also updates the <code>this.interest</code> information to have the <code>fullvarid</code> and <code>varid</code> asssociated with each variable.  We need the <code>fullvarid</code> to write data values to the database; <code>varid</code> is strictly informational.  See the earlier discussion of the  database schema for more context.</p>
+</div><p>The responsibility of the code here is to ensure that the variable definitions for this <code>SimDataSource</code> are present in the database. It also updates the <code>this.interest</code> information to have the <code>fullvarid</code> and <code>varid</code> asssociated with each variable.  We need the <code>fullvarid</code> to write data values to the database; <code>varid</code> is strictly informational.  See the earlier discussion of the  database schema for more context.</p>
 <p>Some or all of the variables may already have been defined, either by other <code>SimDataSource</code>s in this monte-carlo run or in earlier runs.  The demographic variables are shared across all data sources, and there may be some other variables that appear in more than one output file.</p>
 <p>If the definitions are from previous runs it's possible that some of them will be out of date.  Because it's unlikely, we do not check for that possibility.</p>
 <p>Here, and probably elsewhere, the codes refers to <code>this</code> from inside a <code>() =&gt; {...}</code> function definition.  According to <a href="https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Operators/this">Mozille</a>,  arrow functions &quot;inherit <code>this</code> from the parent scope at the time they are defined&quot;.  That is the semantics I need.</p>
 <p>Finally, <code>SQLite</code> has a feature that automatically creates a <code>rowid</code> for each table.  If the table has a single <code>PRIMARY KEY</code> with <code>INTEGER</code> type, then the <code>rowid</code> is just an alias for that key.  This lets me get the <code>varid</code> and <code>fullvarid</code> without needing to requery the database (which the <code>Python</code> code in <code>frmtReport.py</code> does.)</p>
+<p>The activity here is wrapped in a transaction at a higher level.</p>
 <div class="codefragment">
 <div class="fragmentname">&lt;&lt;SimDataSource.setupForHeader&gt;&gt;=+ </div>
 <div class="code">
@@ -737,29 +499,27 @@ Code for sex:
    <span class="hljs-keyword">const</span> hasFullVarSQL = master.<span class="hljs-property">db</span>.<span class="hljs-title function_">prepare</span>(<span class="hljs-string">&quot;SELECT fullvarid FROM fullvar WHERE varid=?&quot;</span>)
    <span class="hljs-keyword">const</span> insertVarSQL = master.<span class="hljs-property">db</span>.<span class="hljs-title function_">prepare</span>(<span class="hljs-string">&quot;INSERT INTO variable (name, description) VALUES (?, ?)&quot;</span>)
    <span class="hljs-keyword">const</span> insertFullVarSQL = master.<span class="hljs-property">db</span>.<span class="hljs-title function_">prepare</span>(<span class="hljs-string">&quot;INSERT INTO fullvar (varid) VALUES (?)&quot;</span>)
-   master.<span class="hljs-property">db</span>.<span class="hljs-title function_">transaction</span>(<span class="hljs-function">() =&gt;</span> {
-      <span class="hljs-keyword">for</span> (<span class="hljs-keyword">const</span> varinfo <span class="hljs-keyword">of</span> <span class="hljs-variable language_">this</span>.<span class="hljs-property">interest</span>){
-         <span class="hljs-keyword">if</span> (r = hasVarSQL.<span class="hljs-title function_">get</span>(v)){
-            
-            varinfo.<span class="hljs-property">varid</span> = r.<span class="hljs-property">varid</span>;
-            r = hasFullVarSQL.<span class="hljs-title function_">get</span>(varinfo.<span class="hljs-property">varid</span>);
-            varinfo.<span class="hljs-property">fullvarid</span> = r.<span class="hljs-property">fullvarid</span>
-            <span class="hljs-keyword">continue</span>;
-         }
-         info = insertVarSQL.<span class="hljs-title function_">run</span>(v, <span class="hljs-variable language_">this</span>.#byvar.<span class="hljs-title function_">get</span>(v.<span class="hljs-title function_">toLowerCase</span>()))
-         <span class="hljs-keyword">if</span> (info.<span class="hljs-property">changes</span> != <span class="hljs-number">1</span>)
-            
-            
-            <span class="hljs-title function_">error</span>(<span class="hljs-string">`Error inserting <span class="hljs-subst">${v}</span> into table named variable`</span>)
-         varinfo.<span class="hljs-property">varid</span> = info.<span class="hljs-property">lastInsertRowid</span>
-
+   <span class="hljs-keyword">for</span> (<span class="hljs-keyword">const</span> varinfo <span class="hljs-keyword">of</span> <span class="hljs-variable language_">this</span>.<span class="hljs-property">interest</span>){
+      <span class="hljs-keyword">if</span> (r = hasVarSQL.<span class="hljs-title function_">get</span>(v)){
          
-         info = insertFullVarSQL.<span class="hljs-title function_">run</span>(varinfo.<span class="hljs-property">varid</span>)
-         <span class="hljs-keyword">if</span> (info.<span class="hljs-property">changes</span> != <span class="hljs-number">1</span>)
-            <span class="hljs-title function_">error</span>(<span class="hljs-string">`Error inserting <span class="hljs-subst">${v}</span> into table named fullvar`</span>)
-         varinfo.<span class="hljs-property">fullvarid</span> = info.<span class="hljs-property">lastInsertRowid</span>
+         varinfo.<span class="hljs-property">varid</span> = r.<span class="hljs-property">varid</span>;
+         r = hasFullVarSQL.<span class="hljs-title function_">get</span>(varinfo.<span class="hljs-property">varid</span>);
+         varinfo.<span class="hljs-property">fullvarid</span> = r.<span class="hljs-property">fullvarid</span>
+         <span class="hljs-keyword">continue</span>;
       }
-   })();
+      info = insertVarSQL.<span class="hljs-title function_">run</span>(v, <span class="hljs-variable language_">this</span>.#byvar.<span class="hljs-title function_">get</span>(v.<span class="hljs-title function_">toLowerCase</span>()))
+      <span class="hljs-keyword">if</span> (info.<span class="hljs-property">changes</span> != <span class="hljs-number">1</span>)
+         
+         
+         <span class="hljs-title function_">error</span>(<span class="hljs-string">`Error inserting <span class="hljs-subst">${v}</span> into table named variable`</span>)
+      varinfo.<span class="hljs-property">varid</span> = info.<span class="hljs-property">lastInsertRowid</span>
+
+      
+      info = insertFullVarSQL.<span class="hljs-title function_">run</span>(varinfo.<span class="hljs-property">varid</span>)
+      <span class="hljs-keyword">if</span> (info.<span class="hljs-property">changes</span> != <span class="hljs-number">1</span>)
+         <span class="hljs-title function_">error</span>(<span class="hljs-string">`Error inserting <span class="hljs-subst">${v}</span> into table named fullvar`</span>)
+      varinfo.<span class="hljs-property">fullvarid</span> = info.<span class="hljs-property">lastInsertRowid</span>
+   }
 }
 </code></pre>
 
@@ -794,26 +554,6 @@ Code for sex:
 </code></pre>
 
 </div>
-</div><h2>Done Reading the Data</h2>
-<p>When we know there is no more data to be written, call this method to cleanup.  Because it only needs to be done once, not once per <code>SimDataSource</code>, make this a <code>static</code>, i.e., class, method.</p>
-<p>Call this <strong>only</strong> when there are no more iterations, not at the end of an individual iteration.</p>
-<p>Also note it is conceivable that we have collected no data at all and never opened the database.  The first test protects against that.</p>
-<p>All transactions should already have been committed.</p>
-<div class="codefragment">
-<div class="fragmentname">&lt;&lt;SimDataSource.done&gt;&gt;= </div>
-<div class="code">
-<pre><code><span class="hljs-keyword">static</span> <span class="hljs-title function_">done</span>(<span class="hljs-params">master</span>){
-   <span class="hljs-keyword">let</span> db = master.<span class="hljs-property">db</span>;
-   <span class="hljs-keyword">if</span> (db === <span class="hljs-literal">undefined</span>){
-      <span class="hljs-keyword">return</span>;
-   db.<span class="hljs-title function_">close</span>();
-   master.<span class="hljs-property">db</span>
-   <span class="hljs-keyword">delete</span> master.<span class="hljs-property">db</span>;
-   }
-}
-</code></pre>
-
-</div>
 </div><h2>The Whole McGilla</h2>
 <div class="codefragment">
 <div class="fragmentname">&lt;&lt;SimDataSource.*&gt;&gt;= ./bin/js/v4-SimDataSource.js $</div>
@@ -834,8 +574,6 @@ Code for sex:
    <span class="literate-tag-name">&lt;&lt;SimDataSource.read&gt;&gt;</span>
    <span class="literate-tag-name">&lt;&lt;SimDataSource.setupForHeader&gt;&gt;</span>
    <span class="literate-tag-name">&lt;&lt;SimDataSource.readBody&gt;&gt;</span>
-   
-   <span class="literate-tag-name">&lt;&lt;SimDataSource.done&gt;&gt;</span>
 }
 </code></pre>
 
@@ -1149,6 +887,7 @@ Although we don't fill in information for sources that are missing from <code>ma
 <div class="code">
 <pre><code><span class="hljs-keyword">class</span> <span class="hljs-title class_">Master</span> {
    <span class="literate-tag-name">&lt;&lt;Master.constructor&gt;&gt;</span>
+   <span class="literate-tag-name">&lt;&lt;Master.setupDatabase&gt;&gt;</span>
    <span class="literate-tag-name">&lt;&lt;Master.iterate&gt;&gt;</span>
    <span class="literate-tag-name">&lt;&lt;Master.done&gt;&gt;</span>
 }
@@ -1166,8 +905,255 @@ Although we don't fill in information for sources that are missing from <code>ma
    <span class="hljs-variable language_">this</span>.<span class="hljs-property">dbfile</span> = yargs.<span class="hljs-property">dbfile</span>;
    <span class="hljs-keyword">let</span> vs = <span class="hljs-keyword">new</span> <span class="hljs-title class_">VariableSelector</span>(<span class="hljs-variable language_">this</span>, <span class="hljs-string">&#x27;./__tests__/monte2.conf&#x27;</span>);
    <span class="hljs-keyword">let</span> cb = <span class="hljs-keyword">new</span> <span class="hljs-title class_">Codebook</span>(<span class="hljs-variable language_">this</span>, <span class="hljs-string">&#x27;./data/CVDPM_HF_Variable_List.csv&#x27;</span>);
+   <span class="hljs-title function_">setupDatabase</span>();
    <span class="hljs-variable language_">console</span>.<span class="hljs-title function_">log</span>(<span class="hljs-variable language_">this</span>.<span class="hljs-property">sources</span>);
 }
+</code></pre>
+
+</div>
+</div><h2>Set Up Database</h2>
+<p>&quot;Setting up&quot; the database involves 3 separate steps:</p>
+<ol>
+<li>check if it already exists and create it if not.</li>
+<li>build the desired structure of tables and indices in the empty db.</li>
+<li>populate the tables with information about the variables of interest.
+Only after doing all those things is the database ready to recieve simulation results.  Notice that steps 1 and 2 only need to be done once per run, while the 3rd step is done once for each <code>SimDataSource</code>.  So the first 2 happen in <code>Master</code>.</li>
+</ol>
+<p>1 and 2 should probably be in a separate function, which could be run asynchronously at the start of <code>runSims</code>, or perhaps after <code>monte.conf</code> has been scanned to determine if <em>anything</em> is to be written to the database.  The current approach <em>always</em> creates the database, even if there will be nothing to put in it.</p>
+<p>At the end of this function <code>master.db</code> will hold a handle to a database initialized with appropriate tables.</p>
+<p>There are some issues.</p>
+<h3>Database Name and Location</h3>
+<p><code>SQLite</code>, which we are currently using, stores all information in a single file.  So we need to know where to put it and what to call it.  The top-level program, <code>mc</code> (not in this document or directory) provides command-line options <code>--dbfile</code> and <code>--dbpath</code> to specify either or both; the default is <code>MC/results/hfmc_results.sqlite</code>.  Note that the directory <code>MC/results</code> ordinarily does not exist until <code>mc init</code> has been run.</p>
+<h3>Existing Database</h3>
+<p>It may be that the database file already exists.  Since it may have results, simply deleting it seems undesirable.  We could refuse to run, but that would make it impossible to resume interrupted runs (not currently supported, but hopefully someday) or to add simulations of more scenarios.  So we will allow it to proceed.  Note this does carry the risk that the database will end up with the same information twice--actually, that might cause a duplicate key error on attempted insert--or even with 2 different values for the same keys.</p>
+<p>We could potentially check that the database is valid, or even that it is consistent with the run we are doing.  But for now we simply assume that if we find the file it is in the correct format, both that it is a <code>SQLite</code> database and the necessary tables have been defined.  If we have new variables, they will be added if they are not already present.</p>
+<p>After this function runs the database exists on disk; <code>master.db</code> is a handle to it; and the basic table structure is defined in it.</p>
+<h3><code>setupDatabase()</code></h3>
+<div class="codefragment">
+<div class="fragmentname">&lt;&lt;Master.setupDatabase&gt;&gt;= </div>
+<div class="code">
+<pre><code><span class="hljs-title function_">setupDatabase</span>(<span class="hljs-params"></span>){
+   
+   <span class="hljs-keyword">if</span> (!<span class="hljs-variable language_">this</span>.<span class="hljs-property">db</span>)
+      <span class="hljs-title function_">createSkeletonDB</span>();
+}
+</code></pre>
+
+</div>
+</div><h3>Make empty database or reuse existing one</h3>
+<p>Given the current, single-threaded, synchronous, design, opening the database in <code>Single-Thread</code> <a href="https://www.sqlite.org/threadsafe.html">mode</a> is safe and most performant.  The <code>better-sqlite3</code> <a href="https://github.com/WiseLibs/better-sqlite3/blob/60763a0742690c8bae1db43d838f418cfc83b656/docs/compilation.md">docs</a> say it builds <code>SQLite</code> with <code>SQLITE_THREADSAFE=2</code>, which is <code>Multi-thread</code> mode.
+<code>SQLITE_THREADSAFE=0</code>, <code>Single-Thread</code> mode, is the fastest.</p>
+<p>While the underlying <code>SQLite</code> allows setting the threading mode at compile, startup, or run time (provided the compilation did not specify <code>Single-Thread</code> mode, which it didn't), <code>better-sqlite3</code> does not appear to offer any run-time hooks to change it.  The run-time interface in <code>C</code> allows threading mode to be specified as an argument to <code>sqlite3_open_vs()</code>, but the <code>better-sqlite3</code> <code>Database</code> constructor does not offer it as an option.  Start-time specification in <code>C</code> is via <code>sqlite3_config()</code>, which also is not exposed by <code>better-sqlite3</code>.</p>
+<p>Since there is no good way to do otherwise, we will go with the default <code>Multi-thread</code> mode, which is safe and robust against design changes in this program, but not as fast as possible.</p>
+<div class="codefragment">
+<div class="fragmentname">&lt;&lt;Master.setupDatabase&gt;&gt;=+ </div>
+<div class="code">
+<pre><code><span class="hljs-title function_">createSkeletonDB</span>(<span class="hljs-params"></span>){
+   <span class="hljs-variable language_">this</span>.<span class="hljs-property">dbFullPath</span> = path.<span class="hljs-title function_">join</span>(<span class="hljs-variable language_">this</span>.<span class="hljs-property">dbpath</span>, <span class="hljs-variable language_">this</span>.<span class="hljs-property">dbfile</span>);
+   existingDB = fs.<span class="hljs-title function_">existsSync</span>(<span class="hljs-variable language_">this</span>.<span class="hljs-property">dbFullPath</span>)
+   <span class="hljs-variable language_">this</span>.<span class="hljs-property">db</span> = <span class="hljs-keyword">new</span> <span class="hljs-title function_">sqlite</span>(<span class="hljs-variable language_">this</span>.<span class="hljs-property">dbFullPath</span>);
+   <span class="hljs-variable language_">this</span>.<span class="hljs-property">db</span>.<span class="hljs-title function_">pragma</span>(<span class="hljs-string">&#x27;journal_mode = WAL&#x27;</span>);  
+   <span class="hljs-keyword">if</span> (existingDB) {
+      
+      <span class="hljs-keyword">return</span>;
+   }
+   <span class="hljs-variable language_">this</span>.<span class="hljs-property">db</span>.<span class="hljs-title function_">transaction</span>( <span class="hljs-function">() =&gt;</span> {
+      <span class="hljs-title function_">makeDBTables</span>();
+      <span class="hljs-title function_">fillDemographicTables</span>();
+   }).();
+}
+</code></pre>
+
+</div>
+</div><h3>Define All Tables in DB</h3>
+<h4>Tall vs Wide Tables</h4>
+<p>Here's a small part of a typical formatted table of results:</p>
+<table>
+<thead>
+<tr>
+<th>CHD DEATHS</th>
+<th></th>
+<th></th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td></td>
+<td>Age/Sex Breakdown</td>
+<td></td>
+</tr>
+<tr>
+<td>Year</td>
+<td>M35-44</td>
+<td>M45-54</td>
+</tr>
+<tr>
+<td>2018</td>
+<td>4138</td>
+<td>15267</td>
+</tr>
+<tr>
+<td>2019</td>
+<td>4154</td>
+<td>14963</td>
+</tr>
+</tbody>
+</table>
+<p>The interpretation of each number depends on its position in the grid.  Call this a &quot;wide&quot; representation of the data.</p>
+<p>In contrast the database uses a &quot;tall&quot; represention of the data.  Conceptually it might look like this:</p>
+<table>
+<thead>
+<tr>
+<th>variable</th>
+<th>Year</th>
+<th>Sex</th>
+<th>Age</th>
+<th>Sim #</th>
+<th>Value</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>CHD DEATHS</td>
+<td>2018</td>
+<td>M</td>
+<td>35-44</td>
+<td>10</td>
+<td>4138</td>
+</tr>
+<tr>
+<td>CHD DEATHS</td>
+<td>2018</td>
+<td>M</td>
+<td>45-54</td>
+<td>10</td>
+<td>15267</td>
+</tr>
+<tr>
+<td>CHD DEATHS</td>
+<td>2019</td>
+<td>M</td>
+<td>35-44</td>
+<td>10</td>
+<td>4154</td>
+</tr>
+<tr>
+<td>CHD DEATHS</td>
+<td>2019</td>
+<td>M</td>
+<td>45-54</td>
+<td>10</td>
+<td>14963</td>
+</tr>
+</tbody>
+</table>
+<p>This offers several advantages.</p>
+<ol>
+<li>It is easy to extend it with other identifying information; the &quot;tall&quot; table has already been extended relative to the wide one by the addition of the simulation number. In the previous approach the simulation number was embedded in the file name.</li>
+<li>It is easy to extend to additional variables.  Often, variables are represented as different columns in a table, which might lead to a table like this:</li>
+</ol>
+<table>
+<thead>
+<tr>
+<th>Year</th>
+<th>CHDM35-44</th>
+<th>CHDM45-54</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>2018</td>
+<td>4138</td>
+<td>15267</td>
+</tr>
+<tr>
+<td>2019</td>
+<td>4154</td>
+<td>14963</td>
+</tr>
+</tbody>
+</table>
+<p>But that means columns must be defined for every variable, and there are hundreds of possible variables---even without making year or demographic category part of the name.  In contrast, the approach taken extends easily as one adds variables, and it only requires the database to hold the variables used.</p>
+<ol start="3">
+<li>Embedding identifying information in the variable names makes many forms of analysis harder than they need to be.</li>
+</ol>
+<p>The obvious drawback of the &quot;tall&quot; format is that each index value (e.g., variable name, year, sex, age, simulation number in the above example) must be repeated for each observation.  Depending on how clever the database is, this may or may not take up as much space on disk as one would expect: strings may be compressed or shared between rows, for example.  Another problem is that the indices themselves may have some internal structure.  For example, if a demographic category like <code>M45-54</code> is the index, it may have several associated values, for example <code>sexcode=M, sex=Male, agerange=45-54, youngest=45, oldest=54, widthInYears=10, label=&quot;middle-aged men&quot;</code>.  Variables can be even more complex with short and long names, descriptions, and relations between variables.</p>
+<p>To help with the problems associated with bulky or complex index values, we create auxiliary tables that give the full information on the index values, and simply refer to them with an id in the main <code>data</code> table.</p>
+<p>So each row in the <code>data</code> table looks conceptually like this:</p>
+<p>| fullvarid | demoid | year | value | other stuff |</p>
+<p><code>fullvarid</code> indicates which variable the <code>value</code> is for; <code>fullvarid</code> is the index of a row in the <code>fullvar</code> table. Similarly, <code>demoid</code> indicates which demographic group in the <code>demo</code> table the <code>value</code> is for.  <code>year</code> and other variables indicate more precisely exactly which <code>value</code> is reported in this row.</p>
+<h4>Handling of Variables</h4>
+<p>The database is designed to accommodate groups of variables that have the same name, but represent different things; the formatted reports often show the breakdown as subheads.  For example, a table for &quot;CHD Deaths (Bridge)&quot; is broken into columns for &quot;Case Fatality Rate (%)&quot; and &quot;Population&quot;.  Hence there is a distinction between potentially non-unique variable names like &quot;CHD Deaths (Bridge)&quot; in the <code>variable</code> table and the name/category like &quot;CHD Deaths (Bridge)&quot;/&quot;Population&quot; in the <code>fullvar</code> table.</p>
+<p>In the context of the intermediate <code>.csv</code> files we are reading, variables <em>are</em> unique and are identified only by brief names like &quot;CVDPOP17&quot;.  That is, the same variable may occur in several files, but it always refers to the same thing, and should have the same value.  The <code>.csv</code> files contain no descriptive information, but we have a fuller description of each variable from the codebook, recorded in <code>SimDataSource.#byvar</code>.  For example, &quot;BrDH hs&quot; is the description of &quot;CVDPOP17&quot;.  That may not seem like much help, but the cognoscenti find that it is.</p>
+<p>To allow our downstream tools like <code>frmtReport.py</code> to continue to work we retain the previous schema, although the problem it was designed to solve does not exist with our inputs.  Since the original scheme uses <code>fullvarid</code> to indicate variable; we continue to use that even though the category (column name <code>subCat</code>) is always empty.</p>
+<h4>Schema, graphically</h4>
+<p>Each box is a table, with its columns and their types listed below it.  The primary key, if any, is underlined, and arrows indicate inter-table relationships.  With <code>SQLite</code> the types are really just hints; it stores almost everything as a string.</p>
+<p><img src="../doc/schema.svg" alt="schema"></p>
+<p>There are some additional indices (in the database sense) to speed queries, as shown in the code.</p>
+<h4>Schema, code</h4>
+<div class="codefragment">
+<div class="fragmentname">&lt;&lt;Master.setupDatabase&gt;&gt;=+ </div>
+<div class="code">
+<pre><code><span class="hljs-title function_">makeDBTables</span>(<span class="hljs-params"></span>) {
+   <span class="hljs-keyword">const</span> db = <span class="hljs-variable language_">this</span>.<span class="hljs-property">db</span>;
+   <span class="hljs-keyword">const</span> design =  [
+      [<span class="hljs-string">&quot;variable&quot;</span>, <span class="hljs-string">&quot;varid integer primary key, name text, description text&quot;</span>],
+      [<span class="hljs-string">&quot;fullvar&quot;</span>, <span class="hljs-string">&quot;fullvarid integer primary key, varid references variable(varid), subCat text&quot;</span>],
+      [<span class="hljs-string">&quot;demo&quot;</span>, <span class="hljs-string">&quot;demoid integer primary key, label text, sex text, ageStart integer, ageEnd integer&quot;</span>],
+      [<span class="hljs-string">&quot;data&quot;</span>, <span class="hljs-string">&quot;scenario text, iSim integer, fullvarid references fullvar(fullvarid), &quot;</span>+
+      <span class="hljs-string">&quot;year integer, demoid references demo(demoid), value real&quot;</span>]
+      ];
+   <span class="hljs-keyword">for</span> (<span class="hljs-keyword">const</span> [tbl, cols] <span class="hljs-keyword">of</span> design)
+      db.<span class="hljs-title function_">exec</span>(<span class="hljs-string">`CREATE TABLE IF NOT EXISTS <span class="hljs-subst">${tbl}</span> (<span class="hljs-subst">${cols}</span>);`</span>);
+   
+   <span class="hljs-keyword">for</span> (<span class="hljs-keyword">const</span> indexStr <span class="hljs-keyword">of</span> [<span class="hljs-string">&quot;fullindex ON fullvar (varid, subCat)&quot;</span>,
+                           <span class="hljs-string">&quot;varindex ON variable (name)&quot;</span>,
+                           <span class="hljs-string">&quot;demoindex ON demo (label)&quot;</span>,
+                           <span class="hljs-string">&quot;demoid ON demo (demoid)&quot;</span>])
+      db.<span class="hljs-title function_">exec</span>(<span class="hljs-string">`CREATE UNIQUE INDEX IF NOT EXISTS <span class="hljs-subst">${indexStr}</span>;`</span>);
+}
+</code></pre>
+
+</div>
+</div><h4>Supporting Demographic Tables</h4>
+<p>These tables translate from numeric codes to interpretable sex and age ranges.  This may potentially vary from study to study, or even run to run, but for now we treat it as eternal truth.</p>
+<p>Note the handling of demographics is much different in the inputs to this program
+than those of the <code>Python</code> program.  The <code>Python</code> inputs had columns labelled with demographics;
+in our inputs different demographic groups are in different rows, with numbers indicating
+the age and sex group.  We need to get the meaning of the numbers from an external source.
+That information is incorporated into the following code.</p>
+<p>From Sue Hennessay email 6/29/23, about the format of our input.
+Code for agerange:
+1=35-44,
+2=45-54,
+3=55-64,
+4=65-74,
+5=75-84,
+6=85-94.
+Code for sex:
+1=male,
+2=female.</p>
+<div class="codefragment">
+<div class="fragmentname">&lt;&lt;Master.setupDatabase&gt;&gt;=+ </div>
+<div class="code">
+<pre><code><span class="hljs-title function_">fillDemographics</span>(<span class="hljs-params"></span>) {
+   
+   <span class="hljs-keyword">const</span> db = <span class="hljs-variable language_">this</span>.<span class="hljs-property">db</span>;
+   <span class="hljs-keyword">let</span> demoid, ageEnd, label;
+   <span class="hljs-keyword">let</span> sql = db.<span class="hljs-title function_">prepare</span>(<span class="hljs-string">&quot;INSERT INTO demo /*(demoid, label, sex, ageStart, ageEnd)*/ VALUES (?, ?, ?, ?, ?)&quot;</span>);
+   
+   <span class="hljs-keyword">for</span> (<span class="hljs-keyword">let</span> [isex, sexname] <span class="hljs-keyword">of</span> [<span class="hljs-string">&quot;M&quot;</span>, <span class="hljs-string">&quot;F&quot;</span>].<span class="hljs-title function_">entries</span>()) {
+      
+      isex += <span class="hljs-number">1</span>
+      <span class="hljs-keyword">for</span> (<span class="hljs-keyword">let</span> [iage, ageStart] <span class="hljs-keyword">of</span> [<span class="hljs-number">35</span>, <span class="hljs-number">45</span>, <span class="hljs-number">55</span>, <span class="hljs-number">65</span>, <span class="hljs-number">75</span>, <span class="hljs-number">85</span>].<span class="hljs-title function_">entries</span>()) {
+            iage += <span class="hljs-number">1</span>
+            demoid = <span class="hljs-number">10</span>*isex+iage;  
+            ageEnd = ageStart+<span class="hljs-number">9</span>;
+            label = sexname+ageStart+<span class="hljs-string">&quot;-&quot;</span>+ageEnd
+            sql.<span class="hljs-title function_">run</span>(demoid, label, sexname, ageStart, ageEnd);
+      }
+   }
+};
 </code></pre>
 
 </div>
@@ -1176,14 +1162,14 @@ Although we don't fill in information for sources that are missing from <code>ma
 it should call this method with the iteration number and, optionally, a string
 giving the scenario.</p>
 <p>This wraps the entire operation in a database transaction.  Lower level code does not need to worry about
-transactions, yet some of the setup code (that in some cases is triggered from here on the first time through)
-does use transactions.  <code>better-sqlite3</code> docs say nesting transactions is OK; the inner ones create save points.
-They also say <em>not</em> to mix their tranactions with raw <code>SQL</code> (e.g., <code>BEGIN</code>, <code>COMMIT</code>)
-that starts and end transactions.  None of this code uses the raw <code>SQL</code>.</p>
-<p>I could remove some of the other uses of <code>db.transaction()</code>.</p>
+transactions.</p>
 <p>Arguably it would be better to do the transactions at the individual <code>SimDataSource</code> level
 since one must actually open and read all the &quot;interesting&quot; <code>.csv</code> files, making the
-transaction relatively long-lived.</p>
+transaction relatively long-lived.  Also, the <code>better-sqlite3</code>
+<a href="https://github.com/WiseLibs/better-sqlite3/blob/HEAD/docs/api.md#caveats">docs</a>
+say &quot;it's generally a very bad idea to keep a transaction open across event loop ticks&quot;.
+It's not clear why, but it seems quite likely the file I/O involved in reading the <code>.csv</code>
+files creates such ticks.</p>
 <div class="codefragment">
 <div class="fragmentname">&lt;&lt;Master.iterate&gt;&gt;= </div>
 <div class="code">
@@ -1197,16 +1183,21 @@ transaction relatively long-lived.</p>
 </pre>
 
 </div>
-</div><h2>Done</h2>
-<p>There is no more data to write out.  Clean up.</p>
-<p>This is a bit awkward; <code>SimDataSource</code> actually created the database,
-and should be responsible for cleanup.  But it's only created once.
-Delegate to a static method on that class.</p>
+</div><h2>Done Reading the Data</h2>
+<p>When we know there is no more data to be written, call this method to cleanup.</p>
+<p>Call this <strong>only</strong> when there are no more iterations, not at the end of an individual iteration.</p>
+<p>Also note it is conceivable that we have collected no data at all and never opened the database (well, not with current code, but being defensive).  The first test protects against that.</p>
+<p>All transactions should already have been committed.</p>
 <div class="codefragment">
 <div class="fragmentname">&lt;&lt;Master.done&gt;&gt;= </div>
 <div class="code">
-<pre><code><span class="hljs-title function_">done</span>(<span class="hljs-params"></span>) {
-   <span class="hljs-title class_">SimDataSource</span>.<span class="hljs-title function_">done</span>(<span class="hljs-variable language_">this</span>)
+<pre><code><span class="hljs-title function_">done</span>(<span class="hljs-params"></span>){
+   <span class="hljs-keyword">let</span> db = <span class="hljs-variable language_">this</span>.<span class="hljs-property">db</span>;
+   <span class="hljs-keyword">if</span> (db === <span class="hljs-literal">undefined</span>){
+      <span class="hljs-keyword">return</span>;
+   }
+   db.<span class="hljs-title function_">close</span>();
+   <span class="hljs-keyword">delete</span> <span class="hljs-variable language_">this</span>.<span class="hljs-property">db</span>;
 }
 </code></pre>
 

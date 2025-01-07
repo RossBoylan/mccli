@@ -727,6 +727,7 @@ Code for sex:
 <p>The responsibility of the code here is to ensure that the variable definitions for this <code>SimDataSource</code> are present in the database. It also updates the <code>this.interest</code> information to have the <code>fullvarid</code> and <code>varid</code> asssociated with each variable.  We need the <code>fullvarid</code> to write data values to the database; <code>varid</code> is strictly informational.  See the earlier discussion of the  database schema for more context.</p>
 <p>Some or all of the variables may already have been defined, either by other <code>SimDataSource</code>s in this monte-carlo run or in earlier runs.  The demographic variables are shared across all data sources, and there may be some other variables that appear in more than one output file.</p>
 <p>If the definitions are from previous runs it's possible that some of them will be out of date.  Because it's unlikely, we do not check for that possibility.</p>
+<p>Here, and probably elsewhere, the codes refers to <code>this</code> from inside a <code>() =&gt; {...}</code> function definition.  According to <a href="https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Operators/this">Mozille</a>,  arrow functions &quot;inherit <code>this</code> from the parent scope at the time they are defined&quot;.  That is the semantics I need.</p>
 <p>Finally, <code>SQLite</code> has a feature that automatically creates a <code>rowid</code> for each table.  If the table has a single <code>PRIMARY KEY</code> with <code>INTEGER</code> type, then the <code>rowid</code> is just an alias for that key.  This lets me get the <code>varid</code> and <code>fullvarid</code> without needing to requery the database (which the <code>Python</code> code in <code>frmtReport.py</code> does.)</p>
 <div class="codefragment">
 <div class="fragmentname">&lt;&lt;SimDataSource.setupForHeader&gt;&gt;=+ </div>
@@ -736,27 +737,29 @@ Code for sex:
    <span class="hljs-keyword">const</span> hasFullVarSQL = master.<span class="hljs-property">db</span>.<span class="hljs-title function_">prepare</span>(<span class="hljs-string">&quot;SELECT fullvarid FROM fullvar WHERE varid=?&quot;</span>)
    <span class="hljs-keyword">const</span> insertVarSQL = master.<span class="hljs-property">db</span>.<span class="hljs-title function_">prepare</span>(<span class="hljs-string">&quot;INSERT INTO variable (name, description) VALUES (?, ?)&quot;</span>)
    <span class="hljs-keyword">const</span> insertFullVarSQL = master.<span class="hljs-property">db</span>.<span class="hljs-title function_">prepare</span>(<span class="hljs-string">&quot;INSERT INTO fullvar (varid) VALUES (?)&quot;</span>)
-   <span class="hljs-keyword">for</span> (<span class="hljs-keyword">const</span> varinfo <span class="hljs-keyword">of</span> <span class="hljs-variable language_">this</span>.<span class="hljs-property">interest</span>){
-      <span class="hljs-keyword">if</span> (r = hasVarSQL.<span class="hljs-title function_">get</span>(v)){
-         
-         varinfo.<span class="hljs-property">varid</span> = r.<span class="hljs-property">varid</span>;
-         r = hasFullVarSQL.<span class="hljs-title function_">get</span>(varinfo.<span class="hljs-property">varid</span>);
-         varinfo.<span class="hljs-property">fullvarid</span> = r.<span class="hljs-property">fullvarid</span>
-         <span class="hljs-keyword">continue</span>;
-      }
-      info = insertVarSQL.<span class="hljs-title function_">run</span>(v, <span class="hljs-variable language_">this</span>.#byvar.<span class="hljs-title function_">get</span>(v.<span class="hljs-title function_">toLowerCase</span>()))
-      <span class="hljs-keyword">if</span> (info.<span class="hljs-property">changes</span> != <span class="hljs-number">1</span>)
-         
-         
-         <span class="hljs-title function_">error</span>(<span class="hljs-string">`Error inserting <span class="hljs-subst">${v}</span> into table named variable`</span>)
-      varinfo.<span class="hljs-property">varid</span> = info.<span class="hljs-property">lastInsertRowid</span>
+   master.<span class="hljs-property">db</span>.<span class="hljs-title function_">transaction</span>(<span class="hljs-function">() =&gt;</span> {
+      <span class="hljs-keyword">for</span> (<span class="hljs-keyword">const</span> varinfo <span class="hljs-keyword">of</span> <span class="hljs-variable language_">this</span>.<span class="hljs-property">interest</span>){
+         <span class="hljs-keyword">if</span> (r = hasVarSQL.<span class="hljs-title function_">get</span>(v)){
+            
+            varinfo.<span class="hljs-property">varid</span> = r.<span class="hljs-property">varid</span>;
+            r = hasFullVarSQL.<span class="hljs-title function_">get</span>(varinfo.<span class="hljs-property">varid</span>);
+            varinfo.<span class="hljs-property">fullvarid</span> = r.<span class="hljs-property">fullvarid</span>
+            <span class="hljs-keyword">continue</span>;
+         }
+         info = insertVarSQL.<span class="hljs-title function_">run</span>(v, <span class="hljs-variable language_">this</span>.#byvar.<span class="hljs-title function_">get</span>(v.<span class="hljs-title function_">toLowerCase</span>()))
+         <span class="hljs-keyword">if</span> (info.<span class="hljs-property">changes</span> != <span class="hljs-number">1</span>)
+            
+            
+            <span class="hljs-title function_">error</span>(<span class="hljs-string">`Error inserting <span class="hljs-subst">${v}</span> into table named variable`</span>)
+         varinfo.<span class="hljs-property">varid</span> = info.<span class="hljs-property">lastInsertRowid</span>
 
-      
-      info = insertFullVarSQL.<span class="hljs-title function_">run</span>(varinfo.<span class="hljs-property">varid</span>)
-      <span class="hljs-keyword">if</span> (info.<span class="hljs-property">changes</span> != <span class="hljs-number">1</span>)
-         <span class="hljs-title function_">error</span>(<span class="hljs-string">`Error inserting <span class="hljs-subst">${v}</span> into table named fullvar`</span>)
-      varinfo.<span class="hljs-property">fullvarid</span> = info.<span class="hljs-property">lastInsertRowid</span>
-   }
+         
+         info = insertFullVarSQL.<span class="hljs-title function_">run</span>(varinfo.<span class="hljs-property">varid</span>)
+         <span class="hljs-keyword">if</span> (info.<span class="hljs-property">changes</span> != <span class="hljs-number">1</span>)
+            <span class="hljs-title function_">error</span>(<span class="hljs-string">`Error inserting <span class="hljs-subst">${v}</span> into table named fullvar`</span>)
+         varinfo.<span class="hljs-property">fullvarid</span> = info.<span class="hljs-property">lastInsertRowid</span>
+      }
+   })();
 }
 </code></pre>
 
@@ -1172,13 +1175,24 @@ Although we don't fill in information for sources that are missing from <code>ma
 <p>Each time the overall simulation generates a new set of data in the <code>.csv</code> files
 it should call this method with the iteration number and, optionally, a string
 giving the scenario.</p>
+<p>This wraps the entire operation in a database transaction.  Lower level code does not need to worry about
+transactions, yet some of the setup code (that in some cases is triggered from here on the first time through)
+does use transactions.  <code>better-sqlite3</code> docs say nesting transactions is OK; the inner ones create save points.
+They also say <em>not</em> to mix their tranactions with raw <code>SQL</code> (e.g., <code>BEGIN</code>, <code>COMMIT</code>)
+that starts and end transactions.  None of this code uses the raw <code>SQL</code>.</p>
+<p>I could remove some of the other uses of <code>db.transaction()</code>.</p>
+<p>Arguably it would be better to do the transactions at the individual <code>SimDataSource</code> level
+since one must actually open and read all the &quot;interesting&quot; <code>.csv</code> files, making the
+transaction relatively long-lived.</p>
 <div class="codefragment">
 <div class="fragmentname">&lt;&lt;Master.iterate&gt;&gt;= </div>
 <div class="code">
 <pre title="<<Master.iterate>>=">iterate(i, scenario=&quot;&quot;){
-   for (const sds in this.sources.values()){
-      sds.read(this, i, scenario)
-   }
+   this.db.transaction(()=&gt; {
+      for (const sds in this.sources.values()){
+         sds.read(this, i, scenario)
+      }
+   })();
 }
 </pre>
 

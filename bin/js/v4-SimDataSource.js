@@ -185,27 +185,29 @@ module.exports = class SimDataSource {
       const hasFullVarSQL = master.db.prepare("SELECT fullvarid FROM fullvar WHERE varid=?")
       const insertVarSQL = master.db.prepare("INSERT INTO variable (name, description) VALUES (?, ?)")
       const insertFullVarSQL = master.db.prepare("INSERT INTO fullvar (varid) VALUES (?)")
-      for (const varinfo of this.interest){
-         if (r = hasVarSQL.get(v)){
-            //already defined. assume OK
-            varinfo.varid = r.varid;
-            r = hasFullVarSQL.get(varinfo.varid);
-            varinfo.fullvarid = r.fullvarid
-            continue;
-         }
-         info = insertVarSQL.run(v, this.#byvar.get(v.toLowerCase()))
-         if (info.changes != 1)
-            // API says it throws errors if something goes wrong
-            // so I don't know if this is necessary
-            error(`Error inserting ${v} into table named variable`)
-         varinfo.varid = info.lastInsertRowid
+      master.db.transaction(() => {
+         for (const varinfo of this.interest){
+            if (r = hasVarSQL.get(v)){
+               //already defined. assume OK
+               varinfo.varid = r.varid;
+               r = hasFullVarSQL.get(varinfo.varid);
+               varinfo.fullvarid = r.fullvarid
+               continue;
+            }
+            info = insertVarSQL.run(v, this.#byvar.get(v.toLowerCase()))
+            if (info.changes != 1)
+               // API says it throws errors if something goes wrong
+               // so I don't know if this is necessary
+               error(`Error inserting ${v} into table named variable`)
+            varinfo.varid = info.lastInsertRowid
    
-         // assume that if there is no entry in variable there is none in fullvar
-         info = insertFullVarSQL.run(varinfo.varid)
-         if (info.changes != 1)
-            error(`Error inserting ${v} into table named fullvar`)
-         varinfo.fullvarid = info.lastInsertRowid
-      }
+            // assume that if there is no entry in variable there is none in fullvar
+            info = insertFullVarSQL.run(varinfo.varid)
+            if (info.changes != 1)
+               error(`Error inserting ${v} into table named fullvar`)
+            varinfo.fullvarid = info.lastInsertRowid
+         }
+      })();
    }
    readBody(master, iteration, scenario){
       // skip scenario column since I have nothing for it

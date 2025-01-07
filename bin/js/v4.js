@@ -13,9 +13,11 @@ class Master {
       console.log(this.sources);
    }
    iterate(i, scenario=""){
-      for (const sds in this.sources.values()){
-         sds.read(this, i, scenario)
-      }
+      this.db.transaction(()=> {
+         for (const sds in this.sources.values()){
+            sds.read(this, i, scenario)
+         }
+      })();
    }
    done() {
       SimDataSource.done(this)

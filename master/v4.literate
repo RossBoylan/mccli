@@ -41,6 +41,7 @@ Version 4 of `mccli` uses new `Fortran` code for the Heart Failure model.  As ex
       - [Supporting Demographic Tables](#supporting-demographic-tables)
       - [Add Definition of Variables for this `SimDataSource`](#add-definition-of-variables-for-this-simdatasource)
   - [Reading the Data](#reading-the-data)
+  - [Done Reading the Data](#done-reading-the-data)
   - [The Whole McGilla](#the-whole-mcgilla)
 - [`monte.conf`](#monteconf)
   - [Roads Not Taken](#roads-not-taken)
@@ -66,6 +67,10 @@ Version 4 of `mccli` uses new `Fortran` code for the Heart Failure model.  As ex
   - [Warnings](#warnings)
   - [Error Handling](#error-handling)
   - [Logging Module](#logging-module)
+- [Master](#master)
+  - [Constructor](#constructor-1)
+  - [Iterate](#iterate)
+  - [Done](#done)
 - [Top Level Stub](#top-level-stub)
 
 
@@ -352,9 +357,9 @@ countPatternMatches() {
          }
       }
       // safer to delete after iteration
-      // Set provide no set-level operator to remove members
-      // experimental difference operator creates a new Set,
-      // and is not currently in Node.js
+      // Set provides no set-level operator to remove members
+      // difference operator creates a new Set,
+      // available in  Node.js as of v22
       matched.forEach(v=>myvar.delete(v));
       // note we leave the pattern in pats
       result.add(re, [matched.length, matched]);
@@ -424,7 +429,7 @@ If the data source is a pipe, the logic here might need to be different; the pip
 read(master, iter, scenario){
    this.reader = nReadLines(this.ifpath);
    readHeader(master);
-   readBody(master, iter);
+   readBody(master, iter, scenario);
 }
 
 readLine() {
@@ -717,10 +722,10 @@ We should be in a transaction at this point.
 `year`, `age` and `sex` are column indices defined as constants for this class.  We'll see if they are accessible simply by naming them...
 
 ```js : <<SimDataSource.readBody>>=
-readBody(master, iteration){
+readBody(master, iteration, scenario){
    // skip scenario column since I have nothing for it
-   const sql = master.db.prepare(`INSERT INTO data (iSim, fullvarid,
-        year, demoid, value) VALUES (?, ?, ?, ?, ?)`);
+   const sql = master.db.prepare(`INSERT INTO data (iSim, scenario, fullvarid,
+        year, demoid, value) VALUES (?, ?, ?, ?, ?, ?)`);
    let line;
    while (line = readLine().trim()){
       // strip trailing ,
@@ -733,8 +738,29 @@ readBody(master, iteration){
       for (const varinfo of this.interest) {
             // parseFloat probably makes no difference because of SQLite `type affinity`
             // will attempt to convert an input string to a float for this column
-         sql.run(iteration, varinfo.fullvarid, iyr, demoid, xs[varinfo.icol]); // parseFloat(xs[varinfo.icol]));
+         sql.run(iteration, scenario, varinfo.fullvarid, iyr, demoid, xs[varinfo.icol]); // parseFloat(xs[varinfo.icol]));
          }
+   }
+}
+```
+
+## Done Reading the Data
+When we know there is no more data to be written, call this method to cleanup.  Because it only needs to be done once, not once per `SimDataSource`, make this a `static`, i.e., class, method.
+
+Call this **only** when there are no more iterations, not at the end of an individual iteration.
+
+Also note it is conceivable that we have collected no data at all and never opened the database.  The first test protects against that.
+
+All transactions should already have been committed.
+
+```js : <<SimDataSource.done>>=
+static done(master){
+   let db = master.db;
+   if (db === undefined){
+      return;
+   db.close();
+   master.db
+   delete master.db;
    }
 }
 ```
@@ -757,6 +783,8 @@ module.exports = class SimDataSource {
    <<SimDataSource.read>>
    <<SimDataSource.setupForHeader>>
    <<SimDataSource.readBody>>
+   
+   <<SimDataSource.done>>
 }
 ```
 
@@ -894,7 +922,7 @@ We check that the entry matches one of the 3 valid possibilities in `sectionName
 
 We do allow an optional `.csv` at the end of the name, adding it if it is absent.  That may fail on case-sensitive file systems, typically `Unix` types (e.g., Linux, BSD, but generally not Macs).  Case sensitivity is actually a property of a particular file system, not the operating system as a whole.
 
-At the end `csvname` is set to the file name (not the full path) and `master.csvs` has a new entry.
+At the end `csvname` is set to the file name (not the full path) and `master.sources` has a new entry.
 
 ```js : <<handle sections>>=
 if (match = line.match(sectionRE)){
@@ -1083,6 +1111,72 @@ const shell = require("shelljs");
 exports.error = error;
 exports.warning = warning;
 ```
+
+# Master
+
+The `master` object is mostly a scratch space for scribbling global state, allowing gradual accumulation of information as different files are processed by different classes.  It accumulates information in the following order:
+
+  1. The location and name of the database file (`dbpath`, `dbfile`).
+  2. The names of active files from which to retrieve info, and the patterns and variables of interest (`sources`, a `Map` with lowercase basenames of files as keys and `SimDataSource` instances as values).  Setup by the constructor for `VariableSelector`
+  3. Descriptions of all variables, added to those `SimDataSource`'s by `Codebook`.
+  4. The database object, `db`, to which all information will be added.  This will be created if necessary.  Done by `SimDataSource` when the first `.csv` file is processed.
+  5. Only after the first `.csv` file is processed will the `SimDataSource`'s be fully populated, e.g., with the column indices that it should focus on.
+
+Aside from the constructor, the other notable function is `iteration()` which the larger monte-carlog process uses to signal the completion of and iteration and `done()` when all iterations are done.
+
+I am unsure if the use of `this` will work correctly if the functions are handed directly to the overall simulator.  (The documentation says `this` resolves to the local object when called in a function invoked  `obj.fn()`, but not if called like `fn()`.  So if I pass `obj.fn` back, and the caller calls it as a regular function, what is `this`?) Because of that, and because there are multiple functions, I will hand the master object back to the caller.  The caller *should not peek or manipulate `master`* apart from calling `iteration()` and `done()`.
+
+```js : <<Master>>=
+class Master {
+   <<Master.constructor>>
+   <<Master.iterate>>
+   <<Master.done>>
+}
+```
+
+## Constructor
+
+This creates master and does all information gathering before iteration begins.
+
+Currently setting for **testing**.  I need a better way to test.
+
+```js : <<Master.constructor>>=
+constructor(yargs) {
+   this.dbpath = yargs.dbpath;
+   this.dbfile = yargs.dbfile;
+   let vs = new VariableSelector(this, './__tests__/monte2.conf');
+   let cb = new Codebook(this, './data/CVDPM_HF_Variable_List.csv');
+   console.log(this.sources);
+}
+```
+
+## Iterate
+
+Each time the overall simulation generates a new set of data in the `.csv` files
+it should call this method with the iteration number and, optionally, a string
+giving the scenario.
+
+```js: <<Master.iterate>>=
+iterate(i, scenario=""){
+   for (const sds in this.sources.values()){
+      sds.read(this, i, scenario)
+   }
+}
+```
+
+## Done
+
+There is no more data to write out.  Clean up.
+
+This is a bit awkward; `SimDataSource` actually created the database,
+and should be responsible for cleanup.  But it's only created once.
+Delegate to a static method on that class.
+
+```js : <<Master.done>>=
+done() {
+   SimDataSource.done(this)
+}
+```
 # Top Level Stub
 
 This is for testing and may well be discarded when `v4` is integrated into  the regular processing in `runSims`.
@@ -1094,14 +1188,9 @@ This is for testing and may well be discarded when `v4` is integrated into  the 
 const VariableSelector = require('./v4-VariableSelector');
 const Codebook = require('./v4-Codebook');
 
-module.exports = (yargs)=> {
-   let master = {
-      dbpath: yargs.dbpath,
-      dbfile: yargs.dbfile
-   };
-   let vs = new VariableSelector(master, './__tests__/monte2.conf');
-   let cb = new Codebook(master, './data/CVDPM_HF_Variable_List.csv');
-   console.log(master.sources);
+<<Master>>
 
+module.exports = (yargs)=> {
+   return new Master(yargs);
 }
 ```

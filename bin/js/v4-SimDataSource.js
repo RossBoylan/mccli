@@ -57,9 +57,9 @@ module.exports = class SimDataSource {
             }
          }
          // safer to delete after iteration
-         // Set provide no set-level operator to remove members
-         // experimental difference operator creates a new Set,
-         // and is not currently in Node.js
+         // Set provides no set-level operator to remove members
+         // difference operator creates a new Set,
+         // available in  Node.js as of v22
          matched.forEach(v=>myvar.delete(v));
          // note we leave the pattern in pats
          result.add(re, [matched.length, matched]);
@@ -95,7 +95,7 @@ module.exports = class SimDataSource {
    read(master, iter, scenario){
       this.reader = nReadLines(this.ifpath);
       readHeader(master);
-      readBody(master, iter);
+      readBody(master, iter, scenario);
    }
    
    readLine() {
@@ -207,10 +207,10 @@ module.exports = class SimDataSource {
          varinfo.fullvarid = info.lastInsertRowid
       }
    }
-   readBody(master, iteration){
+   readBody(master, iteration, scenario){
       // skip scenario column since I have nothing for it
-      const sql = master.db.prepare(`INSERT INTO data (iSim, fullvarid,
-           year, demoid, value) VALUES (?, ?, ?, ?, ?)`);
+      const sql = master.db.prepare(`INSERT INTO data (iSim, scenario, fullvarid,
+           year, demoid, value) VALUES (?, ?, ?, ?, ?, ?)`);
       let line;
       while (line = readLine().trim()){
          // strip trailing ,
@@ -223,8 +223,18 @@ module.exports = class SimDataSource {
          for (const varinfo of this.interest) {
                // parseFloat probably makes no difference because of SQLite `type affinity`
                // will attempt to convert an input string to a float for this column
-            sql.run(iteration, varinfo.fullvarid, iyr, demoid, xs[varinfo.icol]); // parseFloat(xs[varinfo.icol]));
+            sql.run(iteration, scenario, varinfo.fullvarid, iyr, demoid, xs[varinfo.icol]); // parseFloat(xs[varinfo.icol]));
             }
+      }
+   }
+   
+   static done(master){
+      let db = master.db;
+      if (db === undefined){
+         return;
+      db.close();
+      master.db
+      delete master.db;
       }
    }
 }

@@ -69,6 +69,7 @@
 </ul>
 </li>
 <li><a href="#reading-the-data">Reading the Data</a></li>
+<li><a href="#done-reading-the-data">Done Reading the Data</a></li>
 <li><a href="#the-whole-mcgilla">The Whole McGilla</a></li>
 </ul>
 </li>
@@ -112,6 +113,13 @@
 <li><a href="#warnings">Warnings</a></li>
 <li><a href="#error-handling">Error Handling</a></li>
 <li><a href="#logging-module">Logging Module</a></li>
+</ul>
+</li>
+<li><a href="#master">Master</a>
+<ul>
+<li><a href="#constructor-1">Constructor</a></li>
+<li><a href="#iterate">Iterate</a></li>
+<li><a href="#done">Done</a></li>
 </ul>
 </li>
 <li><a href="#top-level-stub">Top Level Stub</a></li>
@@ -420,7 +428,7 @@
 <span class="hljs-title function_">read</span>(<span class="hljs-params">master, iter, scenario</span>){
    <span class="hljs-variable language_">this</span>.<span class="hljs-property">reader</span> = <span class="hljs-title function_">nReadLines</span>(<span class="hljs-variable language_">this</span>.<span class="hljs-property">ifpath</span>);
    <span class="hljs-title function_">readHeader</span>(master);
-   <span class="hljs-title function_">readBody</span>(master, iter);
+   <span class="hljs-title function_">readBody</span>(master, iter, scenario);
 }
 
 <span class="hljs-title function_">readLine</span>(<span class="hljs-params"></span>) {
@@ -760,10 +768,10 @@ Code for sex:
 <div class="codefragment">
 <div class="fragmentname">&lt;&lt;SimDataSource.readBody&gt;&gt;= </div>
 <div class="code">
-<pre><code><span class="hljs-title function_">readBody</span>(<span class="hljs-params">master, iteration</span>){
+<pre><code><span class="hljs-title function_">readBody</span>(<span class="hljs-params">master, iteration, scenario</span>){
    
-   <span class="hljs-keyword">const</span> sql = master.<span class="hljs-property">db</span>.<span class="hljs-title function_">prepare</span>(<span class="hljs-string">`INSERT INTO data (iSim, fullvarid,
-        year, demoid, value) VALUES (?, ?, ?, ?, ?)`</span>);
+   <span class="hljs-keyword">const</span> sql = master.<span class="hljs-property">db</span>.<span class="hljs-title function_">prepare</span>(<span class="hljs-string">`INSERT INTO data (iSim, scenario, fullvarid,
+        year, demoid, value) VALUES (?, ?, ?, ?, ?, ?)`</span>);
    <span class="hljs-keyword">let</span> line;
    <span class="hljs-keyword">while</span> (line = <span class="hljs-title function_">readLine</span>().<span class="hljs-title function_">trim</span>()){
       
@@ -776,8 +784,28 @@ Code for sex:
       <span class="hljs-keyword">for</span> (<span class="hljs-keyword">const</span> varinfo <span class="hljs-keyword">of</span> <span class="hljs-variable language_">this</span>.<span class="hljs-property">interest</span>) {
             
             
-         sql.<span class="hljs-title function_">run</span>(iteration, varinfo.<span class="hljs-property">fullvarid</span>, iyr, demoid, xs[varinfo.<span class="hljs-property">icol</span>]); 
+         sql.<span class="hljs-title function_">run</span>(iteration, scenario, varinfo.<span class="hljs-property">fullvarid</span>, iyr, demoid, xs[varinfo.<span class="hljs-property">icol</span>]); 
          }
+   }
+}
+</code></pre>
+
+</div>
+</div><h2>Done Reading the Data</h2>
+<p>When we know there is no more data to be written, call this method to cleanup.  Because it only needs to be done once, not once per <code>SimDataSource</code>, make this a <code>static</code>, i.e., class, method.</p>
+<p>Call this <strong>only</strong> when there are no more iterations, not at the end of an individual iteration.</p>
+<p>Also note it is conceivable that we have collected no data at all and never opened the database.  The first test protects against that.</p>
+<p>All transactions should already have been committed.</p>
+<div class="codefragment">
+<div class="fragmentname">&lt;&lt;SimDataSource.done&gt;&gt;= </div>
+<div class="code">
+<pre><code><span class="hljs-keyword">static</span> <span class="hljs-title function_">done</span>(<span class="hljs-params">master</span>){
+   <span class="hljs-keyword">let</span> db = master.<span class="hljs-property">db</span>;
+   <span class="hljs-keyword">if</span> (db === <span class="hljs-literal">undefined</span>){
+      <span class="hljs-keyword">return</span>;
+   db.<span class="hljs-title function_">close</span>();
+   master.<span class="hljs-property">db</span>
+   <span class="hljs-keyword">delete</span> master.<span class="hljs-property">db</span>;
    }
 }
 </code></pre>
@@ -803,6 +831,8 @@ Code for sex:
    <span class="literate-tag-name">&lt;&lt;SimDataSource.read&gt;&gt;</span>
    <span class="literate-tag-name">&lt;&lt;SimDataSource.setupForHeader&gt;&gt;</span>
    <span class="literate-tag-name">&lt;&lt;SimDataSource.readBody&gt;&gt;</span>
+   
+   <span class="literate-tag-name">&lt;&lt;SimDataSource.done&gt;&gt;</span>
 }
 </code></pre>
 
@@ -908,7 +938,7 @@ Code for sex:
 <p>Here we identify lines that are section headers and interpret those headers.  Because of the final <code>continue</code> we move on to the next line, rather than falling through to pattern handling.</p>
 <p>We check that the entry matches one of the 3 valid possibilities in <code>sectionNames</code>.</p>
 <p>We do allow an optional <code>.csv</code> at the end of the name, adding it if it is absent.  That may fail on case-sensitive file systems, typically <code>Unix</code> types (e.g., Linux, BSD, but generally not Macs).  Case sensitivity is actually a property of a particular file system, not the operating system as a whole.</p>
-<p>At the end <code>csvname</code> is set to the file name (not the full path) and <code>master.csvs</code> has a new entry.</p>
+<p>At the end <code>csvname</code> is set to the file name (not the full path) and <code>master.sources</code> has a new entry.</p>
 <div class="codefragment">
 <div class="fragmentname">&lt;&lt;handle sections&gt;&gt;= </div>
 <div class="code">
@@ -1100,6 +1130,73 @@ Although we don't fill in information for sources that are missing from <code>ma
 </code></pre>
 
 </div>
+</div><h1>Master</h1>
+<p>The <code>master</code> object is mostly a scratch space for scribbling global state, allowing gradual accumulation of information as different files are processed by different classes.  It accumulates information in the following order:</p>
+<ol>
+<li>The location and name of the database file (<code>dbpath</code>, <code>dbfile</code>).</li>
+<li>The names of active files from which to retrieve info, and the patterns and variables of interest (<code>sources</code>, a <code>Map</code> with lowercase basenames of files as keys and <code>SimDataSource</code> instances as values).  Setup by the constructor for <code>VariableSelector</code></li>
+<li>Descriptions of all variables, added to those <code>SimDataSource</code>'s by <code>Codebook</code>.</li>
+<li>The database object, <code>db</code>, to which all information will be added.  This will be created if necessary.  Done by <code>SimDataSource</code> when the first <code>.csv</code> file is processed.</li>
+<li>Only after the first <code>.csv</code> file is processed will the <code>SimDataSource</code>'s be fully populated, e.g., with the column indices that it should focus on.</li>
+</ol>
+<p>Aside from the constructor, the other notable function is <code>iteration()</code> which the larger monte-carlog process uses to signal the completion of and iteration and <code>done()</code> when all iterations are done.</p>
+<p>I am unsure if the use of <code>this</code> will work correctly if the functions are handed directly to the overall simulator.  (The documentation says <code>this</code> resolves to the local object when called in a function invoked  <code>obj.fn()</code>, but not if called like <code>fn()</code>.  So if I pass <code>obj.fn</code> back, and the caller calls it as a regular function, what is <code>this</code>?) Because of that, and because there are multiple functions, I will hand the master object back to the caller.  The caller <em>should not peek or manipulate <code>master</code></em> apart from calling <code>iteration()</code> and <code>done()</code>.</p>
+<div class="codefragment">
+<div class="fragmentname">&lt;&lt;Master&gt;&gt;= </div>
+<div class="code">
+<pre><code><span class="hljs-keyword">class</span> <span class="hljs-title class_">Master</span> {
+   <span class="literate-tag-name">&lt;&lt;Master.constructor&gt;&gt;</span>
+   <span class="literate-tag-name">&lt;&lt;Master.iterate&gt;&gt;</span>
+   <span class="literate-tag-name">&lt;&lt;Master.done&gt;&gt;</span>
+}
+</code></pre>
+
+</div>
+</div><h2>Constructor</h2>
+<p>This creates master and does all information gathering before iteration begins.</p>
+<p>Currently setting for <strong>testing</strong>.  I need a better way to test.</p>
+<div class="codefragment">
+<div class="fragmentname">&lt;&lt;Master.constructor&gt;&gt;= </div>
+<div class="code">
+<pre><code><span class="hljs-title function_">constructor</span>(<span class="hljs-params">yargs</span>) {
+   <span class="hljs-variable language_">this</span>.<span class="hljs-property">dbpath</span> = yargs.<span class="hljs-property">dbpath</span>;
+   <span class="hljs-variable language_">this</span>.<span class="hljs-property">dbfile</span> = yargs.<span class="hljs-property">dbfile</span>;
+   <span class="hljs-keyword">let</span> vs = <span class="hljs-keyword">new</span> <span class="hljs-title class_">VariableSelector</span>(<span class="hljs-variable language_">this</span>, <span class="hljs-string">&#x27;./__tests__/monte2.conf&#x27;</span>);
+   <span class="hljs-keyword">let</span> cb = <span class="hljs-keyword">new</span> <span class="hljs-title class_">Codebook</span>(<span class="hljs-variable language_">this</span>, <span class="hljs-string">&#x27;./data/CVDPM_HF_Variable_List.csv&#x27;</span>);
+   <span class="hljs-variable language_">console</span>.<span class="hljs-title function_">log</span>(<span class="hljs-variable language_">this</span>.<span class="hljs-property">sources</span>);
+}
+</code></pre>
+
+</div>
+</div><h2>Iterate</h2>
+<p>Each time the overall simulation generates a new set of data in the <code>.csv</code> files
+it should call this method with the iteration number and, optionally, a string
+giving the scenario.</p>
+<div class="codefragment">
+<div class="fragmentname">&lt;&lt;Master.iterate&gt;&gt;= </div>
+<div class="code">
+<pre title="<<Master.iterate>>=">iterate(i, scenario=&quot;&quot;){
+   for (const sds in this.sources.values()){
+      sds.read(this, i, scenario)
+   }
+}
+</pre>
+
+</div>
+</div><h2>Done</h2>
+<p>There is no more data to write out.  Clean up.</p>
+<p>This is a bit awkward; <code>SimDataSource</code> actually created the database,
+and should be responsible for cleanup.  But it's only created once.
+Delegate to a static method on that class.</p>
+<div class="codefragment">
+<div class="fragmentname">&lt;&lt;Master.done&gt;&gt;= </div>
+<div class="code">
+<pre><code><span class="hljs-title function_">done</span>(<span class="hljs-params"></span>) {
+   <span class="hljs-title class_">SimDataSource</span>.<span class="hljs-title function_">done</span>(<span class="hljs-variable language_">this</span>)
+}
+</code></pre>
+
+</div>
 </div><h1>Top Level Stub</h1>
 <p>This is for testing and may well be discarded when <code>v4</code> is integrated into  the regular processing in <code>runSims</code>.</p>
 <div class="codefragment">
@@ -1111,15 +1208,10 @@ Although we don't fill in information for sources that are missing from <code>ma
 <span class="hljs-keyword">const</span> <span class="hljs-title class_">VariableSelector</span> = <span class="hljs-built_in">require</span>(<span class="hljs-string">&#x27;./v4-VariableSelector&#x27;</span>);
 <span class="hljs-keyword">const</span> <span class="hljs-title class_">Codebook</span> = <span class="hljs-built_in">require</span>(<span class="hljs-string">&#x27;./v4-Codebook&#x27;</span>);
 
-<span class="hljs-variable language_">module</span>.<span class="hljs-property">exports</span> = <span class="hljs-function">(<span class="hljs-params">yargs</span>)=&gt;</span> {
-   <span class="hljs-keyword">let</span> master = {
-      <span class="hljs-attr">dbpath</span>: yargs.<span class="hljs-property">dbpath</span>,
-      <span class="hljs-attr">dbfile</span>: yargs.<span class="hljs-property">dbfile</span>
-   };
-   <span class="hljs-keyword">let</span> vs = <span class="hljs-keyword">new</span> <span class="hljs-title class_">VariableSelector</span>(master, <span class="hljs-string">&#x27;./__tests__/monte2.conf&#x27;</span>);
-   <span class="hljs-keyword">let</span> cb = <span class="hljs-keyword">new</span> <span class="hljs-title class_">Codebook</span>(master, <span class="hljs-string">&#x27;./data/CVDPM_HF_Variable_List.csv&#x27;</span>);
-   <span class="hljs-variable language_">console</span>.<span class="hljs-title function_">log</span>(master.<span class="hljs-property">sources</span>);
+<span class="literate-tag-name">&lt;&lt;Master&gt;&gt;</span>
 
+<span class="hljs-variable language_">module</span>.<span class="hljs-property">exports</span> = <span class="hljs-function">(<span class="hljs-params">yargs</span>)=&gt;</span> {
+   <span class="hljs-keyword">return</span> <span class="hljs-keyword">new</span> <span class="hljs-title class_">Master</span>(yargs);
 }
 </code></pre>
 

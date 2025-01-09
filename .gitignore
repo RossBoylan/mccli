@@ -18,3 +18,5 @@ py_tests/test_effect.out
 mod92_MODEL-A_Monte-Carlo_HTN-guide
 *~
 bin/v4-csvconfig.
+package-lock_screwy.json
+node_modules_screwy

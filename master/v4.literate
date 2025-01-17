@@ -6,6 +6,9 @@ Version 4 of `mccli` uses new `Fortran` code for the Heart Failure model.  As ex
   - [Splitting the Problem Up](#splitting-the-problem-up)
 - [Some Notes on `JavaScript`](#some-notes-on-javascript)
   - [Module Systems](#module-systems)
+  - [Typical Use of Modules](#typical-use-of-modules)
+  - [Namespaces](#namespaces)
+  - [Version Dependencies](#version-dependencies)
   - [Classes and Types](#classes-and-types)
   - [Synchronicity ](#synchronicity-)
 - [Design of Access to `SQLite3`](#design-of-access-to-sqlite3)
@@ -134,15 +137,25 @@ There is one output file holding the database; the class that reads the `.csv` f
 
 `JavaScript` running under `Node.js` has 2 module systems, the original [`CommonJS`](https://nodejs.org/dist/latest-v20.x/docs/api/modules.html) used by `Node.js` and the newer and now standardized [`ES6`](https://nodejs.org/dist/latest-v20.x/docs/api/esm.html) (ECMAScript v6), now also available in `Node.js`.  Using them employs different syntaxes; modules built for one generally don't work in the other, and there are a host of differences in the semantics of each. The 2 coexist uneasily, and it's simplest to work with one or the other.
 
+The two systems are often referred to as `CJS` for `CommonJS` and `ESM` for the `ES6` module system.  `Node.js` supports `require()` for *some* `ESM` modules (they must be synchronous) into a `CJS` module.  This requires the `--experimental-require-module` flag to enable, though the plan is eventually it will be enabled by default.
+
 `mccli` was developed using `CommonJS` and most of the modules it uses are available in that form and may not be available as `ES6`.  So this code will continue to use `CommonJS` modules.
 
-That said, `ES6` is probably the wave of the future, and modules are likely to be increasingly available in that format.  One of the key modules `mccli` uses, `inquirer`, is *only* available in `ES6` format for recent releases, leading this package to restrict it to earlier versions in `package.json`
+That said, `ES6` is probably the wave of the future, and modules are likely to be increasingly available in that format.  One of the key modules `mccli` uses, `inquirer`, was *only* available in `ES6` format as of v9.  Fortunately, as of v10 it is available in both forms, so we can continue to use the current version.
 
+## Typical Use of Modules
 Each file is a module, and it seems fairly conventional to put a class definition in a file so that importing the file creates the class.
 
-I haven't been able to find a clear statement about namespaces for `CommonJS` modules, in particular whether a module needs to import (via `require`) a module already present in the parent. This [discussion](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Guide/Modules#other_differences_between_modules_and_standard_scripts) of `ES6` seems pretty clear that the import must be done within the module, saying that only global variables are accessible from the module.  But aren't imported modules global vaiables?
+## Namespaces
+I haven't been able to find a clear statement about namespaces for `CommonJS` modules, in particular whether a module needs to import (via `require`) a module already present in the parent. This [discussion](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Guide/Modules#other_differences_between_modules_and_standard_scripts) of `ES6` seems pretty clear that the import must be done within the module, saying that only global variables are accessible from the module.  But aren't imported modules global variables?
 
 At any rate, redundant imports should be cheap since the results are cached, and experimentation shows that `CommonJS` modules, like `ES6`, must be imported separately in each file.
+
+## Version Dependencies
+
+It seems the tools like to create dependencies like `^4.5.1` which means anything up to, but not including, `5.0.0`, is OK.  I had at least one `>=` dependency rewritten to `^`.  The logic, presumably, is that semantic version declares that major version changes are breaking changes, and so are to be avoided.  `npm` generally respects the rules in place and so will not do bigger updates.
+
+That's all sensible, but this eventually results in a lot of very outdated dependencies.  For that reason I've changed some of the version requirements to inequalities that permit getting the latest current version.
 
 ## Classes and Types
 

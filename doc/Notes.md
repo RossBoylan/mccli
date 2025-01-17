@@ -257,6 +257,65 @@ Some of this stems from the use of `{silent:true}` option, which is the default,
 
 The `python-shell` module advertises much better error reporting, but I've never been able to get it to do anything.  My latest attempts apparently couldn't even get it to run anything.  I have *2* different branches experimenting with the package, *both* named `python-shell`.  The primary archive in `J:\source\repos\mccli` has that branch with work from Feb 2022.  The archive in `C:\Users\rdboylan\Documents\KBD\mccli-release`, intended for production runs, has some *different* work from Nov 2022.  It is not based on the earlier branch.
 
+# `Node`  package versions
+
+The current settings in `package.json`, and of course, even more, those in `package-lock.json`, preclude major upgrades.  Since `mccli` was created quite awhile ago, some packages are way behind the current release.  Since major releases may have breaking changes, some checking before upgrading is in order.
+
+Additionally, some packages, notably `inquirer` went over to packaging as `ES` modules exclusively, leading me to pin them to an old version.  I think some (either `inquirer` or maybe `better-sqlite3`) have resumed dual packaging, which would be one reason to upgrade.  Another is that `Node` v22 introduces the ability to handle `ES` modules directly from an old-style package, which `mccli` is.  If that will work, that would be great.  But the installation requirements and instructions should be changed to indicate v22 is essential.
+
+```cmd
+C:\Users\rdboylan\Documents\KBD\mccli-HF>npm outdated
+Package         Current  Wanted  Latest  Location                     Depended by
+better-sqlite3    9.6.0   9.6.0  11.8.0  node_modules/better-sqlite3  mccli-HF
+inquirer          8.2.6   8.2.6  12.3.2  node_modules/inquirer        mccli-HF
+n-readlines       1.0.3   1.0.3   1.0.1  node_modules/n-readlines     mccli-HF
+```
+
+By the way, the `Latest` column is **not visible in `Powershell`** because the values are dark blue, same as the default background color.
+
+That is only the direct dependencies; the list from `npm outdated --all` is quite long and includes a few modules that are `MISSING`.  Maybe the are dependents of versions I have not installed?
+
+The `engines` specification of `package.json` can be used to specify required `Node.js` versions, e.g.,
+```json
+{
+  "engines": {
+    "node": ">=0.10.3 <15"
+  }
+}
+```
+The docs say this field is advisory only; it's unclear if that is for `engines` generally, or only if used for `npm`, which is the immediately preceding example.
+
+Notable changes:
+
+## `better-sqlite3`
+11.0.0 drops support for `Node.js` v21 and `Electron` v25.
+10.0.0 drops support for `Node.js` <18, if I read it right.
+
+Hmm, I don't see any minimum version of `Node.js` specified in `package.json`.  I wonder what it requires in that case.  The dependencies currently specify `"better-sqlite3": "^9.4.1"`, which limits it to v9.  There is also a `devDependency` `"@types/better-sqlite3": "^7.6.9"`.  I surprised the 2 versions don't line up.
+
+But I don't see anything to suggest any breaking changes.
+
+## `inquirer`
+11.0.0 question prefix changes once an answer is provided (to tick mark, was `?`)
+10.1.0 add new `{type: 'search'}` prompt.
+10.0.0 Reimplement with `Typescript`.  Add CJS support, and so dual build is available.
+ 9.2.18 Use Unicode when possible on `MS-Windows`.
+ 9.0.0 Now an `ES` (ECMAScript) module only.  `Node` must support `ES` and your module must be `ES`.
+
+There are what look like fairly subtle changes in the handling of corner cases along the way.
+
+# `Javascript` Module Systems
+
+`Node.js` originally had a single system, known as `CommonJS` or `CJS` for handling modules.  This application is written for that system and uses modules written in that system.  I believe `Javascript` itself had no official module system.
+
+Eventually, a standardized module system, `ECMAScript Modules` or `ESM` was devised.  Based partly on experience with `CJS` it had some important semantic differences, including the fact it allowed asynchronous loads. Because of these differences, it was initially necessary to pick one module system and stick to it; either a program and all its modules were `CJS`, or they were `ESM`.
+
+Converting `mccli` to `ESM` would require potentially wide-ranging changes to work.  In fact, it's not clear that all the modules it depends are available as `ESM`, or whether `CJS` modules can be imported into an `ESM`.
+
+Since then, things have gotten more flexible.  With `Node.js` [v22](https://nodejs.org/en/blog/announcements/v22-release-announce#support-requireing-synchronous-esm-graphs) it became possible to import *some* `ESM` modules.  Among other requirements, the `ESM` module must be full synchronous (no top-level await).  I'm not sure if that refers to functions the module provides, or just those associated with loading and initializing the module.  This is only available with the `--experimental-require-module`, though eventually that will not be necessary.
+
+Getting `CJS` and `ESM` to coexist has been a big mess.  If you're curious see [different ways](https://gist.github.com/sindresorhus/a39789f98801d908bbc7ff3ecc99d99c) to solve the problem.   Still curious? [Read more](https://redfin.engineering/node-modules-at-war-why-commonjs-and-es-modules-cant-get-along-9617135eeca1) about the problems using both systems at once.
+
 # Log
 
 2023-11-27
@@ -270,6 +329,12 @@ Created `master/` subdirectory to hold `.literate` files, part of the introducti
 2022-09-14
 ----------
 Modified test code to write out iteration number.
+
+2025-01-16
+----------
+After about a week being unable to update or install the system (on `MS-Windows`) because permission errors (`EPERM`) when trying to delete directories, and then build failures while building from source, fixed the problem by relaxing version requirements.  The original source of the problem remains obscure, but people have been reporting it for years.
+
+Then relaxed even further to allow major version upgrades of packages. `inquirer` was doing `ESM` only releases but has switched to dual (i.e., `ESM` and `CJS` releases), and so no longer needs to be pinned at v8.
 
 # To Do
 
@@ -348,6 +413,11 @@ Modified test code to write out iteration number.
   - [ ] Incorporate my fuller understanding of correlations in `.inp` files into user documentation.  Currently quite a bit is in this file and in comments in `montecarlo.py` (low)
   - [ ] Incorporate relevant material from https://github.com/ecfairle/CHDMOD into this project (may already be in our `README.md`) and eliminate reference to it in documentation and code (e.g., `montecarlo.py` has a comment referring to it.) (low)
   - [ ] Allow resuming after interrupted run from, e.g., system shutdown.  See issues #5, #2.
+  - [ ] Update `Node` packages to use current versions.
+    - [x] check for breaking changes by reviewing release notes
+    - [ ] check the program still works
+    - [ ] try import of `ES` packages
+    - [ ] require `Node` v22 for `ES` packages
   - [ ] Update to handle Heart Failure model (Sue)
     - [ ] if possible keep single code base
     - [ ] identify differences between current production version on c: and interruptible version on j:

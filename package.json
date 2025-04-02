@@ -1,7 +1,7 @@
 {
   "name": "@ecfairle/mccli",
-  "version": "3.3.2",
-  "description": "cli for CVD Policy Model Montecarlo simulation",
+  "version": "3.4.0",
+  "description": "cli for CVD Policy Model Montecarlo simulation with base HF",
   "main": "index.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1"

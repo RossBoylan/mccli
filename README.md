@@ -1,5 +1,7 @@
 # Montecarlo CLI (Command Line Interface)
 
+WARNING: v 3.4 is for use only with the new Heart Failure Fortran model.
+
 WARNING: v 3.0 changes the meaning of inputs for the lognormal, beta and gamma
 distributions.  The inputs now are the mean and standard deviation of the generated
 variables for *all* distributions.  For distributions related to interventions (`.inp` files) this wasn't the case until v 3.3.
@@ -61,7 +63,7 @@ This code is under development, may not work properly, and might seize your firs
 
 ### Get Source
 
-This code is the `repeatable` branch of RossBoylan/mccli on github.com.  Despite that, it is still identified as "@ecfairle/mccli",
+This code is the `base-HF` branch of RossBoylan/mccli on github.com.  Despite that, it is still identified as "@ecfairle/mccli",
 and because of that the conventional installation with npm install may not work, especially if you have already installed the earlier version.
 
 I recommend putting a copy of this package on your local hard drive, e.g., `Documents\mccli`.  You can clone it from github and switch to the `repeatable` branch,
@@ -172,7 +174,7 @@ The regular instructions appear below here.
    Currently they involve installing Qt5, which in turn has some requirements.  The clang components it needs are available for download from the Qt5 site and do not seem to be
    easily available from elsewhere.
 
-Portions of the system currently rely on invoking python with the py command, which is probably Windows-specific.
+Portions of the system currently rely on invoking python with the py command, which is Windows-specific.
 
 ### Initialization
 

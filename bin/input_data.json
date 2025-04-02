@@ -109,7 +109,7 @@
 				"num_format": "8.6f"
 			},
 			"correlation": "block",
-			"blocksPerGroup": 1,
+			"blocksPerGroup": 2,
 			"distribution": "beta"
 		},
 		{
@@ -120,7 +120,7 @@
 				"num_format": "8.6f"
 			},
 			"correlation": "block",
-			"blocksPerGroup": 1,
+			"blocksPerGroup": 3,
 			"distribution": "beta"
 		}
 	]

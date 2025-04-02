@@ -1,4 +1,11 @@
 Change Log for `mccli`
+* 3.4.0 2025-04-02 ross.boylan@ucsf.edu
+  * Support new .dat format for HF model (qol and shrt)
+    Previous version induced correlations between variables we want to consider
+    uncorrelated. E.g., for qol the values for `1-Ang`, `11-MI` and `21-AngHF`
+    were all in lockstep.
+  * Do *not* use this with the old Fortran model
+  * Untested.
 
 * 3.3.2 2022-10-18 ross.boylan@ucsf.edu
     * Fix: beta distribution can't handle vectors

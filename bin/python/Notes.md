@@ -1,4 +1,4 @@
-Notes on what files montecarlo.py uses.  Also files used by runSims.js and Fortran.
+Notes on what files `montecarlo.py` uses.  Also files used by `runSims.js` and `Fortran`.
 So probably I should move this file to a different directory.
 This is to aid testing.
 

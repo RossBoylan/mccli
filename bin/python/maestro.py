@@ -49,7 +49,6 @@ PYENV = MYROOT / "pyenv"
 if not PYENV.exists():
     PYENV.symlink_to(OTHERME / "pyenv", target_is_directory=True)
 
-sys.exit(0         )
 
 MYNODE = shutil.which("node")
 MYPY = sys.executable  # the one in the virtual environment

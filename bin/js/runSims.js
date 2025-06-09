@@ -11,13 +11,35 @@ const shell = require("shelljs"),
 
 let INPUTS_FILENAME = path.join('MC','inputs','input_data.json');
 
+var json_logging = false;  // true -> output json instead of regular
+
 let error = (msg,stdout="") => {
-	process.stdout.clearLine();
-	process.stdout.cursorTo(0);
-	console.log(`${'ERR'.bgYellow} ${msg}`);
-	process.stdout.write(stdout);
+	if (json_logging){
+		// probably need more context: iteration #, inp file, cmd line
+		process.stdout.write(JSON.stringify({
+			type: "ERR",
+			text: msg,
+			captured: stdout
+		}))
+	} else {
+		// this fails if stdout is not a tty
+		process.stdout.clearLine();
+		process.stdout.cursorTo(0);
+		console.log(`${'ERR'.bgYellow} ${msg}`);
+		process.stdout.write(stdout);
+	}
 	shell.exit(1);
 };
+
+let mylog = (msg, type="INFO") => {
+	if (json_logging)
+		process.stdout.write(JSON.stringify({
+			type: type,
+			text: msg
+	}))
+	else
+		console.log(msg)
+}
 
 let outFileName = (inp_file) => {
 	let file_data = fs.readFileSync(`${inp_file}_mc0.inp`,'ascii');
@@ -28,6 +50,9 @@ let outFileName = (inp_file) => {
 
 module.exports = (argv) => {
 	let simRuns = () => {
+		// stick in module level variable so logging functions know what to do
+		json_logging = argv.json;
+		
 		let inputsFile = fs.readFileSync(INPUTS_FILENAME, 'utf8');
 
 		let inputsData = JSON.parse(inputsFile);
@@ -161,19 +186,31 @@ module.exports = (argv) => {
 			let endIter = new Date();
 
 			lastTime = endIter.getTime() - startIter.getTime();
-			process.stdout.clearLine();
-			process.stdout.cursorTo(0);
+			if (! json_logging){
+				process.stdout.clearLine();
+				process.stdout.cursorTo(0);
+			}
 			if( i < i1 ){
-				process.stdout.write(`simulations remaining: ${i1-i} eta:${parseFloat(lastTime*(i1-i)/60000).toFixed(2)}m`);
+				let out = `simulations remaining: ${i1-i} eta:${parseFloat(lastTime*(i1-i)/60000).toFixed(2)}m`;
+				if (json_logging)
+					process.stdout.write(JSON.stringify({
+						type: "PROGRESS",
+						text: out,
+						remaining: i1-i,
+						iteration: i,
+						lastTime: lastTime
+				}));
+				else
+					process.stdout.write(out);
 			}	
 		}
 
-		console.log('sum results')
+		mylog('sum results', "SUMMARY")
 		res = shell.exec(py+` ${__dirname}/../python/sum_results.py`,{silent:true});
 		if (res.code !== 0) {
 			error("sum_results.py run failed",res.stderr);
 		}
-		console.log('done')
+		mylog('done', "SUMMARY")
 
 		let end = new Date();
 		let totalS = (end.getTime() - start.getTime())/1000;
@@ -190,8 +227,15 @@ module.exports = (argv) => {
                 i1: i1,
             seed: argv.seed
 		};
-		fs.appendFileSync('MC/results/.run',JSON.stringify(runData, null, 4));
-		console.log(`  simulations completed in ${hours>0 ? hours + ' hours and ' : ''}${minutes} minutes!`.green)
+		let out = JSON.stringify(runData, null, 4);
+		if (json_logging)
+			mylog(out, "DETAIL")
+		fs.appendFileSync('MC/results/.run', out);
+		out = `  simulations completed in ${hours>0 ? hours + ' hours and ' : ''}${minutes} minutes!`;
+		if (json_logging)
+			mylog(out, "DONE")
+		else
+			console.log(out.green)
 		
 	}
 

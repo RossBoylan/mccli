@@ -32,6 +32,15 @@ let argv = yargs
                 ' across simulations, and may stall the simulation and other processes by exhausting system entropy.',
             type: 'number'
         })
+        .option('json', {
+            describe: 'Format output using JSON, ordinarily for use by another program.  All to stdout.  '+
+            'All objects have a type, one of PROGRESS (simulation progress), '+
+            'SUMMARY (after all sims complete), DETAIL (details of all simulations), '+
+            'DONE (very last message), or ERR (error).  All have a text field with the main message, '+
+            'and some have additional fields.  See code for details.  '+
+            'Note that programs invoked by run-sims will still generate non-JSON output on stdout and, '+
+            'possibly, stderr.'
+        })
         .epilog("All numbers should be unsigned integers."),
     handler: runSims,
 })

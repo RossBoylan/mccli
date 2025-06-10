@@ -38,7 +38,7 @@ let argv = yargs
             'SUMMARY (after all sims complete), DETAIL (details of all simulations), '+
             'DONE (very last message), or ERR (error).  All have a text field with the main message, '+
             'and some have additional fields.  See code for details.  '+
-            'Note that programs invoked by runSims will still generate non-JSON output on stdout and, '+
+            'Note that programs invoked by run-sims will still generate non-JSON output on stdout and, '+
             'possibly, stderr.'
         })
         .epilog("All numbers should be unsigned integers."),

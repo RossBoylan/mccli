@@ -11,8 +11,9 @@ let argv = yargs
     handler: init
     })
 .command({
-    //  [iterations] [start] [seed] [--json] [--overwrite]
-    command: 'run-sims',
+    // the command string must include positional arguments for them
+    // to be parsed properly. 
+    command: 'run-sims [iterations] [start] [seed] [--json] [--overwrite]',
     aliases: ['run', 'r'],
     desc: 'run MC simulations',
     // yargs >= 17.0.0 allows positional at root level

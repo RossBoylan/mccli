@@ -11,7 +11,8 @@
             "request": "launch",
             "program": "${file}",
             "console": "integratedTerminal",
-            "justMyCode": true
+            "justMyCode": true,
+            "cwd": "C:\\Users\\rdboylan\\Documents\\KBD\\MC_SELECT_06.02.2025"
         },
         {
             "type": "node",
@@ -20,15 +21,18 @@
             "skipFiles": [
                 "<node_internals>/**"
             ],
-            "program": "J:\\source\\repos\\mccli\\bin\\mc.js",
+            "program": "${workspaceFolder}\\bin\\mc.js",
             "args": [
                 "run",
                 "3",
                 "0",
-                "343"
+                "343",
+                "--json",
+                "--python",
+                "${workspaceFolder}\\pyenv\\Scripts\\python.exe",
             ],
             "console": "integratedTerminal",
-            "cwd": "J:\\source\\repos\\mccli\\Mod92_YLMC_09292022"
+            "cwd": "C:\\Users\\rdboylan\\Documents\\KBD\\MC_SELECT_06.02.2025"
         }
     ]
 }

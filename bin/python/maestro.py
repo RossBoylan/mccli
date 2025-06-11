@@ -32,6 +32,7 @@
 #
 # Once execution finishes various cleanup or file copying operations 
 # may be necessary.
+import json
 from pathlib import Path
 import shutil
 import subprocess
@@ -53,14 +54,21 @@ if not PYENV.exists():
 MYNODE = shutil.which("node")
 MYPY = sys.executable  # the one in the virtual environment
 MYMC = str(Path(__file__).parent.parent / "mc.js")
-cmd = [MYNODE, MYMC]+("run 2 0 345 --python".split())+[MYPY]
+# --overwrite is a dangerous option.
+cmd = [MYNODE, MYMC]+("run 2 0 345 --json --overwrite --python".split())+[MYPY]
 r = subprocess.Popen(cmd, 
                      stdout=subprocess.PIPE,
                      stderr=subprocess.STDOUT,
                      text=True)
-for line in r.stdout:
+for line in r.stdout: # type: ignore
     if not line:
         break
-    print(line, end="")
+    try:
+        data = json.loads(line)
+    except json.decoder.JSONDecodeError:
+        data = line.rstrip()
+        print("Encountered non-JSON output from mc runSims, treating as text.")
+    print(data)
 
 print(f"Done with status {r.returncode}.")
+r.wait(10)  # wait for it to finish, if it hasn't already

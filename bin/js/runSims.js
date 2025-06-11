@@ -20,7 +20,7 @@ let error = (msg,stdout="") => {
 			type: "ERR",
 			text: msg,
 			captured: stdout
-		}))
+		})+'\n');
 	} else {
 		// this fails if stdout is not a tty
 		process.stdout.clearLine();
@@ -36,7 +36,7 @@ let mylog = (msg, type="INFO") => {
 		process.stdout.write(JSON.stringify({
 			type: type,
 			text: msg
-	}))
+	})+'\n')
 	else
 		console.log(msg)
 }
@@ -49,10 +49,13 @@ let outFileName = (inp_file) => {
 };
 
 module.exports = (argv) => {
+
+	// stick arg.json in module level variable so logging functions know what to do
+	json_logging = argv.json;
+	mylog(JSON.stringify(argv), "DETAIL");
+
 	let simRuns = () => {
-		// stick in module level variable so logging functions know what to do
-		json_logging = argv.json;
-		
+	
 		let inputsFile = fs.readFileSync(INPUTS_FILENAME, 'utf8');
 
 		let inputsData = JSON.parse(inputsFile);
@@ -199,7 +202,7 @@ module.exports = (argv) => {
 						remaining: i1-i,
 						iteration: i,
 						lastTime: lastTime
-				}));
+				})+'\n');
 				else
 					process.stdout.write(out);
 			}	
@@ -246,12 +249,16 @@ module.exports = (argv) => {
 
 	let saveFileDir = './MC/saved_runs';
 	let resultsDir = './MC/results';
-	if (fs.existsSync(resultsDir) && fs.readdirSync(path.join(resultsDir,'cumulative')).length !== 0) {
+	if (!argv.overwrite && fs.existsSync(resultsDir) && fs.readdirSync(path.join(resultsDir,'cumulative')).length !== 0) {
+		if (json_logging)
+			error(`There are previous results. Either move ${resultsDir} out of the way, \n`+
+		`or use --overwrite to overwrite them.`);
+
 		inquirer.prompt({
 			type: 'confirm',
-	    name: 'saveResults',
-	    message: 'There are previous results.  Do you want to save them? (otherwise they will be written over)',
-	    default: true
+		name: 'saveResults',
+		message: 'There are previous results.  Do you want to save them? (otherwise they will be written over)',
+		default: true
 		}).then( (answers) => {
 			if (answers.saveResults) {
 				inquirer.prompt({

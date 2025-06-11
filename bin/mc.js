@@ -11,7 +11,7 @@ let argv = yargs
     handler: init
     })
 .command({
-    command: 'run-sims [iterations] [start] [seed]',
+    command: 'run-sims [iterations] [start] [seed] [--json] [--overwrite]',
     aliases: ['run', 'r'],
     desc: 'run MC simulations',
     // yargs >= 17.0.0 allows positional at root level
@@ -39,7 +39,13 @@ let argv = yargs
             'DONE (very last message), or ERR (error).  All have a text field with the main message, '+
             'and some have additional fields.  See code for details.  '+
             'Note that programs invoked by run-sims will still generate non-JSON output on stdout and, '+
-            'possibly, stderr.'
+            'possibly, stderr.',
+            boolean: true
+        })
+        .option('overwrite', {
+            describe: 'Overwrite existing results *without* notice.',
+            type: 'boolean',
+            default: false
         })
         .epilog("All numbers should be unsigned integers."),
     handler: runSims,

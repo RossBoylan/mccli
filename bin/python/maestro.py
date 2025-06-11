@@ -54,21 +54,59 @@ if not PYENV.exists():
 MYNODE = shutil.which("node")
 MYPY = sys.executable  # the one in the virtual environment
 MYMC = str(Path(__file__).parent.parent / "mc.js")
-# --overwrite is a dangerous option.
-cmd = [MYNODE, MYMC]+("run 2 0 345 --json --overwrite --python".split())+[MYPY]
-r = subprocess.Popen(cmd, 
-                     stdout=subprocess.PIPE,
-                     stderr=subprocess.STDOUT,
-                     text=True)
-for line in r.stdout: # type: ignore
-    if not line:
-        break
-    try:
-        data = json.loads(line)
-    except json.decoder.JSONDecodeError:
-        data = line.rstrip()
-        print("Encountered non-JSON output from mc runSims, treating as text.")
-    print(data)
+def prepare_one(inp_file, input_data, pdir, inp_distribution):
+    """prepare a single directory for a parallel run
+    inp_file: the input file to use (no extension) <str>
+    input_data: JSON object with original input data
+    pdir: directory under which individual parallel directories go <Path>
+    inp_distribution: path from which to copy the distributions <Path>
 
-print(f"Done with status {r.returncode}.")
-r.wait(10)  # wait for it to finish, if it hasn't already
+    Creates a directory under pdir named inp_file and copies stuff from
+    the master, modifying as necessary.
+
+    Many of these things seem like good candidates for symlinks,
+    but the system has a nasty habit of writing over input files and directories.
+    So, for safety, we copy everything.
+
+    The one exception is that the MC directory will be a symlink back to
+    an appropriately named directory MC_{inp_file} under the main project.
+    """
+def prepare():
+    """Prepare directories for simulation"""
+    with open(Path('MC/inputs/input_data.json')) as f:
+        input_data = json.load(f)
+    inp_files = input_data['inp_files']
+    pdir = Path("./parallel")
+    if not pdir.exists():
+        pdir.mkdir()
+    inp_distribution = Path('MC/inputs/inp_distribution.txt')
+    if not inp_distribution.exists():
+        inp_distribution = Path("./inp_distribution.txt")
+        if not inp_distribution.exists():
+            raise FileNotFoundError("inp_distribution.txt not found in MC/inputs or top directory.")
+    for inp_file in inp_files:
+        prepare_one(inp_file, input_data, pdir, inp_distribution)
+
+
+prepare()
+
+def do_run():
+    "stub of code to do a single simulation run"
+    # --overwrite is a dangerous option.
+    cmd = [MYNODE, MYMC]+("run 2 0 345 --json --overwrite --python".split())+[MYPY]
+    r = subprocess.Popen(cmd, 
+                        stdout=subprocess.PIPE,
+                        stderr=subprocess.STDOUT,
+                        text=True)
+    for line in r.stdout: # type: ignore
+        if not line:
+            break
+        try:
+            data = json.loads(line)
+        except json.decoder.JSONDecodeError:
+            data = line.rstrip()
+            print("Encountered non-JSON output from mc runSims, treating as text.")
+        print(data)
+
+    print(f"Done with status {r.returncode}.")
+    r.wait(10)  # wait for it to finish, if it hasn't already

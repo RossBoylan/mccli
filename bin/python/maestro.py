@@ -50,10 +50,37 @@ PYENV = MYROOT / "pyenv"
 if not PYENV.exists():
     PYENV.symlink_to(OTHERME / "pyenv", target_is_directory=True)
 
+DATADIR = Path.cwd()  # assume we are running from top of the analysis directory.
 
 MYNODE = shutil.which("node")
 MYPY = sys.executable  # the one in the virtual environment
 MYMC = str(Path(__file__).parent.parent / "mc.js")
+
+with open(Path('MC/inputs/input_data.json')) as f:
+    input_data = json.load(f)
+
+def file_filter(theDir, theList):
+    """Return elements of theList to exclude from copying.
+    This is for use by shutil.copytree."""
+    exclude = []
+    myprog = (input_data['model']+".exe").lower()
+    if Path(theDir) == DATADIR:
+        # yes, "output"
+        keep_dirs = ("input", "modfile", "output")
+        for x in theList:
+            p = DATADIR / x
+            if p.is_dir():
+                if x in keep_dirs:
+                    continue
+                else:
+                    exclude.append(x)
+            elif p.suffix.lower() in (".inp", ".out", ".frmt", ".dat", ".txt") or \
+                p.name.lower() in ("outfile.dat", myprog):
+                continue         
+            else:
+                exclude.append(x)
+    return exclude
+
 def prepare_one(inp_file, input_data, pdir, inp_distribution):
     """prepare a single directory for a parallel run
     inp_file: the input file to use (no extension) <str>
@@ -71,10 +98,17 @@ def prepare_one(inp_file, input_data, pdir, inp_distribution):
     The one exception is that the MC directory will be a symlink back to
     an appropriately named directory MC_{inp_file} under the main project.
     """
+    realMC = DATADIR / f"MC_{inp_file}"
+    realMC.mkdir(exist_ok=True)
+    pproj = pdir / inp_file  # will be created by copytree
+    shutil.copytree(DATADIR, pproj, ignore=file_filter)
+    (pproj / "MC").symlink_to(realMC, target_is_directory=True)
+    # more to go
+    # copy the inp_distribution.txt file
+
 def prepare():
     """Prepare directories for simulation"""
-    with open(Path('MC/inputs/input_data.json')) as f:
-        input_data = json.load(f)
+
     inp_files = input_data['inp_files']
     pdir = Path("./parallel")
     if not pdir.exists():

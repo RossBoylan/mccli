@@ -103,8 +103,14 @@ def prepare_one(inp_file, input_data, pdir, inp_distribution):
     pproj = pdir / inp_file  # will be created by copytree
     shutil.copytree(DATADIR, pproj, ignore=file_filter)
     (pproj / "MC").symlink_to(realMC, target_is_directory=True)
-    # more to go
-    # copy the inp_distribution.txt file
+    (pproj / "MC" / "inputs").mkdir()
+    custom = input_data.copy()
+    custom["inp_files"] = [inp_file]
+    with open(pproj / "MC" / "inputs" / "input_data.json", 'w') as f:
+        json.dump(custom, f, indent=4)
+    # probably the next could be a symlink, but it is safer to copy
+    shutil.copy2(inp_distribution, pproj / "MC" / "inputs" / "inp_distribution.txt")
+
 
 def prepare():
     """Prepare directories for simulation"""

@@ -6,10 +6,22 @@ async def do_one(name):
         sys.executable, 'bin/python/tclient.py', name,
         stdout=asyncio.subprocess.PIPE,
         stderr=asyncio.subprocess.PIPE)
-    stdout, stderr = await p.communicate()
-    print(f'[{stdout.decode()}]')
-    if stderr:
-        print(f'[{stderr.decode()}]')
+    while not (p.stdout.at_eof() and p.stderr.at_eof()):
+        x = await p.stdout.readline()
+        if x:
+            print(x.decode().rstrip())
+        else:
+            print('EOF on stdout')
+        continue
+        done, pending = await asyncio.wait(
+            [await p.stdout.readline(), await p.stderr.readline()],
+            return_when=asyncio.FIRST_COMPLETED)
+        for s in done:
+            line = s.result().decode().rstrip()
+            if s == p.stdout:
+                print(line)
+            else:
+                print(f"ERR: {line}")
     print(f'{name} returns {p.returncode}')
 
 async def main():

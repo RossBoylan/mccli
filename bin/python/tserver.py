@@ -6,6 +6,8 @@ async def do_one(name):
         sys.executable, 'bin/python/tclient.py', name,
         stdout=asyncio.subprocess.PIPE,
         stderr=asyncio.subprocess.PIPE)
+    taskout = None
+    taskerr = None
     while not (p.stdout.at_eof() and p.stderr.at_eof()):
         # x = await p.stdout.readline()
         # if x:
@@ -13,15 +15,27 @@ async def do_one(name):
         # else:
         #     print('EOF on stdout')
         # continue
+        if taskout is None:
+            taskout = asyncio.create_task(p.stdout.readline(), name="stdout")
+        if taskerr is None:
+            taskerr = asyncio.create_task(p.stderr.readline(), name="stderr")
         done, pending = await asyncio.wait(
-            [await p.stdout.readline(), await p.stderr.readline()],
+            [taskout, taskerr],
             return_when=asyncio.FIRST_COMPLETED)
         for s in done:
-            line = s.result().decode().rstrip()
-            if s == p.stdout:
-                print(line)
+            line = s.result()
+            # I generally get back 0 byte string for stderr even when nothing was written to stderr
+            n = len(line)
+            if n:
+                line = line.decode().rstrip()
+            if s.get_name() == "stderr":
+                taskerr = None
+                if n:
+                    print(f"ERR: {line}")
             else:
-                print(f"ERR: {line}")
+                taskout = None
+                if n:
+                    print(line)
     print(f'{name} returns {p.returncode}')
 
 async def main():

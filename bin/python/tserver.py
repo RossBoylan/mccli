@@ -7,12 +7,12 @@ async def do_one(name):
         stdout=asyncio.subprocess.PIPE,
         stderr=asyncio.subprocess.PIPE)
     while not (p.stdout.at_eof() and p.stderr.at_eof()):
-        x = await p.stdout.readline()
-        if x:
-            print(x.decode().rstrip())
-        else:
-            print('EOF on stdout')
-        continue
+        # x = await p.stdout.readline()
+        # if x:
+        #     print(x.decode().rstrip())
+        # else:
+        #     print('EOF on stdout')
+        # continue
         done, pending = await asyncio.wait(
             [await p.stdout.readline(), await p.stderr.readline()],
             return_when=asyncio.FIRST_COMPLETED)

@@ -196,11 +196,17 @@ module.exports = (argv) => {
 			if( i < i1 ){
 				let out = `simulations remaining: ${i1-i} eta:${parseFloat(lastTime*(i1-i)/60000).toFixed(2)}m`;
 				if (json_logging)
+					/* Times are in milliseconds (1/1000 s) since epoch 1/1/1970, midnight UTC. (https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Date/getTime).
+					There is a slight ambiguity about whether this is in local time.
+					lastTime is difference between start and end time of last iteration.
+					*/
 					process.stdout.write(JSON.stringify({
 						type: "PROGRESS",
 						text: out,
 						remaining: i1-i,
 						iteration: i,
+						startTime: startIter.getTime(),
+						endTime: endIter.getTime(),
 						lastTime: lastTime
 				})+'\n');
 				else

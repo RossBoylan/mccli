@@ -33,6 +33,8 @@
 # Once execution finishes various cleanup or file copying operations 
 # may be necessary.
 import asyncio
+from datetime import datetime
+import itertools
 import json
 from pathlib import Path
 import shutil
@@ -133,7 +135,66 @@ def prepare():
         prepare_one(inp_file, input_data, pdir, inp_distribution)
 
 
-prepare()
+class SwitchBoard:
+    """Receives messages and routes them to interested parties via function calls.
+    The functions should take 2 arguments, the JSON "object" and its string representation.
+    """
+    def __init__(self):
+        self._syncFunctions = []
+        self._asyncFunctions = []
+
+    def addSyncFunction(self, fn):
+        "add a regular function, which is blocking"
+        self._syncFunctions.append(fn)
+
+    def addAsyncFunction(self, fn):
+        "add an async function that is awaitable"
+        self._asyncFunctions.append(fn)
+
+    async def message_obj(self, obj):
+        "Receive message as a JSON object.  Transmit it to all interested."
+        # Because this is async it will not do to put the string
+        # version in an instance variable.
+        json_str = json.dumps(obj)
+        myasyncs = [f(obj, json_str) for f in self._asyncFunctions]
+        later = asyncio.gather(*myasyncs)
+        for f in self._syncFunctions:
+            f(obj, json_str)
+        await later
+
+    def close(self):
+        "Call when all done to assure cleanup"
+        for f in itertools.chain(self._asyncFunctions, self._syncFunctions):
+            try:
+                f.close()
+            except:
+                pass
+
+class StupidLogfile:
+    "really simple logging to a file"
+    def __init__(self, logfile: Path|str):
+        self._logfile = Path(logfile)
+        self._fout = self._logfile.open("at")
+
+    def __call__(self, obj, json_str):
+        "log the message"
+        self._fout.write(json_str)
+
+    def close(self):
+        self._fout.close()
+
+class DumbTerminalLog:
+    """simple logging that works for any stdout
+    No coloring, beeping or styling.
+    No curses-type manipulation.
+    No filtering out unimportant info.
+    """
+    def __call__(self, obj, json_str):
+        print(json_str, end="")
+
+    def close(self):
+        "Leave it open for others"
+        pass
 
 class AbstractRun:
     """Describes and manages a single `mc run` invocation.
@@ -226,11 +287,12 @@ class SingleScenarioRun(AbstractRun):
         "Iterations done, remembering we start at 0"
         return 1+self._lasti
     
-    async def run(self, switchboard)->int:
+    async def run(self, switchboard)->int|None:
         """Run the job, reporting results to switchboard in real time.
         """
         self._status = "running"
-        p = await asyncio.create_subprocess_exec(*cmd, 
+        p = await asyncio.create_subprocess_exec(*self._cmd, 
+                                                 cwd=self.root(),
                                 stdout=subprocess.PIPE,
                                 stderr=subprocess.PIPE)
         taskout = None
@@ -283,3 +345,20 @@ class SingleScenarioRun(AbstractRun):
         self._status = "error"
         self._status_info = obj
 
+async def main():
+    """top-level driver.
+    Ordinarily prepares and runs the simulations.
+    """
+    pdir = Path(".parallel")
+    prepare()
+    switch = SwitchBoard()
+    switch.addSyncFunction(DumbTerminalLog())
+    switch.addSyncFunction(StupidLogfile(pdir / "runlog.txt"))
+    runs = [SingleScenarioRun(pdir, scenario, iterations=1001, seed=345).run(switch)
+             for scenario in input_data['inp_files'] ]
+    x = switch.message_obj({"type": "INFO", "text": "Maestro begins {len(runs)} parallel runs at {datetime.now()}\n"})
+    rvals = await asyncio.gather(*runs)
+    x = await switch.message_obj({"type": "INFO", "text": "Maestro finishes {len(runs)} parallel runs at {datetime.now()}\n"})
+    switch.close()
+
+asyncio.run(main())

@@ -124,6 +124,71 @@ Some of this stems from the use of `{silent:true}` option, which is the default,
 
 The `python-shell` module advertises much better error reporting, but I've never been able to get it to do anything.  My latest attempts apparently couldn't even get it to run anything.  I have *2* different branches experimenting with the package, *both* named `python-shell`.  The primary archive in `J:\source\repos\mccli` has that branch with work from Feb 2022.  The archive in `C:\Users\rdboylan\Documents\KBD\mccli-release`, intended for production runs, has some *different* work from Nov 2022.  It is not based on the earlier branch.
 
+Parallel
+========
+
+Challenge: File Conflicts
+-------------------------
+
+To run more than one simulation at a time requires assuring the different simulations do not step on each other.  The obvious way this could be a problem is if they both write to the same file.
+
+I ran the simulation under `procmon` to capture what files were being opened, read, and written.  This showed files in almost every directory--include ones with "input" in the name (!)--got writes, many of them to files that did not have an iteration number suffix.  Also, some of the `_mc0` file may be written repeatedly.
+
+The one bit of good news is that I did not find any mystery files that were written only for the duration of the run, being neither an input nor an output.  I thought I saw such things in an earlier version of the source code.  Or perhaps there were such files, but the names did not stand out to me.
+
+The conclusion is that, for safety, one must copy basically the entire directory.
+
+Challenge: Interactivity
+------------------------
+The monte-carlo system assumes it is running in a regular terminal with a person who can respond to prompts.  This makes it awkward to run multiple copies.
+
+This is most obvious for `mc init`, whose primary job is to collect user input.  It does this with a curses-like interface that uses multiple rows of the terminal and allows one to scroll through alternatives.  The "solution" is to run this *before* the parallel run.
+
+However, `mc run`, the main simulation driver, also assumes and requires such an environment.  If it encounters signs of a previous run, it asks the user what to do.  And its logging procedure has commands like `clearLine()` and `cursorTo()` that only work with a terminal.  When I ran the program with a pipe for `stdout` that same call produced an error, because the output object did not understand the command.  In `node` the stream does have an `isTTY` attribute which could be checked.  Solutions are
+
+  1. Provide an `--overwrite` option that will suppress the query if there seems to be a previous run, acting as if the user selected overwrite the existing results.  This is risky.
+  2. Provide a `--json` option which simultaneously produces `json` output and avoids any terminal manipulation commands.
+
+Challenge: Subprocess Management
+--------------------------------
+To run in parallel, each simulation must run in its own process and its own directory.  Use threads is possible in principle, but `python` threads are ineffective because the global lock.  And threads are messy anywya. While I could create separate python processes, that adds an unnecessary extra layer to the invocation of `node`.  The most effective way is to use the `asyncio` module and coroutines to launch the different runs.
+
+A perennial weak spot in `python` is getting output from a subprocess while it runs, rather than having to wait until it completes.  That output has progress reports, and so is essential for monitoring progress.  The advice in the documenation is to use `communicate()` to avoid deadlocks, but, as the documentation says, this only returns after the process exits.
+
+I fond various questions about this problem but not a lot of solutions.  One suggestion was to use `readLine()` on the file handle (pipe), which worked for me once I ensured `\n` was written at the end of output lines, and once I added a rather cumbersome task based approach so I could wait on `stdout` and `stderr` separately.
+
+In practice, it seems both tasks complete at once, even though the `stderr` reader returns a 0-byte result.
+
+There are alternative methods of communication: shared memory, named pipes, other IPC frameworks (I considered `RabbitMQ`), even reading from a file as it is written.  But pipes seemed lightest weight and most straightforward.
+
+One consideration is that the node process being invoked in turn invokes other processes, `python` and `fortran` programs.  So even if the main `node` code sends everything as a `JSON` message, there may still be traffic directly to `stdin` and `stdout` that it does not control.
+
+Challenge: `asyncio`
+--------------------
+`asyncio` is a solution that introduces its own problems.
+
+### `Qt`
+
+`Qt` has an event loop.  But `asyncio` has its own event loop.  They can only get along with some help.  `Qt` has a `QtAsync` module that allows the `Qt` event loop to also serve as the event loop for the `python` `async` calls.
+
+The architecture of coroutines in `python` is a little odd.  The language definition defines some keywords, `async` and `await`, and the semantics they should have.  But it does *not* provide the mechanism so they can actually run!
+
+The `asyncio` standard module does provide such a mechanism, but it is not the only way to achieve the task scheduling required for cooperative multitasking.  So other packages can and do provide such services.  `Qt` does so on top of `asyncio` so that code will actually use both `QtAsync` and `asyncio` modules.
+
+*However* `QtAsync` is only available for `Qt6`, and only barely:
+"[This module is currently in technical preview](https://doc.qt.io/qtforpython-6/PySide6/QtAsyncio/index.html)" as of 2025-06-15.  It seems to be available only with recent version, perhaps `Qt6.8+`.  And that in  turn limits the supported `python versions`.  Apparently 6.8 requires `python3.9` and 6.9 requires `python3.10` according to the underexplained [python compatibility matrix](https://wiki.qt.io/Qt_for_Python).
+
+`python` support for `Qt6` is `pyside6` *not* the `pyside2` this package currently uses in `frmtReport.py`.  So using both requires 2 heavyweight installations.
+
+`frmtReport.py` could be ported to `pyside6`, but that would take some time.
+
+Another consideration is that `pyside6` is not obviously available as a package on stable Debian or Ubuntu.
+
+### `SQLite`
+Since this is the database used by `frmtReport.py` and the new heart-failure code, it seems natural to use it here.  But it's synchronous, and doesn't naturally get along (may even refuse to run) with async settings.
+
+There are once again some packages designed to smooth the differences.  In fact, `pyside6` has a local storage option built on `SQLite`, as well as more general database interfaces.  Using that, if I'm using `Qt` anyway, might be simplest.
+
 Log
 ===
 

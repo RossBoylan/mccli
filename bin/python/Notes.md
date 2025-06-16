@@ -151,11 +151,11 @@ However, `mc run`, the main simulation driver, also assumes and requires such an
 
 Challenge: Subprocess Management
 --------------------------------
-To run in parallel, each simulation must run in its own process and its own directory.  Use threads is possible in principle, but `python` threads are ineffective because the global lock.  And threads are messy anywya. While I could create separate python processes, that adds an unnecessary extra layer to the invocation of `node`.  The most effective way is to use the `asyncio` module and coroutines to launch the different runs.
+To run in parallel, each simulation must run in its own process and its own directory.  Using threads is possible in principle, but `python` threads are ineffective because of the global lock.  And threads are messy anyway. While I could create separate python processes, that adds an unnecessary extra layer to the invocation of `node`.  The most effective way to deal with multiple long-lived processes is to use the `asyncio` module and coroutines to launch the different runs.
 
 A perennial weak spot in `python` is getting output from a subprocess while it runs, rather than having to wait until it completes.  That output has progress reports, and so is essential for monitoring progress.  The advice in the documenation is to use `communicate()` to avoid deadlocks, but, as the documentation says, this only returns after the process exits.
 
-I fond various questions about this problem but not a lot of solutions.  One suggestion was to use `readLine()` on the file handle (pipe), which worked for me once I ensured `\n` was written at the end of output lines, and once I added a rather cumbersome task based approach so I could wait on `stdout` and `stderr` separately.
+I fond various questions about this problem but not a lot of solutions.  One suggestion was to use `readLine()` on the file handle (pipe), which worked for me once I ensured `\n` was written at the end of output lines, and once I added a rather cumbersome `asycio.Task`-based approach so I could wait on `stdout` and `stderr` separately.
 
 In practice, it seems both tasks complete at once, even though the `stderr` reader returns a 0-byte result.
 
@@ -165,6 +165,7 @@ One consideration is that the node process being invoked in turn invokes other p
 
 Challenge: `asyncio`
 --------------------
+
 `asyncio` is a solution that introduces its own problems.
 
 ### `Qt`
@@ -176,18 +177,38 @@ The architecture of coroutines in `python` is a little odd.  The language defini
 The `asyncio` standard module does provide such a mechanism, but it is not the only way to achieve the task scheduling required for cooperative multitasking.  So other packages can and do provide such services.  `Qt` does so on top of `asyncio` so that code will actually use both `QtAsync` and `asyncio` modules.
 
 *However* `QtAsync` is only available for `Qt6`, and only barely:
-"[This module is currently in technical preview](https://doc.qt.io/qtforpython-6/PySide6/QtAsyncio/index.html)" as of 2025-06-15.  It seems to be available only with recent version, perhaps `Qt6.8+`.  And that in  turn limits the supported `python versions`.  Apparently 6.8 requires `python3.9` and 6.9 requires `python3.10` according to the underexplained [python compatibility matrix](https://wiki.qt.io/Qt_for_Python).
+"[This module is currently in technical preview](https://doc.qt.io/qtforpython-6/PySide6/QtAsyncio/index.html)" as of 2025-06-15.  It seems to be available only with recent version, perhaps `Qt6.8+`.  And that in  turn limits the supported `python` versions.  Apparently 6.8 requires `python3.9` and 6.9 requires `python3.10` according to the underexplained [python compatibility matrix](https://wiki.qt.io/Qt_for_Python).
 
-`python` support for `Qt6` is `pyside6` *not* the `pyside2` this package currently uses in `frmtReport.py`.  So using both requires 2 heavyweight installations.
+`python` support for `Qt6` is from the `pyside6` module, *not* the `pyside2` this package currently uses in `frmtReport.py`.  So using both requires 2 heavyweight installations.
 
 `frmtReport.py` could be ported to `pyside6`, but that would take some time.
 
-Another consideration is that `pyside6` is not obviously available as a package on stable Debian or Ubuntu.
+Another consideration is that `pyside6` is not obviously available as a package on stable Debian or Ubuntu (June 2025).
 
 ### `SQLite`
-Since this is the database used by `frmtReport.py` and the new heart-failure code, it seems natural to use it here.  But it's synchronous, and doesn't naturally get along (may even refuse to run) with async settings.
+
+Since this is the database used by `frmtReport.py` and the new heart-failure code, it seems natural to use it here.  But it's synchronous, and doesn't naturally get along (may even refuse to run) with `async` settings.
 
 There are once again some packages designed to smooth the differences.  In fact, `pyside6` has a local storage option built on `SQLite`, as well as more general database interfaces.  Using that, if I'm using `Qt` anyway, might be simplest.
+
+Persistence
+-----------
+
+The overall system writes lots of information to regular files, and a some key facts about the run to `MC/results/.run` as JSON on completion.  There are 3 motivations for the parallel processing itself (`maestro.py`) to use persistence:
+
+  1. If processing is interrupted it can serve as a checkpoint for restarts.  It can also indicate exactly how the work was carved up: did individual runs include multiple `.inp` files?  Did individual runs cover only part of the range of iteration?
+  2. The log of all messages received will be large.  Even if they could all fit in memory, it's wasteful to store them that way.  There will be too many to fit on the screen, and so if something goes wrong it will be useful to have a record of what they were.
+  3. Storing the messages in a database allows the use of database queries to extract information; potentially these can use indices to speed up retrieval.  They can also work with GUI frameworks for efficient display of big data without showing it all.
+
+Counter-arguments, using the same numbering as above:
+
+  1. There is currently no resume capability.  If there were, it could be implemented by scanning for output files to determine how far the simulation got, although that could be fooled by previous runs if they were left in place.  While there is no good way to determine how the runs were split up, that information could be written to a small text file.  And, currently, there is no choice about how to split things up.
+  2. There probably is enough RAM to hold all the messages.  They could be written to a plain text file in case of disaster, with manual examination of the file to find old messages about failures.
+  3. I can use indices without persistence.  The availability of good database-friendly GUI's seems a bit spotty: it's unclear to me if `QtQuick` offers such a framework.
+
+Most of the messages are in `JSON`, which is irregular (not fixed rows and columns).  Both `Postgres` and `SQLite` have `JSON`-specific types that can be used for storage and queries, which are thus not exactly regular `SQL` queries.
+
+As noted just before this section, there are challenges to using databases with `async` code, and perhaps with other event loops as well.
 
 Log
 ===

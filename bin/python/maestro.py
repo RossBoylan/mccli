@@ -32,6 +32,7 @@
 #
 # Once execution finishes various cleanup or file copying operations 
 # may be necessary.
+import asyncio
 import json
 from pathlib import Path
 import shutil
@@ -39,7 +40,10 @@ import subprocess
 import sys
 
 MYROOT = Path(__file__).parent.parent.parent
-# This is the root of the project, not the root of the virtual environment.
+# This is the root of the mccli software
+
+## First time cheat setup for the software
+## Also sets variables with key locations
 
 OTHERME = MYROOT.parent / "mccli-repeatable"
 NODE_MODULES = MYROOT / "node_modules"
@@ -57,6 +61,7 @@ MYPY = sys.executable  # the one in the virtual environment
 MYMC = str(Path(__file__).parent.parent / "mc.js")
 
 with open(Path('MC/inputs/input_data.json')) as f:
+    global input_data
     input_data = json.load(f)
 
 def file_filter(theDir, theList):
@@ -130,23 +135,151 @@ def prepare():
 
 prepare()
 
-def do_run():
-    "stub of code to do a single simulation run"
-    # --overwrite is a dangerous option.
-    cmd = [MYNODE, MYMC]+("run 2 0 345 --json --overwrite --python".split())+[MYPY]
-    r = subprocess.Popen(cmd, 
-                        stdout=subprocess.PIPE,
-                        stderr=subprocess.STDOUT,
-                        text=True)
-    for line in r.stdout: # type: ignore
-        if not line:
-            break
-        try:
-            data = json.loads(line)
-        except json.decoder.JSONDecodeError:
-            data = line.rstrip()
-            print("Encountered non-JSON output from mc runSims, treating as text.")
-        print(data)
+class AbstractRun:
+    """Describes and manages a single `mc run` invocation.
+    A run may cover one more scenarios (`.inp` files) and may 
+    cover all or some of the iterations of interest.
+    A run takes place in a single directory, which takes
+    the role of root of the data directories for a project.
 
-    print(f"Done with status {r.returncode}.")
-    r.wait(10)  # wait for it to finish, if it hasn't already
+    Subclasses must implement the following methods
+    root()->Path the top level directory from which the simulations run
+    name()->str  a human-friendly name for the run, usual same as last 
+                  component of root
+    lasti()->int  last iteration number completed
+    startTime()->DateTime or None.  When this whole run began.
+    lastiTime()->DateTime or None. When iteration lasti finished.
+    averageTime()->timedelta Average time for one iteration.
+    longestTime()->timedelta longest time for one iteration
+    shortestTime()->timedelta shortest time for one iteration
+    The timing information should exclude iteration 0 if possible,
+    since it involves less processing.
+    remainingIterations()  number iterations left
+    completeIterations() number of iterations completed
+    averageTimeRemaining() timedelta until completion
+    optimisticTimeRemaining()
+    pessimisticTimeRemaining()
+    completionTime() DateTime estimated based on averageTime
+    optimisticCompletionTime() DateTime
+    pessimisticCompletionTime() DateTime
+
+    The system hits patches of extreme slowness, and so the length
+    of time an iteration takes is expected to vary.  The remaining
+    iterations may occur during an unusually slow or fast period;
+    the optimistic estimates assume remining iterations will be fast,
+    and the pessimistic ones assume it will be slow.
+
+    """
+    _instances = {}  # keys are ids, values are instances of AbstractRun subclasses
+
+    @staticmethod
+    def _newrun(aRun: "AbstractRun")->int:
+        "register a new run object, returning and setting its id"
+        i = len(AbstractRun._instances)+1
+        aRun._id = i
+        AbstractRun._instances[i] = aRun
+        return i
+    
+    def __init__(self):
+        self._newrun(self)
+
+class SingleScenarioRun(AbstractRun):
+    """Does a complete run of a single .inp scenario.
+
+    Currently runs with --overwrite, a dangerous option.
+    This is to permit repeated testing.
+    """
+    def __init__(self, parallelDir: Path, scenario: str, iterations=1001, seed=345):
+        super().__init__()
+        self._root = parallelDir / scenario
+        self._scenario = scenario
+        self._cmd = [MYNODE, MYMC, "run", str(iterations), "0", str(seed),
+                     "--json", "--overwrite", "--python", MYPY]
+        self._niter = iterations
+        self._lasti = -1
+        self._startTime = None
+        self._status = "starting"
+
+    def root(self):
+        "top directory for data files. Will be working directory for programs."
+        return self._root
+    
+    def name(self)->str:
+        "friendly name for self"
+        return self._scenario
+    
+    def lasti(self)->int:
+        """last iteration completed.
+        This is the index number of the iteration; if a run is iterations
+        500-600 and 501 is the last one completed, this function returns 501,
+        not 1 or 2.
+        <0 means nothing done
+        """
+        return self._lasti
+    
+    def remainingIterations(self)->int:
+        "Number of iterations still to go"
+        # this logic would not work for partial runs
+        return self._niter - self._lasti-1
+    
+    def completeIterations(self)->int:
+        "Iterations done, remembering we start at 0"
+        return 1+self._lasti
+    
+    async def run(self, switchboard)->int:
+        """Run the job, reporting results to switchboard in real time.
+        """
+        self._status = "running"
+        p = await asyncio.create_subprocess_exec(*cmd, 
+                                stdout=subprocess.PIPE,
+                                stderr=subprocess.PIPE)
+        taskout = None
+        taskerr = None
+        while not (p.stdout.at_eof() and p.stderr.at_eof()):
+            if taskout is None:
+                taskout = asyncio.create_task(p.stdout.readline(), name="stdout")
+            if taskerr is None:
+                taskerr = asyncio.create_task(p.stderr.readline(), name="stderr")
+            done, pending = await asyncio.wait(
+                [taskout, taskerr],
+                return_when=asyncio.FIRST_COMPLETED)
+            for s in done:
+                line = s.result()
+                # I generally get back 0 byte string for stderr even when nothing was written to stderr
+                n = len(line)
+                if n:
+                    line = line.decode().rstrip()
+                if s.get_name() == "stderr":
+                    taskerr = None
+                    if n:
+                        # everything to stderr is plain text
+                        # make fake JSON object
+                        m = {"type": "ERR", "text": line,
+                             "runid": self._id, "lasti": self._lasti}
+                        self._failed(m)
+                        switchboard.message_obj(m)
+
+                else:
+                    taskout = None
+                    if n:
+                        try:
+                            data = json.loads(line)
+                            if data["type"] == "ERR":
+                                self._failed(data)
+                        except json.decoder.JSONDecodeError:
+                            data = line.rstrip()
+                            data = {"type": "stdout", "text": data,
+                                    "runid": self._id, "lasti": self._lasti}
+                        switchboard.message_obj(data)
+                            
+
+        if self._status != "error":
+            self._status = "done"
+        return p.returncode
+
+    def _failed(self, obj):
+        """Note failure with associated JSON object
+        Should I abort here?"""
+        self._status = "error"
+        self._status_info = obj
+

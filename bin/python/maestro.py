@@ -95,9 +95,9 @@ async def main(basics: Basics):
     switch.addSyncFunction(StupidLogfile(basics.pdir / "runlog.txt"))
     runs = [SingleScenarioRun(basics, scenario, iterations=2, seed=345).run(switch)
              for scenario in basics.inp_files ]
-    x = switch.message_obj({"type": "INFO", "text": "Maestro begins {len(runs)} parallel runs at {datetime.now()}\n"})
+    x = switch.message_obj({"type": "INFO", "text": f"Maestro begins {len(runs)} parallel runs at {datetime.now()}\n"})
     rvals = await asyncio.gather(*runs)
-    x = await switch.message_obj({"type": "INFO", "text": "Maestro finishes {len(runs)} parallel runs at {datetime.now()}\n"})
+    x = await switch.message_obj({"type": "INFO", "text": f"Maestro finishes {len(runs)} parallel runs at {datetime.now()}\n"})
     switch.close()
 
 asyncio.run(main(basics))

@@ -125,7 +125,7 @@ class SingleScenarioRun(AbstractRun):
                         m = {"type": "ERR", "text": line,
                              "runid": self._id, "lasti": self._lasti}
                         self._failed(m)
-                        switchboard.message_obj(m)
+                        await switchboard.message_obj(m)
 
                 else:
                     taskout = None
@@ -138,7 +138,7 @@ class SingleScenarioRun(AbstractRun):
                             data = line.rstrip()
                             data = {"type": "stdout", "text": data,
                                     "runid": self._id, "lasti": self._lasti}
-                        switchboard.message_obj(data)
+                        await switchboard.message_obj(data)
                             
 
         if self._status != "error":

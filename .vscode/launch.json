@@ -15,6 +15,15 @@
             "cwd": "C:\\Users\\rdboylan\\Documents\\KBD\\MC_SELECT_06.02.2025"
         },
         {
+            "name": "Python: TestData2",
+            "type": "debugpy",
+            "request": "launch",
+            "program": "${file}",
+            "console": "integratedTerminal",
+            "justMyCode": true,
+            "cwd": "C:\\Users\\rdboylan\\Documents\\KBD\\TestData2"
+        },
+        {
             "name": "Python: Current File",
             "type": "debugpy",
             "request": "launch",

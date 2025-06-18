@@ -5,7 +5,8 @@
     "python.testing.unittestEnabled": false,
     "python.testing.pytestEnabled": true,
     "python.analysis.extraPaths": [
-        "bin\\python"
+        "bin\\python",
+        "./bin/python/symphony"
     ],
     "cSpell.words": [
         "MYMC",

@@ -53,22 +53,28 @@ def prepare_one(inp_file, basics: "Basics"):
     The one exception is that the MC directory will be a symlink back to
     an appropriately named directory MC_{inp_file} under the main project.
     """
-    realMC = basics.DATADIR / f"MC_{inp_file}"
-    realMC.mkdir(exist_ok=True)
+    if inp_file:
+        realMC = basics.DATADIR / f"MC_{inp_file}"
+        realMC.mkdir(exist_ok=True)
     pproj = basics.pdir / inp_file  # will be created by copytree
     shutil.copytree(basics.DATADIR, pproj, ignore=AFilter(basics))
-    (pproj / "MC").symlink_to(realMC, target_is_directory=True)
-    (pproj / "MC" / "inputs").mkdir()
+    if inp_file:
+        (pproj / "MC").symlink_to(realMC, target_is_directory=True)
+    (pproj / "MC" / "inputs").mkdir(parents=True)
     custom = basics.input_data.copy()
-    custom["inp_files"] = [inp_file]
+    if inp_file:
+        custom["inp_files"] = [inp_file]
     with open(pproj / "MC" / "inputs" / "input_data.json", 'w') as f:
         json.dump(custom, f, indent=4)
     # probably the next could be a symlink, but it is safer to copy
     shutil.copy2(basics.inp_distribution, pproj / "MC" / "inputs" / "inp_distribution.txt")
 
 
-def prepare(basics: "Basics"):
-    """Prepare directories for simulation"""
+def prepare(basics: "Basics", stemcell=None):
+    """Prepare directories for simulation
+    If stemcell is a string or Path this will make a single copy
+    of the directory to that location.
+    """
 
     basics.inp_files = basics.input_data['inp_files']
     basics.pdir = Path("./parallel")
@@ -80,5 +86,9 @@ def prepare(basics: "Basics"):
         if not inp_distribution.exists():
             raise FileNotFoundError("inp_distribution.txt not found in MC/inputs or top directory.")
     basics.inp_distribution = inp_distribution
-    for inp_file in basics.inp_files:
-        prepare_one(inp_file, basics)
+    if stemcell:
+        basics.pdir = Path(stemcell)
+        prepare_one("", basics)
+    else:
+        for inp_file in basics.inp_files:
+            prepare_one(inp_file, basics)

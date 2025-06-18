@@ -42,7 +42,7 @@ import sys
 mysymphony = str((Path(__file__).parent) / "symphony")
 if mysymphony not in sys.path:
     sys.path.append(mysymphony)
-from prepare import prepare, prepareOne
+from prepare import prepare, prepare_one
 from switchboard import SwitchBoard
 from message_handlers import *
 from run import *
@@ -101,3 +101,4 @@ async def main(basics: Basics):
     switch.close()
 
 asyncio.run(main(basics))
+#prepare(basics, stemcell="../TestData2")

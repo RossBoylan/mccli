@@ -1,3 +1,12 @@
-from .test_dir.fred import silly
+from pathlib import Path
+import sys
+
+# There has got to be a better way
+# Modify path so we can pickup my parts, regardless of cwd
+target = str((Path(__file__).parent) / "test_dir")
+if target not in sys.path:
+    sys.path.append(target)
+from fred import silly
+
 silly()
 

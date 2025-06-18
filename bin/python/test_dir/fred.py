@@ -1,3 +1,3 @@
 def silly():
-    global MAGIC
+    nonlocal MAGIC
     print(f"silly {MAGIC} function of fred.py called")

@@ -42,7 +42,8 @@ import sys
 mysymphony = str((Path(__file__).parent) / "symphony")
 if mysymphony not in sys.path:
     sys.path.append(mysymphony)
-from prepare import prepare, prepare_one
+# DEBUG: prepare_basics is for testing, maybe prepare_one too
+from prepare import prepare, prepare_one, prepare_basics
 from switchboard import SwitchBoard
 from message_handlers import *
 from run import *
@@ -89,7 +90,8 @@ async def main(basics: Basics):
     """top-level driver.
     Ordinarily prepares and runs the simulations.
     """
-    prepare(basics)
+    # DEBUG.  Next line usually prepare()
+    prepare_basics(basics)
     switch = SwitchBoard()
     switch.addSyncFunction(DumbTerminalLog())
     switch.addSyncFunction(StupidLogfile(basics.pdir / "runlog.txt"))

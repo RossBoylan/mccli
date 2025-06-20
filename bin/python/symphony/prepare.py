@@ -69,25 +69,43 @@ def prepare_one(inp_file, basics: "Basics"):
     # probably the next could be a symlink, but it is safer to copy
     shutil.copy2(basics.inp_distribution, pproj / "MC" / "inputs" / "inp_distribution.txt")
 
-
-def prepare(basics: "Basics", stemcell=None):
-    """Prepare directories for simulation
-    If stemcell is a string or Path this will make a single copy
-    of the directory to that location.
+def prepare_basics(basics: "Basics", stemcell=None):
     """
+    Insert key values into basics but make no changes on disk.
 
+    This here as a convenience to later runs after prepare() has already executed.
+    Sets
+    inp_files: list[str] names (without extension or path) of .inp files (scenarios)
+    pdir: Path  top directory for all parallel runs
+    inp_distribution: Path  best place to find the distribution file
+
+    Will raise an error if a distribution file can't be found.
+    pdir is not necessarily an existing directory.
+    """
     basics.inp_files = basics.input_data['inp_files']
-    basics.pdir = Path("./parallel")
-    if not basics.pdir.exists():
-        basics.pdir.mkdir()
+    if stemcell:
+        basics.pdir = Path(stemcell)
+    else:
+        basics.pdir = Path("./parallel")
     inp_distribution = Path('MC/inputs/inp_distribution.txt')
     if not inp_distribution.exists():
         inp_distribution = Path("./inp_distribution.txt")
         if not inp_distribution.exists():
             raise FileNotFoundError("inp_distribution.txt not found in MC/inputs or top directory.")
     basics.inp_distribution = inp_distribution
+
+def prepare(basics: "Basics", stemcell=None):
+    """Prepare directories for simulation
+    If stemcell is a string or Path this will make a single copy
+    of the directory to that location.
+
+    Adds more information to basics, as described in prepare_basics().
+    """
+    prepare_basics(basics, stemcell)
+    if not basics.pdir.exists():
+        basics.pdir.mkdir()
+
     if stemcell:
-        basics.pdir = Path(stemcell)
         prepare_one("", basics)
     else:
         for inp_file in basics.inp_files:

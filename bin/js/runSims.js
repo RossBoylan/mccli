@@ -41,6 +41,17 @@ let mylog = (msg, type="INFO") => {
 		console.log(msg)
 }
 
+let mylog_json (obj, type="INFO") => {
+	/* obj is a message that is already in the form of
+	a JSON object */
+	obj.type = type
+	s = JSON.stringify(obj)
+	if (json_logging)
+		process.stdout.write(s)
+	else
+		console.log(msg)
+}
+
 let outFileName = (inp_file) => {
 	let file_data = fs.readFileSync(`${inp_file}_mc0.inp`,'ascii');
 	if (file_data.match(/(?:\r\n|\n)\S+\.out/)){
@@ -52,7 +63,7 @@ module.exports = (argv) => {
 
 	// stick arg.json in module level variable so logging functions know what to do
 	json_logging = argv.json;
-	mylog(JSON.stringify(argv), "DETAIL");
+	mylog_json(argv, "ARGS");
 
 	let simRuns = () => {
 	
@@ -238,7 +249,7 @@ module.exports = (argv) => {
 		};
 		let out = JSON.stringify(runData, null, 4);
 		if (json_logging)
-			mylog(out, "DETAIL")
+			mylog_json(runData, "DETAIL")
 		fs.appendFileSync('MC/results/.run', out);
 		out = `  simulations completed in ${hours>0 ? hours + ' hours and ' : ''}${minutes} minutes!`;
 		if (json_logging)

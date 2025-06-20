@@ -1,6 +1,7 @@
 import asyncio
 import json
 from pathlib import Path
+import re
 
 class AbstractRun:
     """Describes and manages a single `mc run` invocation.
@@ -67,6 +68,8 @@ class SingleScenarioRun(AbstractRun):
         self._startTime = None
         self._status = "starting"
 
+    NOT_ERR_RE = re.compile("^((Debugger (listening on|attached))|For help, see|Waiting for the debugger)", re.I)
+
     def root(self):
         "top directory for data files. Will be working directory for programs."
         return self._root
@@ -122,9 +125,14 @@ class SingleScenarioRun(AbstractRun):
                     if n:
                         # everything to stderr is plain text
                         # make fake JSON object
-                        m = {"type": "ERR", "text": line,
+                        if self.NOT_ERR_RE.match(line):
+                            this_type = "INFO"
+                        else:
+                            this_type = "ERR"
+                        m = {"type": this_type, "text": line,
                              "runid": self._id, "lasti": self._lasti}
-                        self._failed(m)
+                        if this_type == "ERR":
+                            self._failed(m)
                         await switchboard.message_obj(m)
 
                 else:

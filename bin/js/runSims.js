@@ -39,13 +39,13 @@ let mylog = (msg, type="INFO") => {
 	})+'\n')
 	else
 		console.log(msg)
-}
+};
 
-let mylog_json (obj, type="INFO") => {
+let mylog_json = (obj, type="INFO") => {
 	/* obj is a message that is already in the form of
 	a JSON object */
 	obj.type = type
-	s = JSON.stringify(obj)
+	let s = JSON.stringify(obj)
 	if (json_logging)
 		process.stdout.write(s)
 	else

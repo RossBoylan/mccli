@@ -17,7 +17,7 @@ class StupidLogfile:
 
     def __call__(self, obj, json_str):
         "log the message"
-        self._fout.write(json_str)
+        self._fout.write(json_str+"\n")
 
     def close(self):
         self._fout.close()
@@ -29,7 +29,7 @@ class DumbTerminalLog:
     No filtering out unimportant info.
     """
     def __call__(self, obj, json_str):
-        print(json_str, end="")
+        print(json_str)
 
     def close(self):
         "Leave it open for others"

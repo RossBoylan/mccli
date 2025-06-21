@@ -103,6 +103,22 @@ module.exports = (argv) => {
         let res = null;
         let i0 = argv.start
         let i1 = ITERATIONS+i0-1
+
+		let runData = {
+			startTime: start.toLocaleString("en-US", {timeZone: "America/Los_Angeles"}),
+			iterations: ITERATIONS,
+			model: inputsData.model,
+			inp_files: inputsData.inp_files,
+                dat_files: inputsData.dat_files.map((fileData) => fileData.filename),
+                i0: i0,
+                i1: i1,
+            seed: argv.seed
+		};
+		let out = JSON.stringify(runData, null, 4);
+		if (json_logging)
+			mylog_json(runData, "DETAIL")
+		fs.appendFileSync('MC/results/.run', out);
+
 		for (let i = i0; i <= i1; i++){
 
 			let startIter = new Date();
@@ -236,21 +252,11 @@ module.exports = (argv) => {
 		let totalS = (end.getTime() - start.getTime())/1000;
 		let hours = Math.floor(totalS / (60 * 60));
 	  	let minutes = Math.floor(totalS / 60) % 60;
-	  	let runData = {
-			startTime: start.toLocaleString("en-US", {timeZone: "America/Los_Angeles"}),
-			endTime: end.toLocaleString("en-US", {timeZone: "America/Los_Angeles"}),
-			iterations: ITERATIONS,
-			model: inputsData.model,
-			inp_files: inputsData.inp_files,
-                dat_files: inputsData.dat_files.map((fileData) => fileData.filename),
-                i0: i0,
-                i1: i1,
-            seed: argv.seed
-		};
-		let out = JSON.stringify(runData, null, 4);
+	  	runData.endTime = end.toLocaleString("en-US", {timeZone: "America/Los_Angeles"});
+		out = JSON.stringify(runData, null, 4);
 		if (json_logging)
 			mylog_json(runData, "DETAIL")
-		fs.appendFileSync('MC/results/.run', out);
+		fs.appendFileSync('MC/results/.run', out); // or maybe just write end time
 		out = `  simulations completed in ${hours>0 ? hours + ' hours and ' : ''}${minutes} minutes!`;
 		if (json_logging)
 			mylog(out, "DONE")

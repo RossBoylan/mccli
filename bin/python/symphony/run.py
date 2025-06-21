@@ -1,4 +1,5 @@
 import asyncio
+from datetime import datetime, timedelta
 import json
 from pathlib import Path
 import re
@@ -142,6 +143,9 @@ class SingleScenarioRun(AbstractRun):
                             data = json.loads(line)
                             if data["type"] == "ERR":
                                 self._failed(data)
+                            data["runid"] = self._id
+                            data["lasti"] = self._lasti
+                            self._special_handling(data)
                         except json.decoder.JSONDecodeError:
                             data = line.rstrip()
                             data = {"type": "stdout", "text": data,
@@ -158,3 +162,21 @@ class SingleScenarioRun(AbstractRun):
         Should I abort here?"""
         self._status = "error"
         self._status_info = obj
+
+    def _special_handling(self, obj):
+        """
+        Check obj, an object representing a JSON message,
+        for any special processing.  May modify obj.
+        """
+        if obj["type"] == "PROGRESS":
+            # TO DO record progress in matrix
+
+            # strings that are integers are already converted to in
+            # for a in ("remaining", "iteration"):
+            #     obj[a] = int(obj[a])
+            for a in ("startTime", "endTime"):
+                obj[a] = datetime.fromtimestamp(obj[a]/1000)
+            a = "lastTime"
+            obj[a] = timedelta(milliseconds=obj[a])
+            self._lasti = obj["iteration"]
+

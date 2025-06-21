@@ -34,3 +34,12 @@ class DumbTerminalLog:
     def close(self):
         "Leave it open for others"
         pass
+
+class TimerLog:
+    "Collect timing info about individual iterations, all runs"
+    def __init__(self, niter: int, nrun: int):
+        "there will be niter iterations for each of nrun parallel runs"
+        # let's see if we can stick with NumPy
+        # numpy.ma has masked arrays with missing values
+        # To Do.
+        self._start = [0]

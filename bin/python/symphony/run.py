@@ -174,9 +174,14 @@ class SingleScenarioRun(AbstractRun):
             # strings that are integers are already converted to in
             # for a in ("remaining", "iteration"):
             #     obj[a] = int(obj[a])
-            for a in ("startTime", "endTime"):
-                obj[a] = datetime.fromtimestamp(obj[a]/1000)
-            a = "lastTime"
-            obj[a] = timedelta(milliseconds=obj[a])
+
+            # random python objects are not serializable by
+            # json.dumps without further help.
+            # It is available, https://stackoverflow.com/q/11875770/4409451,
+            # but for now skip it.  Maybe should be done as a message handler.
+            # for a in ("startTime", "endTime"):
+            #     obj[a] = datetime.fromtimestamp(obj[a]/1000)
+            # a = "lastTime"
+            # obj[a] = timedelta(milliseconds=obj[a])
             self._lasti = obj["iteration"]
 

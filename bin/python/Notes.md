@@ -210,6 +210,27 @@ Most of the messages are in `JSON`, which is irregular (not fixed rows and colum
 
 As noted just before this section, there are challenges to using databases with `async` code, and perhaps with other event loops as well.
 
+Matrices of Time
+-----------------
+
+The underlying `JavaScript` monte-carlo code stores time as milliseconds past the epoch (start of 1970), and durations as milliseconds.  It sometimes  convert these to various printable forms, using Los Angeles as the time zone.  Since I want to compute expected completion for the entire batch, and perform other timing calculations too, the question arises how I should store it.
+
+I'll use matrices of iteration x run, where run is a single batch of simulations, indexed by integer.  They may have start, end, or duration times.  To reduce footprint (relative to `pandas` or `scipy`) I'll use `numpy`.  I will store times as 64 bit integers, and only convert to human form just before presentation.  And I will use `np.nan` for values not set yet.
+
+`numpy` has datatypes `datetime64` and `timedelta64`, corresponding to `Python`'s `datetime.datetime` and `datetime.timedelta`, and so it seemed natural to use them.  But the handling of missing values was problematic.  Both types have an instance know at `NaT` for "Not a Time" for missing values, and these appear to propagate as one would hope.  But that means a sum (I tried) or mean (I presume) will be `NaT` if any of the components are.  `numpy` has a bunch of `nan*` functions that calculate *after* dropping missing values; they do not appear to work `NaT`, as opposed to `np.nan`, for which they were designed.
+
+One could either compute an approprite mask on the fly, or just use the known to be good subset of the data.  At least for my initial case, that's pretty easy to track.  But that is both programming and execution time overhead.
+
+Another option is to use `numpy.ma` for "masked" arrays, which have a separate boolean matrix indicating which cells of the data matrix are invalid.  The `numpy` [website](https://numpy.org/devdocs/reference/module_structure.html) counsels against their use: "Prefer not to use these namespaces for new code. There are better alternatives and/or this code is deprecated or isn’t reliable.".  The masked array namespace is described as "not very reliable, needs an overhaul".  I don't see any specific suggestion of what to use instead.  I take them at their word and avoid it.
+
+That leaves me with integer matrices that have `np.nan` for (currently) unknown values and the `nan*` functions for summarizing them.
+
+It's unclear to me exactly how time zones interact with the millisecond value.  3 AM here is currently 10 AM UTC; I'm not sure if the milliseconds value is til 3 or 10.  `numpy` time types are not aware of timezones.
+
+There are all kinds of subtleties with time, including leap seconds. `numpy` says it follows the Unix convention of treating every minute as 60 seconds.  Real clocks have leap seconds added from time to time (~ a few times in a decade).  And there are the complications of timezones and daylight saving, which might make naive times skip forward or back.  And there are differences in the range of dates that are representable, or considered valid (e.g., use of Gregorian dates before the calendar was introduced.)  The precision may also vary.
+
+
+
 Log
 ===
 

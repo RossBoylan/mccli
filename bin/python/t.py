@@ -1,14 +1,30 @@
-from pathlib import Path
-import sys
+if False:
+    # from pathlib import Path
+    import sys
 
-MAGIC=888
+    MAGIC=888
 
-# There has got to be a better way
-# Modify path so we can pickup my parts, regardless of cwd
-target = str((Path(__file__).parent) / "test_dir")
-if target not in sys.path:
-    sys.path.append(target)
-from fred import silly
+    # There has got to be a better way
+    # Modify path so we can pickup my parts, regardless of cwd
+    target = str((Path(__file__).parent) / "test_dir")
+    if target not in sys.path:
+        sys.path.append(target)
+    from fred import silly
 
-silly()
+    silly()
 
+import numpy as np
+a = np.array([10, 13, 4])
+print(a, np.diff(a))
+
+d=np.array(['2000-10-11', '2000-10-13', '2000-10-05'], dtype='datetime64')
+print(d, np.diff(d))
+
+## now with missing
+a[2] = np.nan
+ad = np.diff(a)
+print(f"a = {a}, diff = {ad}, mean diff = {np.mean(ad)}, nan mean = {np.nanmean(ad)}")
+
+d[2] = np.datetime64("NaT")
+dd = np.diff(d)
+print(f"d = {d}, diff = {dd}, mean diff = {np.mean(dd)}, nan mean = {np.nanmean(dd)}")

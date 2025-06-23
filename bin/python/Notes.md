@@ -223,7 +223,13 @@ One could either compute an approprite mask on the fly, or just use the known to
 
 Another option is to use `numpy.ma` for "masked" arrays, which have a separate boolean matrix indicating which cells of the data matrix are invalid.  The `numpy` [website](https://numpy.org/devdocs/reference/module_structure.html) counsels against their use: "Prefer not to use these namespaces for new code. There are better alternatives and/or this code is deprecated or isn’t reliable.".  The masked array namespace is described as "not very reliable, needs an overhaul".  I don't see any specific suggestion of what to use instead.  I take them at their word and avoid it.
 
-That leaves me with integer matrices that have `np.nan` for (currently) unknown values and the `nan*` functions for summarizing them.
+That leaves me with integer matrices that have `np.nan` for (currently) unknown values and the `nan*` functions for summarizing them.  **But it doesn't work. `numpy` has no integer `NaN`.**
+
+`pandas` has `NaT` time values, and supposedly they are handled as other NA's are. But the **best solution seems to be to record time as seconds**, a `float` value = time from `javascript`/1000.  This is also easier for human interpretation.
+
+  * Division by two integers, even 1/1, yields a `float` in `Python`.
+  * Double precision floating point, which it uses, has 15-17 decimal digits of precision.
+  * The current time in milliseconds is 13 digits.  So there should be no loss of precision.
 
 It's unclear to me exactly how time zones interact with the millisecond value.  3 AM here is currently 10 AM UTC; I'm not sure if the milliseconds value is til 3 or 10.  `numpy` time types are not aware of timezones.
 

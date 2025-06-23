@@ -17,14 +17,14 @@ import numpy as np
 a = np.array([10, 13, 4])
 print(a, np.diff(a))
 
-d=np.array(['2000-10-11', '2000-10-13', '2000-10-05'], dtype='datetime64')
+d=np.array([1750467809.396 ,1750467912.724, 1750467896.259])
 print(d, np.diff(d))
 
 ## now with missing
-a[2] = np.nan
-ad = np.diff(a)
-print(f"a = {a}, diff = {ad}, mean diff = {np.mean(ad)}, nan mean = {np.nanmean(ad)}")
+# a[2] = np.nan
+# ad = np.diff(a)
+# print(f"a = {a}, diff = {ad}, mean diff = {np.mean(ad)}, nan mean = {np.nanmean(ad)}")
 
-d[2] = np.datetime64("NaT")
+d[2] = np.nan
 dd = np.diff(d)
 print(f"d = {d}, diff = {dd}, mean diff = {np.mean(dd)}, nan mean = {np.nanmean(dd)}")

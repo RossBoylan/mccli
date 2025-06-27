@@ -36,12 +36,8 @@ let argv = yargs
         })
         .option('json', {
             describe: 'Format output using JSON, ordinarily for use by another program.  All to stdout.  '+
-            'All objects have a type, one of PROGRESS (simulation progress), '+
-            'SUMMARY (after all sims complete), DETAIL (details of all simulations), '+
-            'DONE (very last message), or ERR (error).  All have a text field with the main message, '+
-            'and some have additional fields.  See code for details.  '+
-            'Note that programs invoked by run-sims will still generate non-JSON output on stdout and, '+
-            'possibly, stderr.',
+            'All objects have a `type:`, and a `text:` field with the main message, '+
+            'and some have additional fields.  See maestro.md or the code for details.  ',
             boolean: true
         })
         .option('overwrite', {

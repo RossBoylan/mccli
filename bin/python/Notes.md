@@ -153,6 +153,8 @@ Challenge: Subprocess Management
 --------------------------------
 To run in parallel, each simulation must run in its own process and its own directory.  Using threads is possible in principle, but `python` threads are ineffective because of the global lock.  And threads are messy anyway. While I could create separate python processes, that adds an unnecessary extra layer to the invocation of `node`.  The most effective way to deal with multiple long-lived processes is to use the `asyncio` module and coroutines to launch the different runs.
 
+### Capturing output as it occurs
+
 A perennial weak spot in `python` is getting output from a subprocess while it runs, rather than having to wait until it completes.  That output has progress reports, and so is essential for monitoring progress.  The advice in the documenation is to use `communicate()` to avoid deadlocks, but, as the documentation says, this only returns after the process exits.
 
 I fond various questions about this problem but not a lot of solutions.  One suggestion was to use `readLine()` on the file handle (pipe), which worked for me once I ensured `\n` was written at the end of output lines, and once I added a rather cumbersome `asycio.Task`-based approach so I could wait on `stdout` and `stderr` separately.
@@ -161,7 +163,28 @@ In practice, it seems both tasks complete at once, even though the `stderr` read
 
 There are alternative methods of communication: shared memory, named pipes, other IPC frameworks (I considered `RabbitMQ`), even reading from a file as it is written.  But pipes seemed lightest weight and most straightforward.
 
-One consideration is that the node process being invoked in turn invokes other processes, `python` and `fortran` programs.  So even if the main `node` code sends everything as a `JSON` message, there may still be traffic directly to `stdin` and `stdout` that it does not control.
+### Sub-subprocess output
+
+`runSims()` is the `mccli` `javascript` function that runs the simulations.  It invokes other processes, `python` and `Fortran` programs.  So even if the main `node` code sends everything as a `JSON` message, there may still be traffic directly to `stdin` and `stdout` that it does not control.  The `javascript` function `runSims()` attempts to capture subprocess output and convert it to `JSON`.  `maestro.py` captures both `stdout` and stderr`, separately, and attempts to recognize non-`JSON` output and convert it to `JSON`.
+
+### `JSON` format
+
+Every `JSON` message should have `type` field at the top level.  Here are the current values:
+
+  * `PROGRESS` reports on progress for individual iterations.  One is issued at the start of an iteration, and another, with more information, is sent at iteration end.
+  * `SUMMARY` after all iterations complete
+  * `DETAIL` details of all simulations
+  * `DONE` very last message
+  * `ERR` error.
+  * `INFO` various informational messages
+  * `ARGS` arguments passed to `runSims()`
+  * `DETAIL` details about the entire run, emitted once at the start and once at the end.  Also written to `MC\results\.run`.
+  * `SUMMARY` start and end of the `sum_results.py` run after all iterations complete.
+ 
+ All have a `text` field with the main message and some have additional fields.  See code for details. 
+
+
+
 
 Challenge: `asyncio`
 --------------------

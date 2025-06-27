@@ -124,6 +124,16 @@ module.exports = (argv) => {
 			let startIter = new Date();
 			let lastTime = 0;
 
+			if (json_logging) {
+				process.stdout.write(JSON.stringify({
+						type: "PROGRESS",
+						text: "iteration starts",
+						remaining: i1-i,
+						iteration: i,
+						startTime: startIter.getTime()
+				})+'\n');
+			}
+
 			if(i == 0) {
 				res = shell.exec(py+` ${__dirname}/../python/montecarlo.py -z -s`,{silent:true});
 				if (res.code !== 0) {

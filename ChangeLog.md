@@ -1,4 +1,24 @@
 Change Log for `mccli`
+* 3.5.0
+  * Add `maestro.py` to run jobs in parallel automatically.  Do *not* use without
+  checking that it is using the intended directories.  You should launch it from the 
+  project/data directory top level *after* having run `mc init` and done the file setup
+  it suggests.  See the "Parallel" section in [notes](bin/python/Notes.md) for more.
+  * Add `maestro.md` documenting the use of the program, and material in `Notes.md` about
+  implementation.
+  * Add `--json` and the dangerous `--overwrite` options for `mc run-sims`. These 
+  are intended for use by another program that controls the `mc` program.
+
+  The remaining changes are  not tied to parallel runs.
+
+  * Remove pin of `inquirer`, a `node` module, to an old version as recent
+  versions restore packaging for traditional (CJS) modules.  Remove related installation
+  instructions.  However, the pin removal was only partly effective; it is still locked
+  to the old v8.
+  * Add `my.ps1`, a sample `PowerShell` setup script.  You will need to customize it so
+  that it moves to your project directory as the last step.  This sets up abbreviations
+  for running `mc`.
+
 * 3.4.0 2025-04-02 ross.boylan@ucsf.edu
   * Support new .dat format for HF model (qol and shrt)
     Previous version induced correlations between variables we want to consider

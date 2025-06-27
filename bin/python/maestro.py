@@ -33,7 +33,7 @@
 # Once execution finishes various cleanup or file copying operations 
 # may be necessary.
 import asyncio
-from datetime import datetime
+from datetime import datetime, timedelta
 import json
 from pathlib import Path
 import shutil
@@ -93,10 +93,12 @@ async def main(basics: Basics):
     # DEBUG.  Next line usually prepare()
     prepare_basics(basics)
     switch = SwitchBoard()
-    switch.addSyncFunction(DumbTerminalLog())
-    switch.addSyncFunction(StupidLogfile(basics.pdir / "runlog.txt"))
-    runs = [SingleScenarioRun(basics, scenario, iterations=2, seed=345).run(switch)
-             for scenario in basics.inp_files ]
+    niter = 2
+    nrun = len(basics.inp_files) # type: ignore
+    switch.addSyncFunction(TerminalTimerLog(niter, nrun, updateInterval=timedelta(minutes=1)))
+    switch.addSyncFunction(StupidLogfile(basics.pdir / "runlog.txt")) # type: ignore
+    runs = [SingleScenarioRun(basics, scenario, iterations=niter, seed=345).run(switch)
+             for scenario in basics.inp_files ] # type: ignore
     await switch.message_obj({"type": "INFO", "text": f"Maestro begins {len(runs)} parallel runs at {datetime.now()}\n"})
     rvals = await asyncio.gather(*runs)
     await switch.message_obj({"type": "INFO", "text": f"Maestro finishes {len(runs)} parallel runs at {datetime.now()}\n"})

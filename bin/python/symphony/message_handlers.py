@@ -156,10 +156,16 @@ class TerminalTimerLog(TimerLog):
         self._dirty = False   # has anything changed since last report?
         self._onedone = False  # has at least one job finished?  Otherwise no stats.
         self._delay = updateInterval.total_seconds()
+        self._startTime = datetime.now()
+        self._monitor_task = asyncio.create_task(self.monitor())
 
     DAY = timedelta(days=1)
     HOUR = timedelta(hours=1)
     MINUTE = timedelta(minutes=1)
+
+    def cancel(self):
+        "Cancel the monitoring task"
+        self._monitor_task.cancel()
 
     def format_delta(self, delta: float|timedelta)->str:
         """convert a single time duration in seconds into d:h:m, omitting parts that are 0
@@ -206,6 +212,10 @@ class TerminalTimerLog(TimerLog):
         print(f"  time left: {remainings} as of {datetime.now():%a %b %d %H:%M:%S}")
 
     async def monitor(self):
+        """monitor status of run  and report periodically
+        Although the loop could terminate, typically the associated
+        task will be cancelled first.
+        """
         while not np.all(self.iterRemaining() == 0):
             await asyncio.sleep(self._delay)
             self.report()
@@ -221,3 +231,8 @@ class TerminalTimerLog(TimerLog):
         self._dirty = True
         self._onedone = True
         super().setEnd(iter, run, milli)
+        if np.all(self.iterRemaining() == 0):
+            self.cancel()
+            endTime = datetime.now()
+            wallDuration = endTime - self._startTime
+            print(f"Finished {self._niter} iterations of {self._nrun} runs at {endTime:%a %b %d %H:%M}. Took {self.format_delta(wallDuration)}.")

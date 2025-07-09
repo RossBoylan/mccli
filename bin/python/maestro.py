@@ -101,10 +101,8 @@ async def main(basics: Basics):
     runs = [SingleScenarioRun(basics, scenario, iterations=niter, seed=345).run(switch)
              for scenario in basics.inp_files ] # type: ignore
     await switch.message_obj({"type": "INFO", "text": f"Maestro begins {len(runs)} parallel runs at {datetime.now()}\n"})
-    monitor_done = asyncio.create_task(timer_log.monitor())
     rvals = await asyncio.gather(*runs)
     await switch.message_obj({"type": "INFO", "text": f"Maestro finishes {len(runs)} parallel runs at {datetime.now()}\n"})
-    await monitor_done
     switch.close()
 
 asyncio.run(main(basics))

@@ -273,10 +273,9 @@ To Do
   - [ ] Parallel Runs w/maestro.py
     - [ ] TerminalTimerLog
       - [x] errors when all NA
-      - [ ] Never completes
-      I suspect the problem is that the final iteration never sends a
-      `PROGRESS` message at the end, and so `maestro.py` never drives
-      iterations remaining to 0.
+      - [x] Never completes
+      The final iteration was not sending a `PROGRESS` message at the end, and so `maestro.py` never found iterations remaining to 0.
+      - [ ] Report completion immediately, rather than waiting for `_delay`.
       - [ ] Bias throughout the run because quick jobs finish sooner.
       I "dealt" with this for iteration 1 with a warning message.
       - [ ] Races?  I think I'm OK because actually single-threaded.  E.g.,

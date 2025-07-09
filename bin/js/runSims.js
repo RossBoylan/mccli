@@ -230,7 +230,7 @@ module.exports = (argv) => {
 				process.stdout.clearLine();
 				process.stdout.cursorTo(0);
 			}
-			if( i < i1 ){
+			if( i <= i1 ){  /* maestro.py needs to get the i == i1 case */
 				let out = `simulations remaining: ${i1-i} eta:${parseFloat(lastTime*(i1-i)/60000).toFixed(2)}m`;
 				if (json_logging)
 					/* Times are in milliseconds (1/1000 s) since epoch 1/1/1970, midnight UTC. (https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Date/getTime).

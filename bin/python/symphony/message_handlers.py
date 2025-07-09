@@ -62,17 +62,21 @@ class TimerLog:
         self._end = self._start.copy()
         self._delta = self._start.copy() # delta[i, r] = end[i, r] - start[i, r]
         self._gap = self._start.copy() # gap[i, r] = start[i+1, r] - end[i, r]
+        self._niter = niter
+        self._nrun = nrun
 
     def __call__(self, obj, json_str):
-        iter = obj["iteration"]
-        run = obj["runid"]
+        # use get in case there is no key
+        # in which case result is None
+        iter = obj.get("iteration")
+        run = obj.get("runid")
         if obj["type"] == "PROGRESS":
-            s = obj.get("endTime", None)
+            s = obj.get("endTime")
             if s:
                 self.setEnd(iter, run, s)
                 # we should already have the start time
             else:
-                s = obj.get("startTime", None)
+                s = obj.get("startTime")
                 if s:
                     self.setStart(iter, run, s)
         elif obj["type"] == "ERR":
@@ -82,16 +86,18 @@ class TimerLog:
     def setStart(self, iter: int, run: int, milli: int):
         "note that iteration iter of run run started at milli milliseconds since the epoch"
         s = milli/1000  # always a float, even if 1000/1000
-        self._start[iter, run] = s
+        irun = run - 1
+        self._start[iter, irun] = s
         if iter>0:
-            self._gap[iter-1, run] = s - self._end[iter-1, run]
+            self._gap[iter-1, irun] = s - self._end[iter-1, irun]
             self.updateGap(iter-1, run)
 
     def setEnd(self, iter: int, run: int, milli: int):
         "note that iteration iter of run run ended at milli milliseconds since the epoch"
         s = milli/1000
-        self._end[iter, run] = s
-        self._delta[iter, run] = s - self._start[iter, run]
+        irun = run - 1
+        self._end[iter, irun] = s
+        self._delta[iter, irun] = s - self._start[iter, irun]
         self.updateDelta(iter, run)
 
     def delta(self):
@@ -148,6 +154,7 @@ class TerminalTimerLog(TimerLog):
         "Print a summary report every updateInterval"
         super().__init__(iter, nrun)
         self._dirty = False   # has anything changed since last report?
+        self._onedone = False  # has at least one job finished?  Otherwise no stats.
         self._delay = updateInterval.total_seconds()
 
     DAY = timedelta(days=1)
@@ -163,30 +170,33 @@ class TerminalTimerLog(TimerLog):
             return "?"
         if not isinstance(delta, timedelta):
             delta = timedelta(seconds=delta)
-        d = delta/self.DAY
+        d = delta.days
         if d:
             if d == 1:
                 r = "1 day "
             else:
                 r = f"{d} days "
-            delta = delta % self.DAY
+            delta %= self.DAY
         else:
             r = ""
         h = delta//self.HOUR
-        delta %= self.HOUR
+        if h:
+            r += f"{h}h "
+            delta %= self.HOUR
         m = delta / self.MINUTE
-        r += f"{h:02d}h {m:04.1f}m"
+        r += f"{m:4.1f}m"
         return r
 
 
     def report(self):
         "print a short summary"
-        if  not self._dirty:
+        if  not (self._dirty and self._onedone):
             return
+        self._dirty = False
         remain = self.timeRemaining()
         worst = timedelta(seconds=np.nanmax(remain))
         ntogo = self.iterRemaining()
-        atleast_one = np.all(remain)
+        atleast_one = np.all(ntogo < self._niter)
         now = datetime.now()
         eta = now+worst
         if not atleast_one:
@@ -194,7 +204,6 @@ class TerminalTimerLog(TimerLog):
         remainings = ", ".join(self.format_delta(x) for x in remain)
         print(f"ETA {eta:%a %b %d %H:%M} ({self.format_delta(worst)} from now).  iter left: {ntogo}")
         print(f"  time left: {remainings} as of {datetime.now():%a %b %d %H:%M:%S}")
-        self._dirty = False
 
     async def monitor(self):
         while not np.all(self.iterRemaining() == 0):
@@ -210,4 +219,5 @@ class TerminalTimerLog(TimerLog):
     def setEnd(self, iter: int, run: int, milli: int):
         "note that iteration iter of run run ended at milli milliseconds since the epoch"
         self._dirty = True
+        self._onedone = True
         super().setEnd(iter, run, milli)

@@ -270,6 +270,41 @@ Modified test code to write out iteration number.
 To Do
 =====
 
+  - [ ] Parallel Runs w/maestro.py
+    - [ ] TerminalTimerLog
+      - [x] errors when all NA
+      - [ ] Never completes
+      I suspect the problem is that the final iteration never sends a
+      `PROGRESS` message at the end, and so `maestro.py` never drives
+      iterations remaining to 0.
+      - [ ] Bias throughout the run because quick jobs finish sooner.
+      I "dealt" with this for iteration 1 with a warning message.
+      - [ ] Races?  I think I'm OK because actually single-threaded.  E.g.,
+        - [ ] _dirty flag reset during a report.
+        Definitely an issue while in debugger.  Dealt with by moving 
+        clearing the flag to the top of the `report()` function.  With real
+        multithreading the flag might be dirtied before report() finished its
+        calculation.  But that would only lead to an extra report when nothing
+        had changed.
+        - [ ] inconsitencies within calculations
+        E.g., something might be updated between calculating iterations remaining
+        and time remaining.
+        - [ ] `async` is not an absolute guarantee of safety; computations can still
+        be interleaved whenever they yield control, and the yield (`await`) could
+        be hidden in a function called by the function one is considering.
+    - [ ] External review of `maestro.md`
+    - [ ] Extend to parallelizing within a single `.inp` file, i.e., by iteration
+    - [ ] Extend to allow multiple `.inp` in a single run.
+    - [ ] GUI
+      - [ ] raises issues with the event loop.  GUI frameworks have their own.
+    - [ ] database
+      - [ ] to save messages for a single run.
+      - [ ] the messages would most naturally be saved and searched as `JSON`.
+      - [ ] to save information on multiple runs
+      - [ ] also raises event loop issues, at least for some db's.  `SQLite` is
+      allergic to `async`.
+    - [ ] review notes in the Parallel section above for to-do's
+    - [ ] review maestro.md for to-do's
   - [x] Analyze input and output files for `montecarlo.py`.  See above.
   - [x] Pick a testing framework: `pytest` (only alternative in `VSCode` is the older `unittest`)
   - [x] Incorporate montecarlo module into it.  Remarkably undocumented how to do so.  Done by supplementing `sys.path` and using `import`.  Needed one import to get the names at top level, and another to get the module accessible for messing with its global state.  The working directory, at least when I run the test code in the debugger, is the top level project directory.

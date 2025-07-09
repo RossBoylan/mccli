@@ -95,13 +95,16 @@ async def main(basics: Basics):
     switch = SwitchBoard()
     niter = 2
     nrun = len(basics.inp_files) # type: ignore
-    switch.addSyncFunction(TerminalTimerLog(niter, nrun, updateInterval=timedelta(minutes=1)))
+    timer_log = TerminalTimerLog(niter, nrun, updateInterval=timedelta(seconds=45))
+    switch.addSyncFunction(timer_log)
     switch.addSyncFunction(StupidLogfile(basics.pdir / "runlog.txt")) # type: ignore
     runs = [SingleScenarioRun(basics, scenario, iterations=niter, seed=345).run(switch)
              for scenario in basics.inp_files ] # type: ignore
     await switch.message_obj({"type": "INFO", "text": f"Maestro begins {len(runs)} parallel runs at {datetime.now()}\n"})
+    monitor_done = asyncio.create_task(timer_log.monitor())
     rvals = await asyncio.gather(*runs)
     await switch.message_obj({"type": "INFO", "text": f"Maestro finishes {len(runs)} parallel runs at {datetime.now()}\n"})
+    await monitor_done
     switch.close()
 
 asyncio.run(main(basics))

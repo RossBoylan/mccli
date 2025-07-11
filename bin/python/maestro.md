@@ -1,6 +1,19 @@
 Maestro
 =======
 
+Contents
+
+- [Maestro](#maestro)
+- [Purpose](#purpose)
+- [Instructions](#instructions)
+- [Cautions](#cautions)
+- [Message Handlers](#message-handlers)
+- [Requirements](#requirements)
+- [Operation](#operation)
+- [Variations](#variations)
+- [Future](#future)
+
+
 Purpose
 =======
 
@@ -19,15 +32,15 @@ The monte-carlo system and the `Fortran` model it runs are not designed for mult
 Instructions
 ============
 
-  1. Install `mccli` as described in the general [README](../../README.md), if you haven't already.
-  2. Create a project directory, separate from the code, and set up the project for analysis as usual.  Try to avoid extraneous files, as they are likely to be copied many times.
-  3. If you are using  a `Python` virtual environment (you are if you followed the standard `mccli` instructions), activate it.
-  4. Execute subsequent steps from a terminal in the top of the project directory.  Running from the `mccli` directory will not work.
-  5. Run `mc init` as usual, selecting *all* scenarios (`.inp` files) you wish to consider.  Then do any post-init setup necessary to get the project ready for a usual `mc run`.
-  6. Review the [Requirements](#requirements) below.
-  7. Check the code for `maestro.py` in light of the [Cautions](#cautions) below, and make any changes necessary.
-  8. Run `python maestro.py`.  The `python` is there to ensure you get the version associated with your virtual environment.
-  9. When it finishes, if you don't want any of the extra information, delete the `parallel` directory and all its children.  This will retain the `MC_xxx` directories under the main project with the `MC` results.  Ordinarily, most of the space occupied will be there.
+  1. Install `mccli` as described in the general [README](../../README.md), if you haven't already.  This code is in the `parallel` branch, which you can switch to with your favorite `git` tool or `git checkout parallel` from a terminal.
+  2. Review the [Requirements](#requirements) below.  You need a beefy system, and if you are on `MS-Windows` you need a somewhat recent version and/or administrative rights.
+  3. Create a project directory, separate from the code, and set up the project for analysis as usual.  Try to avoid extraneous files, as they are likely to be copied many times.  If you are on `MS-Windows`, success is more likely if the project is on a local drive.
+  8. If you are using  a `Python` virtual environment (you are if you followed the standard `mccli` instructions), activate it.
+  9. Execute subsequent steps from a terminal in the top of the project directory.  Running from the `mccli` directory will not work.
+  10. Run `mc init` as usual, selecting *all* scenarios (`.inp` files) you wish to consider.  Then do any post-init setup necessary to get the project ready for a usual `mc run`.
+  11. Check the code for `maestro.py` in light of the [Cautions](#cautions) below, and make any changes necessary.
+  12. Run `python maestro.py`.  The `python` is there to ensure you get the version associated with your virtual environment.
+  13. When it finishes, if you don't want any of the extra information, delete the `parallel` directory and all its children.  This will retain the `MC_xxx` directories under the main project with the `MC` results.  Ordinarily, most of the space occupied will be there.
 
 
 
@@ -62,7 +75,46 @@ Requirements
 
 Your system must have adequate RAM, disk space, and CPUs to handle the parallel runs.  In testing, each run required 1.6GB of RAM.
 
-This was developed for `MS-Windows` and might have issues on other platforms.  Further, because it creates symbolic links, it requires somewhat recent versions of `Windows` or admin rights.  The current implementation uses symbolic links, not the older junction points (I think: exact behavior depends on `Python`'s `pathlib.Path.symlink_to()` implementation).  Symbolic links work on all `Unix` variants, including `Linux` and `MacOS`.
+This was developed for `MS-Windows` and might have issues on other platforms.  
+
+On the other hand, if you are on `MS-Windows` you may have problems because `maestro.py` creates symbolic links.  That's no problem on `*nix` variants, including `MacOS`, but `MS-Windows` makes it difficult.  It has been made less difficult over time, with `Windows 10` from around 2017 on, as well as `Windows 11`, being easier.  Assuming you have at least that, here are the rules as best I can tell:
+
+    1. If you run `maestro.py` with administrative rights, there should be no problem.
+    2. If you enable developer mode, there should be no problem.
+    3. If your user has `Create symbolic links` rights, it will probably work, although some things I've read indicate this may need to be combined with 2.
+   
+Note that to set developer mode (#2) or add rights to a user (#3) requires administrative privileges, although once they have been done you can run `maestro.py` as a regular user.
+
+With admin rights, `MS-Windows` has had symbolic links from `Vista` onward, though I think initially they were only available for the operating system kernel.
+
+You are more likely to run into trouble if you attempt to run `maestro` for a project on a network drive.
+
+Practically, try the following steps in order until one works:
+
+  1. Run `maestro.py` and see if it works.  If it fails with an error that it can't create a symbolic link, try next option.
+  2. If you can, run `maestro.py` as an administrator.  Typically files have a "run as administrator" option when you right click on them, if you have permissions.  Use that to launch your favorite command prompt and try again.  Do *not* run `maestro.py` directly from the file explorer, as this will likely not have the `Python` virtual environment set properly.
+  3. Have an administrator give you `Create symbolic links` rights.
+  4. Have an administrator enable "Developer Mode" on your machine.  I put this last because it has more wide-ranging effects than 3, including giving everyone rights to create symbolic links.
+   
+See [this useful guide](https://neacsu.net/posts/win_symlinks/) for an illustrated walk-through of all 3 ways of enabling symlinks.
+
+Bear in mind that
+
+  * Symbolic links or Developer Mode weaken system security.
+  * To get recently added rights you must log out and then log back in.
+  * Unlike `Unix` links, `MS-Windows` distinguishes links to directories from links to files.
+  * Even when using a link, it may matter whether the source (where the link is) or the target is local or remote, where "remote" includes network drives that you have mapped.  You can check with following command:
+
+```ps1
+PS C:\Users\rdboylan> fsutil behavior query SymlinkEvaluation
+Local to local symbolic links are enabled.
+Local to remote symbolic links are enabled.
+Remote to local symbolic links are disabled.
+Remote to remote symbolic links are disabled.
+```
+That indicates symbolic links on network shares would not work for me.  The name suggests this is about whether I can use them; I might still be able to create them.
+
+The developer [Notes](Notes.md#challenge-symbolic-links-on-ms-windows) provide further information about symbolic links and what to do if none of the options above work.
 
 Operation
 =========
@@ -94,10 +146,10 @@ with all relevant files and directories from `myproject/` copied to the `a` and 
 
 `maestro` then launches `mc run` in each subproject `parallel/xxx/`, monitors the progress, and reports the results.  The exact behavior depends on the [message handlers](#message-handlers) (`symphony/message_handlers.py`) installed in the `Switchboard` of the main program.
 
-With standard code (from `symphony.message_handlers.StupidLogFile`), `parallel/runlog.txt` will have all the messages generated by all the runs.  If you are not also dumping those messages to the terminal (`symphony.message_handlers.DumbTerminalLog`) you can monitor the file as the program runs to see progress.  Because of caching, messages may not be visible instantly.  All messages are in `JSON` format.
+With standard code (from `symphony.message_handlers.StupidLogFile`), `parallel/runlog.txt` will have all the messages generated by all the runs.  If you are not also dumping those messages to the terminal (`symphony.message_handlers.DumbTerminalLog`), or getting progress reports on a terminal (`symphony.message_handlers.TerminalTimerLog`), you can monitor the file as the program runs to see progress.  Because of caching, messages may not be visible instantly.  All messages are in `JSON` format.
 
-Variation
-=========
+Variations
+==========
 
 As noted earlier, if `prepare()` has already set up the copies, just call `prepare_basic()` to avoid recopying, which might or might not produce errors or toss results of previous runs.
 

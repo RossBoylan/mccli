@@ -214,6 +214,39 @@ Since this is the database used by `frmtReport.py` and the new heart-failure cod
 
 There are once again some packages designed to smooth the differences.  In fact, `pyside6` has a local storage option built on `SQLite`, as well as more general database interfaces.  Using that, if I'm using `Qt` anyway, might be simplest.
 
+Challenge: Symbolic Links on `MS-Windows`
+-----------------------------------------
+
+See the user documentation on [maestro](maestro.md#requirements) for basic background and advice for users.  As noted [above](#challenge-file-conflicts), because the system tends to write over most files and directories, the parallel cloned directories make much less use of links than you might expect.  The only place `maestro` currently uses them is in [prepare_one()](symphony/prepare.py):
+```python
+        (pproj / "MC").symlink_to(realMC, target_is_directory=True)
+```
+`pproj` would be something like `Path("myproject/parallel/")` and `realMC` is something like `Path("myproject/MC_scenarioA")`.
+
+If none of the symlink alternatives in the installation instructions work, there are at least 2 alternative, which require changing  the program.
+
+### Junction Points
+Windows junction points (aka "reparse points") are older than Windows symbolic links, and I think are less security-restricted.  They are also considered safer, because they are limited compared to symlinks:
+
+  * They can only be used on a local disk.
+  * They only work for directories (which is what we need).
+
+You can replace the `Python` code above with a `subprocess` call to `mklink /J SRC DEST` to create the "link".
+
+### Plain Old Directories
+
+Simply create `MC` as a regular directory.
+
+  * If you do this, results will not be available under the main project, but only under the `parallel` directory.
+  * If you delete the `parallel` directory you will delete your results, and so you should ignore the suggestion to delete it in the main instructions.
+
+A  final alternative is to change the environment instead of changing the program.
+
+### Unix on Windows
+
+There is `WSL`, Windows Subsystem for Linux, `cygwin`, a complete Unix under Windows, and various virtual machines you could use to install some kind of `*nix`.  Probably any of them can handle symlinks.
+
+
 Persistence
 -----------
 

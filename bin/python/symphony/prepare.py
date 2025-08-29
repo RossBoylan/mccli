@@ -59,7 +59,7 @@ def prepare_one(inp_file, basics: "Basics"):
     pproj = basics.pdir / inp_file  # will be created by copytree
     shutil.copytree(basics.DATADIR, pproj, ignore=AFilter(basics))
     if inp_file:
-        (pproj / "MC").symlink_to(realMC, target_is_directory=True)
+        (pproj / "MC").symlink_to(realMC, target_is_directory=True) # type: ignore
     (pproj / "MC" / "inputs").mkdir(parents=True)
     custom = basics.input_data.copy()
     if inp_file:

@@ -1,8 +1,44 @@
+Notes for Programmers and Advanced Users
+
 Notes on what files `montecarlo.py` uses.  Also files used by `runSims.js` and `Fortran`.
 So probably I should move this file to a different directory.
 This is to aid testing.
 
-Also includes info on tracking failures.
+Also includes info on tracking failures and the specification of `.dat` files in `input_data.json`.
+
+- [Notes on Internal Use of Files](#notes-on-internal-use-of-files)
+- [Other Notes](#other-notes)
+- [Sampling for .inp and .dat Files](#sampling-for-inp-and-dat-files)
+  - [Specification of Random Distributions for .dat Files](#specification-of-random-distributions-for-dat-files)
+    - [filename](#filename)
+    - [format](#format)
+    - [correlation](#correlation)
+    - [blocksPerGroup](#blockspergroup)
+    - [sumToOne](#sumtoone)
+    - [distribution](#distribution)
+    - [rowLabels](#rowlabels)
+    - [Miscellaneous details](#miscellaneous-details)
+- [Getting Error Info from Python](#getting-error-info-from-python)
+- [Parallel](#parallel)
+  - [Challenge: File Conflicts](#challenge-file-conflicts)
+  - [Challenge: Interactivity](#challenge-interactivity)
+  - [Challenge: Subprocess Management](#challenge-subprocess-management)
+    - [Capturing output as it occurs](#capturing-output-as-it-occurs)
+    - [Sub-subprocess output](#sub-subprocess-output)
+    - [`JSON` format](#json-format)
+  - [Challenge: `asyncio`](#challenge-asyncio)
+    - [`Qt`](#qt)
+    - [`SQLite`](#sqlite)
+  - [Challenge: Symbolic Links on `MS-Windows`](#challenge-symbolic-links-on-ms-windows)
+    - [Junction Points](#junction-points)
+    - [Plain Old Directories](#plain-old-directories)
+    - [Unix on Windows](#unix-on-windows)
+  - [Persistence](#persistence)
+  - [Matrices of Time](#matrices-of-time)
+- [Log](#log)
+  - [2022-09-14](#2022-09-14)
+- [To Do](#to-do)
+
 
 # Notes on Internal Use of Files
 `montecarlo.py` reads an input file (or is it a dat file?) from `_mc0.<ext>` and writes to `_mc.<ext>`.  The javascript code copies the _mc to a numbered version, but that is strictly for archival purposes; the Fortran model will use the _mc file.
@@ -115,6 +151,143 @@ Other notable differences between .dat distributions and .inp distributions
 8.	The .dat file has a bunch of special rules to handle “illegal” values of the beta parameters.  Negative means flip the sign  of the result from the corresponding positive mean, and sd <= 0 result in always drawing the mean value.  .inp files get no such rules.
 9.	.inp files allow you to specify multiple components, all of which are summed to give the parameter of interest. .dat files don’t.
 10.	.inp files attempt to achieve random number correlation by matching seeds; .dat files do so by matching quantiles.
+
+Specification of Random Distributions for .dat Files
+----------------------------------------------------
+
+The method for varying particular `.dat` files is specified in `input_data.json`.  Here's a sample:
+```json
+{
+	"all_dat_files" : [
+		{
+			"filename": "b",
+			"format": {
+				"leading_spaces": 14,
+				"mid_spaces": 3,
+				"num_format": "9.6f"
+			},
+			"correlation": "block",
+			"blocksPerGroup": 2
+		},
+```
+
+As far as I can tell, the meanings of these options aren't specified anywhere.  This subsection attempts to remedy that; it is based on inspection the `Python` code, mostly in the `SDFile` class of `montecarlo.py`.
+
+The rest of this subsection is organized by the different keys that are available for the `all_dat_files` entries.  The keys are all strings, enclosed in double quotes as in the preceding sample.  Each entry provides the allowed values and their meaning.
+
+As already indicated, the methods for specifying variation in `.inp` files are significantly different; do not assume that the information here carries over to them.
+
+### filename
+is a string, the root of the file names used for input and output.  If the name is `X` then inputs are read from `X_mc0.dat` and `X_sd.dat` and the random output is in `X_mc.dat`.
+
+`X` may differ from the standard name for the file being varied; in particular it may be shortened so the `Fortran` program can accommodate it.  The remapping of names is accomplished through the `.lst` file for the original file name.
+
+For example, one of the `.dat` files is `shortwgt`.  If that were used directly, one input file would be `shortwgt_mc.dat` which, at 15 characters, is over the 12 characters allowed by our `Fortran` code.  Since `_mc.dat` is 7(*) characters, that leave 5 characters maximum for the base name. So we shorten the base name to `shrt`.  Here is what is in `SHORTWGT.LST`:
+```
+  4
+ shortwgt.def
+ shrt_mc0.dat
+ shrt_mc.dat
+ shrt_sd.dat
+```
+There is no `SHRT.LST` file, because the `Fortran` model is expecting `shortwgt`.
+
+(*) `_mc0.dat` is 8 characters, but I don't think the `Fortran` program ever reads that in.  If you want to be sure, limit the base name to 4 characters.
+
+`input_data.json`, on the other hand, has an entry with `"filename": "shrt"` and nothing for `shrtwgt`.
+
+The `.lst` files must be set up manually, as well as telling the `Fortran` program which list item to use (typically in an `.inp` file).
+
+### format
+The `format` section controls how values are written, but not read.
+There are 3 keys, `leading_spaces`, `mid_spaces` and `num_format`.  The first two are integers and the last a string containing a `Python` format specification for an individual numerical value.  Each value will be output with `num_format` followed by `mid_spaces` spaces.  Each output line will have `leading_spaces` spaces at the start.
+
+Conversion from the input line, a string, to numbers is via `Python`'s `float()` function applied to each result of `split()`.  Unless `rowLabels` is `False` (see below), the first element of the split is skipped.
+
+### correlation
+If present, acceptable values are `"block"` or `"row"`.
+
+Individual numbers are either uncorrelated or "perfectly" correlated.  Let X and Y refer to 2 such numbers; in general they are drawn from different distributions with different means and standard deviations.  They match in the sense that if the value for X is at the p'th percentile of the distribution for X, they value for Y is at the p'th percentile for Y's distribution.  This will not necessary have a conventional (Pearson) correlation of 1.0, although that is true for the Normal distribution.
+
+In correlation by `row`, numbers in the same row are correlated with each other.
+
+Correlation by `block` induces correlation between rows within the same column.  See the next [subsection](#blockspergroup) for the details.  It is *not* the case that all values in the same column will be correlated.
+
+A block is a group of 6 consecutive data rows.  This is because our model typically has 6 age categories, and the corresponding values are on different rows of our input files.
+
+In all other cases values are uncorrelated.
+
+<table>
+  <tr>
+    <td style="background-color:#ffcccc;">Red</td>
+    <td style="background-color:#ccffcc;">Green</td>
+    <td style="background-color:#ccccff;">Blue</td>
+  </tr>
+  <tr>
+    <td style="background-color:#ffffcc;">Yellow</td>
+    <td style="background-color:#ccffff;">Cyan</td>
+    <td style="background-color:#ffccff;">Magenta</td>
+  </tr>
+  <tr>
+    <td style="background-color:#f0e68c;">Khaki</td>
+    <td style="background-color:#e6e6fa;">Lavender</td>
+    <td style="background-color:#d3d3d3;">Gray</td>
+  </tr>
+</table>
+
+### blocksPerGroup
+
+An optional integer, specifying how many vertical blocks the variables for a single group occupies.  Defaults to 1.  It's easier to explain with an example.
+
+Sometimes data look like this, for `shrtwgt`:
+
+| MALES | | | | | | | | | | |
+|---------|---------|---------|--------|--------|---------|---------|--------|--------|--------|--------|
+| AGE     | 1-noEVT | 2-Rev   | 3-MI   | 4-Arr  | 5-RevMI | 6-RMIHF | 7-HF   | 8-MIHF | 9-IS   | 10-HS  |
+| 35-44   | 0.0000  | -.0029  | 0.0079 | 0.0079 | 0.0192  | 0.0192  | 0.0000 | 0.0079 | 0.0113 | 0.0113 |
+| 45-54   | 0.0000  | -.0029  | 0.0079 | 0.0079 | 0.0192  | 0.0192  | 0.0000 | 0.0079 | 0.0113 | 0.0113 |
+| 55-64   | 0.0000  | -.0029  | 0.0079 | 0.0079 | 0.0192  | 0.0192  | 0.0000 | 0.0079 | 0.0113 | 0.0113 |
+| 65-74   | 0.0000  | -.0029  | 0.0079 | 0.0079 | 0.0192  | 0.0192  | 0.0000 | 0.0079 | 0.0113 | 0.0113 |
+| 75-84   | 0.0000  | -.0029  | 0.0079 | 0.0079 | 0.0192  | 0.0192  | 0.0000 | 0.0079 | 0.0113 | 0.0113 |
+| 85-94   | 0.0000  | -.0029  | 0.0079 | 0.0079 | 0.0192  | 0.0192  | 0.0000 | 0.0079 | 0.0113 | 0.0113 |
+
+| AGE     | 11-ISrv | 12-HSrv | 13-ISHF | 14-HSHF | 15-ISrHF | 16-HSrHF | 17-RevHF | 18-ArrHF | 19-Ang | 20-AngHF |
+|---------|---------|---------|---------|---------|----------|----------|----------|----------|--------|----------|
+| 35-44   | 0.0113  | 0.0113  | 0.0113  | 0.0113  | 0.0113   | 0.0113   | -.0029   | 0.0079   | 0.0078 | 0.0078   |
+| 45-54   | 0.0113  | 0.0113  | 0.0113  | 0.0113  | 0.0113   | 0.0113   | -.0029   | 0.0079   | 0.0078 | 0.0078   |
+| 55-64   | 0.0113  | 0.0113  | 0.0113  | 0.0113  | 0.0113   | 0.0113   | -.0029   | 0.0079   | 0.0078 | 0.0078   |
+| 65-74   | 0.0113  | 0.0113  | 0.0113  | 0.0113  | 0.0113   | 0.0113   | -.0029   | 0.0079   | 0.0078 | 0.0078   |
+| 75-84   | 0.0113  | 0.0113  | 0.0113  | 0.0113  | 0.0113   | 0.0113   | -.0029   | 0.0079   | 0.0078 | 0.0078   |
+| 85-94   | 0.0113  | 0.0113  | 0.0113  | 0.0113  | 0.0113   | 0.0113   | -.0029   | 0.0079   | 0.0078 | 0.0078   |
+
+|FEMALES| | | | | | | | | | |
+|---------|---------|---------|--------|--------|---------|---------|--------|--------|--------|--------|
+| AGE     | 1-noEVT | 2-Rev   | 3-MI   | 4-Arr  | 5-RevMI | 6-RMIHF | 7-HF   | 8-MIHF | 9-IS   | 10-HS  |
+| 35-44   | 0.0000  | -.0029  | 0.0079 | 0.0079 | 0.0192  | 0.0192  | 0.0000 | 0.0079 | 0.0113 | 0.0113 |
+| 45-54   | 0.0000  | -.0029  | 0.0079 | 0.0079 | 0.0192  | 0.0192  | 0.0000 | 0.0079 |
+
+and so on.  Each group (sex) has 20 variables; the first 10 are displayed in the first block, and the second 10 in the second block.  So this gets `"blocksPerGroup": 2`.
+
+The result induces a correlation between values for, e.g., variable 1 in both groups, but not between variable 1 and variable 11 in the first group, even though both are in the first column.
+
+The default processing is effectively `"blocksPerGroup": 1`, which would induce correlations between variables 1 and 11 for both men and women; all 4 variables would move in lockstep.
+
+### sumToOne
+If this parameter is present and `True` in the `Python` sense then the values on each row will be rescaled so they sum to one.  Typical use would be for proportions.
+
+### distribution
+A string: `"beta"`, `"lognormal"` or `"normal"`.  Anything else is an error, although one can omit this key and `"normal"` will be assumed.
+
+### rowLabels
+
+Ordinarily, the program assumes that the first row of the tables contains column headings.  If this value is `false`, without quotes, then the first row is considered data.
+
+### Miscellaneous details
+Data rows are identified as lines whose first non-blank character is a digit.  This allows automatic skipping of the descriptive information usually appearing above tables.
+
+The input fields are separated by whitespace.
+
+The first column is generally assumed to serve as a row label and ignored; however, the label must start with a digit for the line to be identified as data.
 
 Getting Error Info from Python
 ==============================

@@ -216,7 +216,7 @@ Correlation by `block` induces correlation between rows within the same column. 
 A block is a group of 6 consecutive data rows.  This is because our model typically has 6 age categories, and the corresponding values are on different rows of our input files.
 
 In all other cases values are uncorrelated.
-
+<!-- 
 <table>
   <tr>
     <td style="background-color:#ffcccc;">Red</td>
@@ -234,7 +234,7 @@ In all other cases values are uncorrelated.
     <td style="background-color:#d3d3d3;">Gray</td>
   </tr>
 </table>
-
+ -->
 ### blocksPerGroup
 
 An optional integer, specifying how many vertical blocks the variables for a single group occupies.  Defaults to 1.  It's easier to explain with an example.

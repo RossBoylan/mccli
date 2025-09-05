@@ -14,7 +14,7 @@ var whichDatFiles = {
 		type: 'checkbox',
 		message: 'select dat files to vary',
 		name: 'dat_files',
-		choices: [x]
+		choices: [x, "ordinary"]
         /*all_dat_files.map((file_data) => {
 			if (file_data.danger){
 				{
@@ -33,4 +33,3 @@ inquirer.prompt(questions).then((answers) => {
     console.log("got responses ")
     console.log(answers.dat_files)
 });
-console.log(x);

@@ -52,7 +52,7 @@ def simple_block():
 
 
 def block2():
-    fig, (ax1, ax2, ax3, ax4) = plt.subplots(4, 1)
+    fig, ((ax1, ax3), (ax2, ax4)) = plt.subplots(2, 2)
     ax1.imshow(z, cmap="tab20b", aspect="auto")
     AgePlot(ax1, z, title="Men")
     ax2.imshow(z, cmap="tab20", aspect="auto")

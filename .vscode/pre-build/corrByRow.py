@@ -13,7 +13,7 @@ fig, (ax1, ax2) = plt.subplots(2, 1)
 class CellPlot:
     """A plot of cells in a table.
     """
-    def __init__(self, ax:Axes, dat, title=None):
+    def __init__(self, ax:Axes, dat, title=None, firstV=1):
         """
         dat is a 2D array. cells with the same number will
         get the same color.
@@ -25,7 +25,7 @@ class CellPlot:
         ax.grid(visible=True, which="minor", color="black", linewidth=3)
         ax.xaxis.set_label_position("top")
         x0 = np.arange(nc)
-        ax.set_xticks(x0, labels=(f"V{i+1}" for i in x0))
+        ax.set_xticks(x0, labels=(f"V{i+firstV}" for i in x0))
         ax.set_xticks(np.hstack((x0, nc))-0.5, minor=True)
 
         y0 = np.arange(nr)
@@ -37,14 +37,31 @@ class CellPlot:
 
 class AgePlot(CellPlot):
     "adds a label to the vertical axis"
-    def __init__(self, ax:Axes, dat, title=None):
-        CellPlot.__init__(self, ax, dat, title=title)
+    def __init__(self, ax:Axes, dat, title=None, firstV=1):
+        CellPlot.__init__(self, ax, dat, title=title, firstV=firstV)
         ax.set_ylabel("Age Group")
 
 z = np.arange(1, x.size * y.size + 1).reshape((-1, x.size), order="F")
-ax1.imshow(z, cmap="tab20b", aspect="auto")
-AgePlot(ax1, z, title="Men")
-ax2.imshow(z, cmap="tab20b", aspect="auto")
-AgePlot(ax2, z, title="Women")
+
+def simple_block():
+    fig, (ax1, ax2) = plt.subplots(2, 1)
+    ax1.imshow(z, cmap="tab20b", aspect="auto")
+    AgePlot(ax1, z, title="Men")
+    ax2.imshow(z, cmap="tab20b", aspect="auto")
+    AgePlot(ax2, z, title="Women")
+
+
+def block2():
+    fig, (ax1, ax2, ax3, ax4) = plt.subplots(4, 1)
+    ax1.imshow(z, cmap="tab20b", aspect="auto")
+    AgePlot(ax1, z, title="Men")
+    ax2.imshow(z, cmap="tab20", aspect="auto")
+    AgePlot(ax2, z, firstV=11)
+    ax3.imshow(z, cmap="tab20b", aspect="auto")
+    AgePlot(ax3, z, title="Women")
+    ax4.imshow(z, cmap="tab20", aspect="auto")
+    AgePlot(ax4, z, firstV=11)
+
+block2()
 plt.show()
 #print(z)

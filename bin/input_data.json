@@ -122,6 +122,29 @@
 			"correlation": "block",
 			"blocksPerGroup": 3,
 			"distribution": "beta"
+		},
+		{
+			"filename": "modpr",
+			"danger": true,
+			"format": {
+				"leading_spaces": 13,
+				"mid_spaces": 2,
+				"num_format": "8.6f"
+			},
+			"sumToOne": true,
+			"correlation": "none",
+			"distribution": "beta"
+		},
+		{
+			"filename": "pcvd",
+			"danger": true,
+			"format": {
+				"leading_spaces": 16,
+				"mid_spaces": 3,
+				"num_format": "8.6f"
+			},
+			"correlation": "none",
+			"distribution": "beta"
 		}
 	]
 }

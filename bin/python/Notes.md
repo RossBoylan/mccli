@@ -17,6 +17,7 @@ Also includes info on tracking failures and the specification of `.dat` files in
     - [sumToOne](#sumtoone)
     - [distribution](#distribution)
     - [rowLabels](#rowlabels)
+    - [danger](#danger)
     - [Miscellaneous details](#miscellaneous-details)
 - [Getting Error Info from Python](#getting-error-info-from-python)
 - [Parallel](#parallel)
@@ -270,6 +271,11 @@ A string: `"beta"`, `"lognormal"` or `"normal"`.  Anything else is an error, alt
 ### rowLabels
 
 Ordinarily, the program assumes that the first column of the tables contains row headings.  If this value is `false`, without quotes, then the first column is considered data.
+
+### danger
+If present and `true` indicates to use caution when varying this file.  Currently, it is set for 2 new variables (`pcvd` and `modpr`) that ordinarily require manual calibration of the model.
+
+`danger` is new in v3.6.0.
 
 ### Miscellaneous details
 Data rows are identified as lines whose first non-blank character is a digit.  This allows automatic skipping of the descriptive information usually appearing above tables.

@@ -5,10 +5,8 @@ from matplotlib.axes import Axes
 
 x = np.arange(1, 4, 1)
 y = np.arange(1, 7, 1)
-z = np.stack((x, x, x), axis=1)
-fig, (ax1, ax2) = plt.subplots(2, 1)
-#ax.pcolormesh(x, y, z)
-#plt.show()
+z = np.arange(1, x.size * y.size + 1).reshape((-1, x.size), order="F")
+
 
 class CellPlot:
     """A plot of cells in a table.
@@ -41,18 +39,32 @@ class AgePlot(CellPlot):
         CellPlot.__init__(self, ax, dat, title=title, firstV=firstV)
         ax.set_ylabel("Age Group")
 
-z = np.arange(1, x.size * y.size + 1).reshape((-1, x.size), order="F")
 
-def simple_block():
-    fig, (ax1, ax2) = plt.subplots(2, 1)
+
+def byrow(fname=None):
+    fig, ax1 = plt.subplots(1)
+    x = np.arange(1, 5, 1)
+    y = np.arange(1, 4, 1)
+    z = np.stack((x, x, x), axis=1)
+    fig.suptitle("Correlation by row")
+    ax1.imshow(z, cmap="Set1", aspect="auto")
+    CellPlot(ax1, z)
+    if fname:
+        fig.savefig(fname)
+
+def simple_block(fname=None):
+    fig, (ax1, ax2) = plt.subplots(2, 1, figsize=(3, 7))
+    fig.suptitle("Correlation by block")
     ax1.imshow(z, cmap="tab20b", aspect="auto")
     AgePlot(ax1, z, title="Men")
     ax2.imshow(z, cmap="tab20b", aspect="auto")
     AgePlot(ax2, z, title="Women")
+    if fname:
+        fig.savefig(fname)
 
-
-def block2():
-    fig, ((ax1, ax3), (ax2, ax4)) = plt.subplots(2, 2)
+def block2(fname=None):
+    fig, ((ax1, ax3), (ax2, ax4)) = plt.subplots(2, 2, figsize=(7, 6.5))
+    fig.suptitle("Correlation by block with 2 blocks per group")
     ax1.imshow(z, cmap="tab20b", aspect="auto")
     AgePlot(ax1, z, title="Men")
     ax2.imshow(z, cmap="tab20", aspect="auto")
@@ -61,7 +73,11 @@ def block2():
     AgePlot(ax3, z, title="Women")
     ax4.imshow(z, cmap="tab20", aspect="auto")
     AgePlot(ax4, z, firstV=11)
+    if fname:
+        fig.savefig(fname)
 
-block2()
-plt.show()
+byrow("corr-row.svg")
+simple_block("corr-block.svg")
+block2("corr-block2.svg")
+#plt.show()
 #print(z)

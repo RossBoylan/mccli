@@ -209,32 +209,18 @@ If present, acceptable values are `"block"` or `"row"`.
 
 Individual numbers are either uncorrelated or "perfectly" correlated.  Let X and Y refer to 2 such numbers; in general they are drawn from different distributions with different means and standard deviations.  They match in the sense that if the value for X is at the p'th percentile of the distribution for X, they value for Y is at the p'th percentile for Y's distribution.  This will not necessary have a conventional (Pearson) correlation of 1.0, although that is true for the Normal distribution.
 
-In correlation by `row`, numbers in the same row are correlated with each other.
+In correlation by `row`, numbers in the same row are correlated with each other.  The figure immediately below illustrates this; cells that are the same color represent numbers that are correlated.
+![row correlation](../../pre-build/corr-row.svg)
 
 Correlation by `block` induces correlation between rows within the same column.  See the next [subsection](#blockspergroup) for the details.  It is *not* the case that all values in the same column will be correlated.
 
-A block is a group of 6 consecutive data rows.  This is because our model typically has 6 age categories, and the corresponding values are on different rows of our input files.
+A block is a group of 6 consecutive data rows.  This is because our model typically has 6 age categories, and the corresponding values are on different rows of our input files.  In the simple case, correlations look like this: 
+
+![block correlation](../../pre-build/corr-block.svg).
 
 In all other cases values are uncorrelated.
-<!-- 
-<table>
-  <tr>
-    <td style="background-color:#ffcccc;">Red</td>
-    <td style="background-color:#ccffcc;">Green</td>
-    <td style="background-color:#ccccff;">Blue</td>
-  </tr>
-  <tr>
-    <td style="background-color:#ffffcc;">Yellow</td>
-    <td style="background-color:#ccffff;">Cyan</td>
-    <td style="background-color:#ffccff;">Magenta</td>
-  </tr>
-  <tr>
-    <td style="background-color:#f0e68c;">Khaki</td>
-    <td style="background-color:#e6e6fa;">Lavender</td>
-    <td style="background-color:#d3d3d3;">Gray</td>
-  </tr>
-</table>
- -->
+
+
 ### blocksPerGroup
 
 An optional integer, specifying how many vertical blocks the variables for a single group occupies.  Defaults to 1.  It's easier to explain with an example.
@@ -266,7 +252,10 @@ Sometimes data look like this, for `shrtwgt`:
 | 35-44   | 0.0000  | -.0029  | 0.0079 | 0.0079 | 0.0192  | 0.0192  | 0.0000 | 0.0079 | 0.0113 | 0.0113 |
 | 45-54   | 0.0000  | -.0029  | 0.0079 | 0.0079 | 0.0192  | 0.0192  | 0.0000 | 0.0079 |
 
-and so on.  Each group (sex) has 20 variables; the first 10 are displayed in the first block, and the second 10 in the second block.  So this gets `"blocksPerGroup": 2`.
+and so on.  Each group (sex) has 20 variables; the first 10 are displayed in the first block, and the second 10 in the second block.  So this gets `"blocksPerGroup": 2`.  Here's what the correlations look like:
+![correlation by block: 2 blocks per group](../../pre-build/corr-block2.svg)
+
+Although the blocks are shown in 2 columns (men and women), the actual file would have them consecutively: first the 2 blocks for men, and then the 2 blocks for women. Also, some of the colors are very similar, either across blocks (e.g., V3 for age group 2 in the first block and V12 for age group 1 in the second block) or within (e.g., in the seconod block age 2 V13 and age 3 V12).  Take the spirit, not the details: variables match across groups for a given age; all else is uncorrelated.
 
 The result induces a correlation between values for, e.g., variable 1 in both groups, but not between variable 1 and variable 11 in the first group, even though both are in the first column.
 
@@ -280,7 +269,7 @@ A string: `"beta"`, `"lognormal"` or `"normal"`.  Anything else is an error, alt
 
 ### rowLabels
 
-Ordinarily, the program assumes that the first row of the tables contains column headings.  If this value is `false`, without quotes, then the first row is considered data.
+Ordinarily, the program assumes that the first column of the tables contains row headings.  If this value is `false`, without quotes, then the first column is considered data.
 
 ### Miscellaneous details
 Data rows are identified as lines whose first non-blank character is a digit.  This allows automatic skipping of the descriptive information usually appearing above tables.

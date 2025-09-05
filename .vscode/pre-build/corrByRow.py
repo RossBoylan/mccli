@@ -6,7 +6,7 @@ from matplotlib.axes import Axes
 x = np.arange(1, 4, 1)
 y = np.arange(1, 7, 1)
 z = np.stack((x, x, x), axis=1)
-fig, ax = plt.subplots()
+fig, (ax1, ax2) = plt.subplots(2, 1)
 #ax.pcolormesh(x, y, z)
 #plt.show()
 
@@ -42,7 +42,9 @@ class AgePlot(CellPlot):
         ax.set_ylabel("Age Group")
 
 z = np.arange(1, x.size * y.size + 1).reshape((-1, x.size), order="F")
-ax.imshow(z, cmap="tab20b", aspect="auto")
-AgePlot(ax, z, title="Men")
+ax1.imshow(z, cmap="tab20b", aspect="auto")
+AgePlot(ax1, z, title="Men")
+ax2.imshow(z, cmap="tab20b", aspect="auto")
+AgePlot(ax2, z, title="Women")
 plt.show()
 #print(z)

@@ -3,15 +3,13 @@ console.log("Hi\n");
 let file_data = {
     filename: "myfile"
 };
-/*
 let x = {
     value: file_data.filename,
     name: file_data.filename + ": DANGEROUS",
     description: "Changes to "+ file_data.filename + 
         " ordinarily require manual calibration.",
     };	
-    */
-var x = "myfile"; // even simpler test
+//var x = "myfile"; // even simpler test
 var whichDatFiles = {
 		type: 'checkbox',
 		message: 'select dat files to vary',

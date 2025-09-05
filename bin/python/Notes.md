@@ -255,7 +255,7 @@ Sometimes data look like this, for `shrtwgt`:
 and so on.  Each group (sex) has 20 variables; the first 10 are displayed in the first block, and the second 10 in the second block.  So this gets `"blocksPerGroup": 2`.  Here's what the correlations look like:
 ![correlation by block: 2 blocks per group](../../pre-build/corr-block2.svg)
 
-Although the blocks are shown in 2 columns (men and women), the actual file would have them consecutively: first the 2 blocks for men, and then the 2 blocks for women. Also, some of the colors are very similar, either across blocks (e.g., V3 for age group 2 in the first block and V12 for age group 1 in the second block) or within (e.g., in the seconod block age 2 V13 and age 3 V12).  Take the spirit, not the details: variables match across groups for a given age; all else is uncorrelated.
+Although the blocks are shown in 2 columns (men and women), the actual file would have them consecutively: first the 2 blocks for men, and then the 2 blocks for women. Also, some of the colors are very similar, either across blocks (e.g., V3 for age group 2 in the first block and V12 for age group 1 in the second block) or within (e.g., in the seconod block age 2 V13 and age 3 V12).  They actually are subtly different. The point is that variables match across groups for a given age; all else is uncorrelated.
 
 The result induces a correlation between values for, e.g., variable 1 in both groups, but not between variable 1 and variable 11 in the first group, even though both are in the first column.
 

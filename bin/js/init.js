@@ -60,7 +60,18 @@ module.exports = (yargs) => {
 		type: 'checkbox',
 		message: 'select dat files to vary',
 		name: 'dat_files',
-		choices: all_dat_files.map((file_data) => file_data.filename),
+		choices: all_dat_files.map((file_data) => {
+			if (file_data.danger){
+				return {
+				value: file_data.filename,
+				name: file_data.filename + ": DANGEROUS",
+				description: "Changes to "+ file_data.filename + 
+				  " ordinarily require manual calibration.",
+				};
+			} else {
+				return file_data.filename;
+			}
+		}),
 	};
 
 	questions.push(whichDatFiles);

@@ -4,6 +4,7 @@ Change Log for `mccli`
   * Add `pcvd` and `modprfp` to the list of `.dat` files that the monte carlo may vary.  `modprfp` will be known as `modpr` for such purposes.  **CAUTION** ordinarily changes to either of these variables would require recalibrating the model.  No such recalibration occurs in the monte carlo.  Only vary them if you are sure it's appropriate.
   * Both variables will be assumed to follow a beta distribution with individual values uncorrelated. `modpr` also sums to 1 across rows (if you're being picky, this will create some negative correlation between the values in a row).
   * Implementation: add `"danger"` attribute to `.dat` specification, for variables that the previous caution applies to.
+  * Both new `.dat` files will display with DANGER after them.
    
 * 3.5.0
   * Add `maestro.py` to run jobs in parallel automatically.  Do *not* use without

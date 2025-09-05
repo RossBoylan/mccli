@@ -23,14 +23,14 @@ var whichDatFiles = {
 		name: 'dat_files',
 		choices: all_dat_files.map((file_data) => {
 			if (file_data.danger){
-				{
+				return {
 				value: file_data.filename,
 				name: file_data.filename + ": DANGEROUS",
 				description: "Changes to "+ file_data.filename + 
 				  " ordinarily require manual calibration.",
-				}
+				};
 			} else {
-				file_data.filename
+				return file_data.filename;
 			}
 		}),
 	};

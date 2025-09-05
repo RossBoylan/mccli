@@ -26,16 +26,23 @@ class CellPlot:
         ax.xaxis.set_label_position("top")
         x0 = np.arange(nc)
         ax.set_xticks(x0, labels=(f"V{i+1}" for i in x0))
-        ax.set_xticks(x0+0.5, minor=True)
+        ax.set_xticks(np.hstack((x0, nc))-0.5, minor=True)
 
         y0 = np.arange(nr)
         ax.set_yticks(y0, labels= y0+1)
-        ax.set_yticks(y0+0.5, minor=True)
+        ax.set_yticks(np.hstack((y0, nr))-0.5, minor=True)
         ax.tick_params(labeltop=True, labelbottom=False, bottom=False, left=False)
+        ax.tick_params(which="minor", top=False, bottom=False,
+                       left=False, right=False)
+
+class AgePlot(CellPlot):
+    "adds a label to the vertical axis"
+    def __init__(self, ax:Axes, dat, title=None):
+        CellPlot.__init__(self, ax, dat, title=title)
+        ax.set_ylabel("Age Group")
 
 z = np.arange(1, x.size * y.size + 1).reshape((-1, x.size), order="F")
 ax.imshow(z, cmap="tab20b", aspect="auto")
-CellPlot(ax, z, "Men")
-ax.set_ylabel("Age Group")
+AgePlot(ax, z, title="Men")
 plt.show()
 #print(z)

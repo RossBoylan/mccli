@@ -1,6 +1,6 @@
 # Montecarlo CLI (Command Line Interface)
 
-WARNING: v 3.4 is for use only with the new Heart Failure Fortran model.
+WARNING: versions 3.4+ are for use only with the new Heart Failure Fortran model.
 
 WARNING: v 3.0 changes the meaning of inputs for the lognormal, beta and gamma
 distributions.  The inputs now are the mean and standard deviation of the generated
@@ -63,11 +63,13 @@ This code is under development, may not work properly, and might seize your firs
 
 ### Get Source
 
-This code is the `base-HF` branch of RossBoylan/mccli on github.com.  Despite that, it is still identified as "@ecfairle/mccli",
-and because of that the conventional installation with npm install may not work, especially if you have already installed the earlier version.
+This code is the `justice` branch of RossBoylan/mccli on github.com.  Despite that, it is still identified as "@ecfairle/mccli",
+and because of that the conventional installation with `npm install` may not work, especially if you have already installed the earlier version.
 
-I recommend putting a copy of this package on your local hard drive, e.g., `Documents\mccli`.  You can clone it from github and switch to the `repeatable` branch,
+I recommend putting a copy of this package on your local hard drive, e.g., `Documents\mccli`.  You can clone it from github and switch to the `justice` branch,
 or get it from an archive file.
+
+The [ChangeLog](ChangeLog.md) provides the history and features of this code
 
 ### Node Setup
 
@@ -86,7 +88,7 @@ To ensure setup, you should change to the top directory for `mccli`, e.g. `Docum
 ### Python Setup
 If you don't already have Python3 on your system, install [python](https://www.python.org/downloads/).  If you install it system-wide, which requires administrative rights, and add python to your PATH, life will be easier later.
 
-Although using a [Python virtual environment](https://docs.python.org/3/library/venv.html) takes a little more setup, it separates this project more cleanly from others.  In particular, it reduces the chances you will break unrelated programs.  So that's what we describe here; you can skip the virtual environment steps if you're feeling lucky.  So there's one question you've got to ask yourself: "Do I feeling lucky?" Well, do you, punk?
+Although using a [Python virtual environment](https://docs.python.org/3/library/venv.html) takes a little more setup, it separates this project more cleanly from others.  In particular, it reduces the chances you will break unrelated programs.  So that's what we describe here; you can skip the virtual environment steps if you're feeling lucky.  So there's one question you've got to ask yourself: "Do I feel lucky?" Well, do ya, punk?
 
 The careful reader will have noticed the word *reduces* in "reduces the chances you will break unrelated programs".  It did not say it *eliminates* the risk.  If you install a python module, like PySide2, that depends on non-python libraries like `Qt`, they may still end up being installed system-wide and cause trouble.
 
@@ -160,6 +162,11 @@ If you want to execute a variation of the original simulation, rename the `MC` f
 If your first run is part of the total run, e.g., repetitions 0-499, and you want to run the remainder, 500-1000, it may not automatically combine results. Instead at the start of the run the program will ask `do you want to save these results (otherwise they will be written over)`.  We should  probably fix that.
 
 On Windows things might work ok without the `--python` argument; if it is not specified the default `py` is used to invoke python. `py` will probably be able to launch python, but the one it launches may not be using the virtual environment.  The simpler form `--python python` has a better chance of picking up the virtual environment.  For `*nix` systems the default `py` to invoke python will not work; again using python or python3 without a path might work, and explicitly specifying it, as shown above, is safest of all.
+
+### A Shortcut
+Because it is often convenient to define some shortcuts to refer to the possibly cumbersome paths to the `mc` program, the `python` embedded in the proper virtual environment, and other programs like `maestro` that you may want to run, it can be convenient to write a script that takes care of all these steps, as well as activating the `python` virtual environment.
+
+[my](my.ps1) is a script I use for `Powershell`.  As noted in its comments, it should be run from the program (`mccli`) directory, not the project directory, and it must be invoked with a dot: `. my.ps1`.  Users of other environments, such as the regular `MS-Windows command prompt`, will need to roll their own. Scripts on `Unix` should also be invoked with `. `; otherwise some of the definitions will not last after the script finishes.
 
 The regular instructions appear below here.
 

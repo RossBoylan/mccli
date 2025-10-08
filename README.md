@@ -88,9 +88,13 @@ To ensure setup, you should change to the top directory for `mccli`, e.g. `Docum
 ### Python Setup
 If you don't already have Python3 on your system, install [python](https://www.python.org/downloads/).  If you install it system-wide, which requires administrative rights, and add python to your PATH, life will be easier later.
 
+**WARNING** Which version of `Python` to install depends on a decision you will make later about whether to use the `pySide2` module.  We mention it here because the last version of `Python` on `MS-Windows` with available binaries for `pySide2` is 3.10.  So download that if you intend to keep `pySide2`.  We recommend first-time users comment out `pySide2` and get the latest stable `Python`.  See the comments in the `requirements.txt` file for more details.  
+
 Although using a [Python virtual environment](https://docs.python.org/3/library/venv.html) takes a little more setup, it separates this project more cleanly from others.  In particular, it reduces the chances you will break unrelated programs.  So that's what we describe here; you can skip the virtual environment steps if you're feeling lucky.  So there's one question you've got to ask yourself: "Do I feel lucky?" Well, do ya, punk?
 
 The careful reader will have noticed the word *reduces* in "reduces the chances you will break unrelated programs".  It did not say it *eliminates* the risk.  If you install a python module, like `pySide2`, that depends on non-python libraries like `Qt`, they may still end up being installed system-wide and cause trouble.
+
+Virtual environments also allow you to pick which `Python` version to use so that you can, for example, have a virtual environment running `Python 3.10` and using the `pySide2` module while your main system, and other projects, use the current release of `Python`.
 
 From the `mccli` root (you should already be there) create a virtual environment with
 ```shell

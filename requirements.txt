@@ -1,7 +1,7 @@
 # The python code in this module, mccli, requires these packages to run
 
 # PySide2, which has large and potentially tricky dependencies, is only 
-# required if you want to run frmtReport.py or the graphical viewer for maestro.
+# required if you want to run frmtReport.py.
 
 # The monte-carlo run executes montecarlo.py, format.py, and sum_results.py.
 # At a minimum, those require
@@ -12,8 +12,7 @@ scipy
 matplotlib  # used in plot.py and sum_results.py
 pandas  # used in frmtReport.py and plot.py
 
-# Next is only used by frmtReport.py and the GUI for the parallel
-# processing system `maestro`.  Parallel runs do not require the GUI.
+# Next is only used by frmtReport.py.
 # pyside2 requires that the non-python Qt libraries be installed.
 # If you have trouble, trying installing them separately.
 # pySide2 is essentially obsolete and is not available as a pre-built

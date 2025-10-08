@@ -90,7 +90,7 @@ If you don't already have Python3 on your system, install [python](https://www.p
 
 Although using a [Python virtual environment](https://docs.python.org/3/library/venv.html) takes a little more setup, it separates this project more cleanly from others.  In particular, it reduces the chances you will break unrelated programs.  So that's what we describe here; you can skip the virtual environment steps if you're feeling lucky.  So there's one question you've got to ask yourself: "Do I feel lucky?" Well, do ya, punk?
 
-The careful reader will have noticed the word *reduces* in "reduces the chances you will break unrelated programs".  It did not say it *eliminates* the risk.  If you install a python module, like PySide2, that depends on non-python libraries like `Qt`, they may still end up being installed system-wide and cause trouble.
+The careful reader will have noticed the word *reduces* in "reduces the chances you will break unrelated programs".  It did not say it *eliminates* the risk.  If you install a python module, like `pySide2`, that depends on non-python libraries like `Qt`, they may still end up being installed system-wide and cause trouble.
 
 From the `mccli` root (you should already be there) create a virtual environment with
 ```shell
@@ -114,7 +114,7 @@ You are more likely to be in a directory holding your analysis later, in which c
 
 Each time you login, in fact each time you start a new terminal, you will need to activate the environment.  No matter how you started, `deactivate` will disable the environment.
 
-Now install the `Python` packages that mccli requires.  These are documented in `requirements.txt` in the root folder of `mccli`.   You may want to skip some of the packages listed in `requirements.txt`, in particular the heavy graphics of `pyside2` are only needed for some post-analysis.  You can review the comments in `requirements.txt` and comment out or delete any packages you don't want. Save the file.  Then 
+Now install the `Python` packages that mccli requires.  These are documented in `requirements.txt` in the root folder of `mccli`.   You may want to skip some of the packages listed in `requirements.txt`, in particular the heavy graphics of `pySide2` are only needed for some post-analysis.  You can review the comments in `requirements.txt` and comment out or delete any packages you don't want. Save the file.  Then 
 ```shell
 python -m pip install -r requirements.txt  # or
 python -m pip install -r requirements.txt  --user   # if you are not in a virtual environment
@@ -175,7 +175,7 @@ The regular instructions appear below here.
 1. If it is not installed, download and install [Node.js](https://nodejs.org/) (known to  work with v6.5, but try the latest stable release)
 2. If it is not installed, download and install [Python](https://www.python.org/downloads/) (known to work with v3.5.2, but try the the latest stable version)
 3. ~~In the command line, install the montecarlo CLI by running `npm install -g @ecfairle/mccli` (this same command can be used to update to the latest version)~~
-4. This should have installed some python libraries.  However, pySide2 has many non-python dependencies.  If it is not set up properly, you should follow the instructions there.
+4. This should have installed some python libraries.  However, `pySide2` has many non-python dependencies.  If it is not set up properly, you should follow the instructions there.
    Currently they involve installing Qt5, which in turn has some requirements.  The clang components it needs are available for download from the Qt5 site and do not seem to be
    easily available from elsewhere.
 

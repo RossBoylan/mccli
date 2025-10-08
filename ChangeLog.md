@@ -1,7 +1,8 @@
 Change Log for `mccli`
 * 3.6.2-alpha1
   * Fix problems simulating beta distribution for `.dat` files.  Issue #22.
-  * Note obsolesence of `pySide2` in comments of `requirements.txt`.
+  * Note obsolesence of `pySide2` in `README.md` and comments of `requirements.txt`.
+  * **`pySide2` no longer installed by default**.  This implies `frmtReport.py` will **not** run in a default install.
 
 * 3.6.1 2025-09-07 ross.boylan@ucsf.edu
   * Document the specification of `.dat` files for monte-carlo.  See [notes](bin/python/Notes.md#specification-of-random-distributions-for-dat-files).  The documentation is for [input_data.json](input_data.json).

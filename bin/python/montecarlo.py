@@ -610,8 +610,8 @@ class SDFile(object):
 
 
 	def vary_individually(self,line_num):
-		sds = [float(sd) for sd in self.lines[line_num].split()[self.row_offset:]]
-		means = [float(mean) for mean in self.mean_lines[line_num].split()[self.row_offset:]]
+		sds = np.array([float(sd) for sd in self.lines[line_num].split()[self.row_offset:]])
+		means = np.array([float(mean) for mean in self.mean_lines[line_num].split()[self.row_offset:]])
 		return self._do_dist(means, sds)
 
 
@@ -619,8 +619,8 @@ class SDFile(object):
 		rnd = self._rnd
 		# prepare for next call
 		self._rnd = self._basic_generator()
-		sds = [float(sd) for sd in self.lines[line_num].split()[self.row_offset:]]
-		means = [float(mean) for mean in self.mean_lines[line_num].split()[self.row_offset:]]
+		sds = np.array([float(sd) for sd in self.lines[line_num].split()[self.row_offset:]])
+		means = np.array([float(mean) for mean in self.mean_lines[line_num].split()[self.row_offset:]])
 		return self._do_dist(rnd, means, sds)
 
 	def vary_by_block(self,line_num):

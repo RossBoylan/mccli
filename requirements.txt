@@ -23,3 +23,6 @@ pandas  # used in frmtReport.py and plot.py
 
 # remove the # at the start of the next line to request installation of pySide2.
 #pySide2
+
+## For debugging with VSCode, if want to attach to spawned montecarlo.py
+#debugpy

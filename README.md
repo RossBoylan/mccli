@@ -31,22 +31,25 @@ The previous discussion was a slight simplification: the program actually will a
 
 ## Usage
 ```
-Usage: mc <command> [options]
+mc.js [command]
 
 Commands:
-  init                   initialize Montecarlo files
-
-  run-sims [iterations] [start] [seed]      run MC simulations
-                                                       [aliases: run, r]
+  mc.js init                                initialize MC system in current
+                                            directory
+  mc.js run-sims [iterations] [start]       run MC simulations
+  [seed] [--json] [--overwrite]
+  [--vscdebug]                                                 [aliases: run, r]
 
 Options:
-  --python, --py     python interpreter to use   [string] [default: py probably only works on MS-Windows]
-  --help          Show help  
+  --version       Show version number                                  [boolean]
+  --python, --py        [string] [default: py probably only works on MS-Windows]
+  --help          Show help                                            [boolean]
+```
+
+Use `mc run --help` for fuller meaning of arguments
 
 
-Use mc run --help for fuller meaning of arguments
-
-
+```
 Usage: frmtToData.py
 Scans the output of a simulation run and converts it to a single datafile.
 

@@ -82,6 +82,10 @@ module.exports = (argv) => {
 		}
 
         let py = argv.py
+		let pydbg = ''
+		if (argv.vscdebug)
+			pydbg = ' -m debugpy --listen 5678 --wait-for-client'
+
 		let dat_files = inputsData['dat_files'].map((datfile) => datfile.filename)
 
 		let inp_files = inputsData['inp_files'];
@@ -135,7 +139,7 @@ module.exports = (argv) => {
 			}
 
 			if(i == 0) {
-				res = shell.exec(py+` ${__dirname}/../python/montecarlo.py -z -s`,{silent:true});
+				res = shell.exec(py+ pydbg + ` ${__dirname}/../python/montecarlo.py -z -s`,{silent:true});
 				if (res.code !== 0) {
 					error("montecarlo.py run failed",res.stdout);
 				}
@@ -146,7 +150,7 @@ module.exports = (argv) => {
 				if (fs.existsSync(INP_OUTPUT_FILE)) {
 					fs.appendFileSync(INP_OUTPUT_FILE, str.substring(0,16) + '  ')
                 }
-                let cmd = py + ` ${__dirname}/../python/montecarlo.py -s -i ${i}`
+                let cmd = py + pydbg + ` ${__dirname}/../python/montecarlo.py -s -i ${i}`
                 if (argv.seed)
                     cmd += ` --seed ${argv.seed}`
 				res = shell.exec(cmd,{silent:true});

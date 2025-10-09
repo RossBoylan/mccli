@@ -13,7 +13,7 @@ let argv = yargs
 .command({
     // the command string must include positional arguments for them
     // to be parsed properly. 
-    command: 'run-sims [iterations] [start] [seed] [--json] [--overwrite]',
+    command: 'run-sims [iterations] [start] [seed] [--json] [--overwrite] [--vscdebug]',
     aliases: ['run', 'r'],
     desc: 'run MC simulations',
     // yargs >= 17.0.0 allows positional at root level
@@ -45,7 +45,12 @@ let argv = yargs
             type: 'boolean',
             default: false
         })
-        .epilog("All numbers should be unsigned integers."),
+        .option('vscdebug', {
+            describe: 'run montecarlo.py so that Visual Studio Code can attach to it.  Requires the debugpy Python module.  The montecarlo will wait for the debugger to attach.',
+            type: 'boolean',
+            default: false
+        })
+        .epilog("All numbers should be unsigned integers.  Ordinary users will not need the last 3 options."),
     handler: runSims,
 })
 .option('python', {

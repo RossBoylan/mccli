@@ -31,6 +31,13 @@
             "console": "integratedTerminal",
             "justMyCode": true,
         },
+        {"name": "Attach to montecarlo.py",
+        "type": "debugpy",
+        "request": "attach",
+        "connect": {
+            "port": 5678
+            }
+        },
         {
             "type": "node",
             "request": "launch",

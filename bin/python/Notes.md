@@ -1,3 +1,8 @@
+---
+title: Notes for Programmers
+numbersections: true
+---
+
 Notes for Programmers and Advanced Users
 
 Notes on what files `montecarlo.py` uses.  Also files used by `runSims.js` and `Fortran`.
@@ -6,6 +11,10 @@ This is to aid testing.
 
 Also includes info on tracking failures and the specification of `.dat` files in `input_data.json`.
 
+- [Developer Tools](#developer-tools)
+  - [Debugging](#debugging)
+  - [Graphics and `Qt`](#graphics-and-qt)
+  - [Code Layout](#code-layout)
 - [Notes on Internal Use of Files](#notes-on-internal-use-of-files)
 - [Other Notes](#other-notes)
 - [Sampling for .inp and .dat Files](#sampling-for-inp-and-dat-files)
@@ -40,7 +49,53 @@ Also includes info on tracking failures and the specification of `.dat` files in
   - [2022-09-14](#2022-09-14)
 - [To Do](#to-do)
 
+# Developer Tools
+As will be clear from the installation instructions, this system combines a lot of different systems.  These notes are particularly for those who want to develop with the system.
 
+The operation employs a software stack, with `Node.js` running `mc.js` at the top level.  As it runs, it executes various `Python` programs and the core model, typically `CVDMODYY`, which is in `Fortran`.  This project does not include the `Fortran` code, and can work with various versions of it.  Note, however, that recent versions of this code, typically identified as "heart failure" or "HF" require newer versions of the `Fortran` model.
+
+Even if you are not building the `Fortran` model from source you will likely need to install some supporting libraries from the `Fortran` compiler vendor for the binaries to run.  Our practice has been to package the `Fortran` binary (for `MS-Windows`) with the project data; the montecarlo code expects it to be there.  Sometimes an installer for the `Fortran` libraries is with the program.
+
+To keep things interesting, one can go one level more meta and use this package's `maestro.py` to automate parallel runs.  This puts a `Python` program on top of the whole previous stack.
+
+It is useful to have tools that can handle several languages at once.  We have found `Visual Studio Code` useful; it runs on most major platforms.  Some of the code in the possibly never-to-be-completed `HF`  (Heart Failure) branch uses a literate programming extension that is specific to `VSCode`.  If you switch to the `HF` branch there is much more documentation about that.
+
+Note there is also a simpler `base-HF` branch that handles a change in the format of outputs for Heart Failure.  It and its descendants, `parallel` and `justice` all work with the new Heart Failure `Fortran` models.  They are all "completed".
+
+## Debugging
+Since processes in one language launch processes in another, debugging can be awkward; if you are debugging the top-level program you can't just step into the lower level program it invokes.  In a typical scenario something goes wrong in a monte carlo run, but the failure is in `Python` program it invoked.  Further, a lot of the error information tends to get lost as it traverses levels.  This is particularly so because the invocation from `Node` typically hides the output of the subprocesses it invokes.  I, Ross, have used several approaches to this.
+
+1. Run the invoked program separately under a debugger.  This requires guessing how it was invoked and assuring that all the necessary inputs are in place.
+2. Track exactly how it is invoked by printing out the arguments or stepping through the top-level process in the debugger.  This will also assure that any necessary setup, e.g., creation of files, takes place.  Then one can use this information to do step 1.  It generally requires the ability to pass command-line arguments for the underlying program into the debugger.
+3. Make the invocation of subprocesses more verbose.  For example, in `runSims.js` change `shell.exec(someCommand,{silent:true});` to `shell.exec(someCommand,{silent:false});`.  This may overcome the fact that `print()` commands in `Python` otherwise may leave no trace.
+4. Make the lower-level program wait, perhaps by waiting for terminal input or going in a loop or execute a debugging breakpoint.  Then start an appropriate debugger and attach to the process.  I used this in `Visual Studio` and `Visual Studio Code`.
+5. `Visual Studio Code` has a well developed [procedure](https://code.visualstudio.com/docs/python/debugging#_command-line-debugging) for attaching to new `Python` processes.  If you want to debug `montecarlo.py` you can invoke `node mc run` with `--vscdebug` to trigger it.  You will still need to set up a `launch.json` configuration in `VSCode` to attach to it (or maybe not--see the sample under `.vscode` in the repository and its `Attach to montecarlo.py` configuration).  I found that, despite the `--wait-on-client` option the subprocess didn't halt unless I set a breakpoint in it.
+
+If you want to use the last option you **must** install `debugpy` in the appropriate `Python` environment.  And, obviously, you need to be using `VSCode` with the relevant `Python` extension.
+
+## Graphics and `Qt`
+This package currently uses the `Qt` toolkit to create a graphics application.  The only such application is `frmtReport.py`, a somewhat specialized application for post-processing the results of a simulation.  The `Python` package `pySide2` provides the interfaces (to `Qt5`, despite the name). As the [README](../../README.md) indicates, this is a problem because it is a relatively large package, because it depends on parts (namely the `Qt` libraries) that may not be virtual environment respecting, and most of all because it is obsolete.  The last binary package for `pySide2` on `MS-Windows` is for `Python 3.10`.  That version is officially supported until [2026-10](https://devguide.python.org/versions/)--sort of: "After two years (18 months for versions before 3.13), only security fixes are accepted and no more binaries are released." I don't see how a source-only release of a security fix is at all helpful to users who need binariess.  So using an older `Python` carries security risks, at least on `MS-Windows`.
+
+In general, as time passes, current versions of other packages will not be available for `Python 3.10` and so using the older version will tend to freeze your entire `Python` ecosystem.
+
+`pySide2`'s successor, `pySide6`, wraps `Qt6`.  It includes some features, especially `asyncio` integration, that are potentially quite important.  `Python`'s async framework uses an event loop; `Qt`'s GUI uses an event loop; if you want to use them both you need an integrated event loop, which the newer `Qt` provides.  The code `maestro.py` uses relies on the async framework.  I have also contemplated using `Qt` for other non-graphical services like using `SQLite`, which again raises integration issues.
+
+I do not know if one program can use both versions of `pySide` at once.  Even if it's sometimes possible, I assume there can only be one event loop.
+
+The move to `pySide6` is likely relatively easy and the interface pretty similar.  But someone would have to replace the `import`'s from `pySide2` with `pySide6`, create an appropriate virtual environment, update the `requirements.txt` file and other documentation discussing the issue, verify that everything still worked, and then deal with anything that didn't.  The most likely change would be some rearrangement of the namespace.
+
+## Code Layout
+Most of the code is under `bin`, in the `python` subdirectory for `Python` and the `js` directory for `Javascript`, to be executed by `Node.js`.  There are a few higher level programs at higher levels.  The top-level code for automatic parallel runs is `bin/python/maestro.py`, using the library in `bin/python/symphony`.
+
+Some `Python` specific documentation appears under `bin/python`, including the `maestro` documentation and this file, which really isn't just about `Python` any more.  In some branches I believe I already moved it elsewhere.
+
+`node_modules`: Effectively the `Node` virtual environment for this project.
+
+`pre-build`: For documents to create before the ordinary build step.  `CorrGraph.py` creates some images and requires `numpy` and `matplotlib` to function.
+
+`py_tests`: For `Python` unit tests using `pytest`, a testing framework supported by `VSCode`.  Many of the tests do not execute by default since they rely on file scattered around my disk.
+
+`pyenv`: `Python` virtual environment (from `venv`) for this project.
 # Notes on Internal Use of Files
 `montecarlo.py` reads an input file (or is it a dat file?) from `_mc0.<ext>` and writes to `_mc.<ext>`.  The javascript code copies the _mc to a numbered version, but that is strictly for archival purposes; the Fortran model will use the _mc file.
 

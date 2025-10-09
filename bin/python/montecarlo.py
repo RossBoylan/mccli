@@ -16,7 +16,6 @@ def main():
 	global RG  # the random generator
 	args = parse_args()
 	seed = args.seed
-	#print(f"montecarlo.py {args.iteration} called.")
 	if seed:
 		# https://github.com/numpy/numpy/issues/22119#issuecomment-1213579174
 		# recommends the following strategy
@@ -585,6 +584,10 @@ class SDFile(object):
 		# mean of 0 should imply sd of 0
 		mask = (means == 0.0) | (sds <= 0.0)
 		res[mask] = means[mask]
+		if mask.all():
+			# later logic will not handle empty vectors
+			# and there's no need for it.  All values remain at means.
+			return res
 		mask = np.logical_not(mask)
 		switch = (means < 0.0)
 		means = np.abs(means)

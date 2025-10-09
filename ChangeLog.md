@@ -1,6 +1,7 @@
 Change Log for `mccli`
 * 3.6.2-alpha1
   * Fix problems simulating beta distribution for `.dat` files.  Issue #22.
+  * Fix a second problem with beta when all sds are 0. Issue #23.
   * Note obsolesence of `pySide2` in `README.md` and comments of `requirements.txt`.
   * **`pySide2` no longer installed by default**.  This implies `frmtReport.py` will **not** run in a default install.
 

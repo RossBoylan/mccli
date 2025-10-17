@@ -4,6 +4,8 @@ import shutil
 import subprocess
 import sys
 
+from basics import Basics
+
 class AFilter:
     """This is the file filter function with a little extra information.
     """

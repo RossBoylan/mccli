@@ -12,7 +12,11 @@ class AFilter:
         # and then the stuff we will need
         self.input_data = basics.input_data
         self.DATADIR = basics.DATADIR
-        self.keep_extensions = (".inp", ".out", ".frmt", ".dat", ".txt")
+        # Unsure if .def needs to be on the list to keep
+        self.keep_extensions = (".inp", ".out", ".frmt", ".dat", ".txt", ".lst", ".def")
+        # extra_dirs has paths to directories below the top level that should
+        # be retained
+        self.extra_dirs = [Path(self.DATADIR) / "input" / "inputchk"]
 
     def __call__(self, theDir, theList):
         """Return elements of theList to exclude from copying.
@@ -38,7 +42,10 @@ class AFilter:
             # we are in a lower-level directory
             for x in theList:
                 p = Path(theDir) / x
-                if p.is_dir() or p.suffix.lower() not in self.keep_extensions:
+                if p.is_dir():
+                    if p not in self.extra_dirs:
+                        exclude.append(x)
+                elif (p.suffix.lower() not in self.keep_extensions):
                     exclude.append(x)
         return exclude
 

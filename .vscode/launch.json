@@ -15,13 +15,13 @@
             "cwd": "C:\\Users\\rdboylan\\Documents\\KBD\\MC_SELECT_06.02.2025"
         },
         {
-            "name": "Python: TestData2",
+            "name": "Python: justice maestro",
             "type": "debugpy",
             "request": "launch",
             "program": "${workspaceFolder}\\bin\\python\\maestro.py",
             "console": "integratedTerminal",
             "justMyCode": true,
-            "cwd": "C:\\Users\\rdboylan\\Documents\\KBD\\TestData2"
+            "cwd": "C:\\Users\\rdboylan\\Documents\\KBD\\JUSTICE_MonteCarlo_8spk"
         },
         {
             "name": "Python: Current File",

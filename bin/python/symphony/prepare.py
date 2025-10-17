@@ -102,7 +102,8 @@ def prepare(basics: "Basics", stemcell=None):
     Adds more information to basics, as described in prepare_basics().
     """
     prepare_basics(basics, stemcell)
-    if not basics.pdir.exists():
+    if not basics.pdir.exists() and not stemcell:
+        # stemcell creates later by copying
         basics.pdir.mkdir()
 
     if stemcell:

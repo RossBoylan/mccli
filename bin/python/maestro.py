@@ -105,5 +105,5 @@ async def main(basics: Basics):
     await switch.message_obj({"type": "INFO", "text": f"Maestro finishes {len(runs)} parallel runs at {datetime.now()}\n"})
     switch.close()
 
-asyncio.run(main(basics))
-#prepare(basics, stemcell="../TestData2")
+#asyncio.run(main(basics))
+prepare(basics, stemcell="../Justice_Lite")

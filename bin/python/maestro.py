@@ -106,4 +106,4 @@ async def main(basics: Basics):
     switch.close()
 
 #asyncio.run(main(basics))
-prepare(basics, stemcell="../Justice_Lite")
+prepare(basics, stemcell="../Justice_Lite2")

@@ -12,6 +12,7 @@ class AFilter:
         # and then the stuff we will need
         self.input_data = basics.input_data
         self.DATADIR = basics.DATADIR
+        self.keep_extensions = (".inp", ".out", ".frmt", ".dat", ".txt")
 
     def __call__(self, theDir, theList):
         """Return elements of theList to exclude from copying.
@@ -28,10 +29,16 @@ class AFilter:
                         continue
                     else:
                         exclude.append(x)
-                elif p.suffix.lower() in (".inp", ".out", ".frmt", ".dat", ".txt") or \
+                elif p.suffix.lower() in self.keep_extensions or \
                     p.name.lower() in ("outfile.dat", myprog):
                     continue         
                 else:
+                    exclude.append(x)
+        else:
+            # we are in a lower-level directory
+            for x in theList:
+                p = Path(theDir) / x
+                if p.is_dir() or p.suffix.lower() not in self.keep_extensions:
                     exclude.append(x)
         return exclude
 

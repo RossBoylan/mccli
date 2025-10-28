@@ -24,5 +24,10 @@ pandas  # used in frmtReport.py and plot.py
 # remove the # at the start of the next line to request installation of pySide2.
 #pySide2
 
+##### Developer modules ##########
+
 ## For debugging with VSCode, if want to attach to spawned montecarlo.py
 #debugpy
+
+## For python test suite.  Version requirement from VSCode https://code.visualstudio.com/docs/python/testing
+#pytest  >=7.0.0

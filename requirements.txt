@@ -31,3 +31,4 @@ pandas  # used in frmtReport.py and plot.py
 
 ## For python test suite.  Version requirement from VSCode https://code.visualstudio.com/docs/python/testing
 #pytest  >=7.0.0
+#pytest-cov

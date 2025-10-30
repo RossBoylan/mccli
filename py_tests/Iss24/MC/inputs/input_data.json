@@ -1,0 +1,64 @@
+{
+    "default_iterations": 1001,
+    "model": "CVDMOD92",
+    "inp_files": [
+        "USJp",
+        "US"
+    ],
+    "dat_files": [
+        {
+            "filename": "b",
+            "format": {
+                "leading_spaces": 14,
+                "mid_spaces": 3,
+                "num_format": "9.6f"
+            },
+            "correlation": "block",
+            "blocksPerGroup": 2
+        },
+        {
+            "filename": "bstk",
+            "format": {
+                "leading_spaces": 14,
+                "mid_spaces": 3,
+                "num_format": "9.6f"
+            },
+            "correlation": "block",
+            "blocksPerGroup": 2
+        },
+        {
+            "filename": "prfp",
+            "format": {
+                "leading_spaces": 13,
+                "mid_spaces": 2,
+                "num_format": "8.6f"
+            },
+            "sumToOne": true,
+            "correlation": "none",
+            "distribution": "beta"
+        },
+        {
+            "filename": "modpr",
+            "danger": true,
+            "format": {
+                "leading_spaces": 13,
+                "mid_spaces": 2,
+                "num_format": "8.6f"
+            },
+            "sumToOne": true,
+            "correlation": "none",
+            "distribution": "beta"
+        },
+        {
+            "filename": "pcvd",
+            "danger": true,
+            "format": {
+                "leading_spaces": 16,
+                "mid_spaces": 3,
+                "num_format": "8.6f"
+            },
+            "correlation": "none",
+            "distribution": "beta"
+        }
+    ]
+}

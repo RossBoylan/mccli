@@ -1,0 +1,6 @@
+simulation #      INDEPENDENT                   
+USJp.inp          0                 
+US.inp            0                 
+1                 1.3728959         
+2                 1.1738896         
+3                 1.3540013         

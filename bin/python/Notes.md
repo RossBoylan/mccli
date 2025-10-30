@@ -526,6 +526,20 @@ Modified test code to write out iteration number.
 To Do
 =====
 
+  - [ ] `sum_results.py` and Issue #24
+    - [ ] Problem with lack of permission to make the `summary` directory
+      - currently fixed for `KBD\mccli-justice` only
+      - and slightly documented in `Iss24\ReadMe.md`
+      - [ ] check if fresh installs have problem
+      - [ ] Make the necessary instructions more prominent, either in Developer Notes or the overall ReadMe.
+      - [ ] If it is a problem, consider an alternate approach that doesn't run into it, e.g., deleting the individual files and leaving the directory.
+    - [ ] Add comments `test_sum_results.py` and review the ones there
+    - [ ] Consider adding additional tests, e.g., for inp.txt or for the contents of the output files
+    - [ ] rerun previous analysis with new code.  At a minimum need to trim `inp.txt` and delete the files in `summary`.
+    - [ ] Maybe discuss testing in the Developer notes on tooling
+    - [ ] Rationalize layout of tests and test data?
+  - [ ] Move all test input files into project source tree under `py_tests`.
+  - [ ] Is it OK to publish the test data?
   - [ ] Parallel Runs w/maestro.py
     - [ ] TerminalTimerLog
       - [x] errors when all NA
@@ -579,8 +593,6 @@ To Do
     Sometimes I do, and sometimes I don't.
     Inconsistent and confusing.
     This has 2 dimensions: handling of filelike vs pathlike arguments, and handling across different classes and methods.
-  - [ ] Move all test input files into project source tree under `py_tests`.
-  - [ ] Is it OK to publish the test data?
   - [ ] Complete tests for `Effects` as is.  In particular
     + [  ] test values are reasonable given mean and sd
     + [  ] values are in expected domain (maybe)

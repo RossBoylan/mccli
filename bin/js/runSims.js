@@ -206,6 +206,7 @@ module.exports = (argv) => {
 					res = shell.exec(`${modelName}<${mcFile}> MOD_zerorun.txt`,{silent:true});
 				}
 				else {
+					//WARNING: nul is MS-Windows-specific (unless shell.exe is clever)
 					res = shell.exec(`${modelName}<${mcFile}> nul`,{silent:true});
 				}
 				

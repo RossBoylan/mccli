@@ -98,7 +98,8 @@ class InpFile(object):
 
 
 	def includes_file(self,f):
-		return isfile(join(DATFILE_DIR,f)) and f.startswith(self.fname)
+		# the +"_" addresses Issue #24, in which US also matches USJp.
+		return isfile(join(DATFILE_DIR,f)) and f.startswith(self.fname+"_")
 
 	def get_sim_files(self):
 		sim_file_names = [f for f in listdir(DATFILE_DIR) if self.includes_file(f)]

@@ -553,7 +553,13 @@ class SDFile(object):
 		if q is None:
 			res[mask] = self.RG.lognormal(mu, sigma)
 		else:
-			q0 = np.array(q, copy=False)  # q might be a single number
+			# The next line of code used to use np.array(q, copy=False),
+			# but as of NumPy 2.0 that generates (at least when q is a single number)
+			# E     ValueError: Unable to avoid copy while creating an array as requested.
+			# E     If using `np.array(obj, copy=False)` replace it with `np.asarray(obj)` to allow a copy when needed (no behavior change in NumPy 1.x).
+			# E     For more details, see https://numpy.org/devdocs/numpy_2_0_migration_guide.html#adapting-to-changes-in-the-copy-keyword.
+			# The docs note that in NumPy 1.x the asarray could be less efficient.
+			q0 = np.asarray(q)  # q might be a single number
 			if q0.size > 1:
 				res[mask] = stats.lognorm.ppf(q[mask], s = sigma, scale = np.exp(mu))
 			else:

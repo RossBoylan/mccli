@@ -5,6 +5,7 @@ Change Log for `mccli`
   * Document the testing procedure.
   * Create a separate, streamlined `Installation.md`.
   * Support `VSCode` attaching debugger to a launched `montecarlo.py`
+  * Fix incompatibility with `NumPy` 2.x.
 
 * 3.6.2-alpha1 2025-10-08 ross.boylan@ucsf.edu
   * Fix problems simulating beta distribution for `.dat` files.  Issue #22.

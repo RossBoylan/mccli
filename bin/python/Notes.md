@@ -602,7 +602,10 @@ To Do
     - [ ] Rationalize layout of tests and test data?
   - [ ] Move all test input files into project source tree under `py_tests`.
   - [ ] Is it OK to publish the test data?
-  - [ ] The generated `pdf`'s are treating `$` literally rather than using it to go into math mode.
+  - [ ] The generated `pdf`'s are treating `$` literally rather than using it to go into math mode.  DEFER as currently unfixable.
+    - Tried disabling `markdown.extension.math.enabled` as recommended by that extension when `koehlma.markdown-math` is available.  No help on the `pdf`; interactive preview remains good.
+    - https://stackoverflow.com/q/71909535 from 2022 suggests this is a long-standing bug.  Several possible work-arounds (installing `Chrome`, adding `HTML` snippets) suggested.
+    - https://github.com/yzane/vscode-markdown-pdf/issues/395 is a Jan 2025 bug on the plugin for this problem.  It mentions the `HTML` snippet, but apparently it solves the problem for `pdf` but screws up rendering on github.  I subscribed to the bug.
   - [ ] links in the `pdf`'s don't work, at least on `MS-Windows` with the Foxit reader.
   - [ ] Parallel Runs w/maestro.py
     - [ ] TerminalTimerLog

@@ -5,14 +5,14 @@ numbersections: true
 
 Notes for Programmers and Advanced Users
 
-Notes on what files `montecarlo.py` uses.  Also files used by `runSims.js` and `Fortran`.
-So probably I should move this file to a different directory.
-This is to aid testing.
+These notes initially recorded the results of an analysis of what files `montecarlo.py` uses (that [section](#notes-on-internal-use-of-files) is still here, with the addition of files used by `runSims.js` and the `Fortran` model).  But it has expanded beyond that, as seen in the table of contents just below.  And since it's not just about `Python`, it probably belongs in a different directory (the `HF` branch has already moved it under `doc`).  But for  now, it remains in `bin/python`.
 
-Also includes info on tracking failures and the specification of `.dat` files in `input_data.json`.
+This is not intended to be read end-to-end.  As you discover new things, you may want to add them to this document.
 
 - [Developer Tools](#developer-tools)
   - [Debugging](#debugging)
+  - [Testing](#testing)
+    - [`pytest`](#pytest)
   - [Graphics and `Qt`](#graphics-and-qt)
   - [Code Layout](#code-layout)
 - [Notes on Internal Use of Files](#notes-on-internal-use-of-files)
@@ -72,6 +72,68 @@ Since processes in one language launch processes in another, debugging can be aw
 5. `Visual Studio Code` has a well developed [procedure](https://code.visualstudio.com/docs/python/debugging#_command-line-debugging) for attaching to new `Python` processes.  If you want to debug `montecarlo.py` you can invoke `node mc run` with `--vscdebug` to trigger it.  You will still need to set up a `launch.json` configuration in `VSCode` to attach to it (or maybe not--see the sample under `.vscode` in the repository and its `Attach to montecarlo.py` configuration).  I found that, despite the `--wait-on-client` option the subprocess didn't halt unless I set a breakpoint in it.
 
 If you want to use the last option you **must** install `debugpy` in the appropriate `Python` environment.  And, obviously, you need to be using `VSCode` with the relevant `Python` extension.
+
+## Testing
+
+Test coverage is currently minimal: there are no `javascript`/`Node` tests and only a few  for `Python`.  For the latter we use the [pytest](https://docs.pytest.org) framework, and the tests and test data are under `py_tests`.
+
+Testing requires the `Python` package `pytest` and benefits from `pytest-cov`, which provides coverage analysis of the tests.  Both are in `requirements.txt` but commented out.  You need to either uncomment them early in the `mccli` installation process or use `python -m pip install pytest pytest-cov` to install them later, in the appropriate virtual environment.
+
+None of the tests run automatically; you will need to trigger them manually.
+
+If you are using `Python` virtual environments, as recommended, you should run the tests from within that environment.  Some of the tests may assume that you are using a virtual environment and that it is in the `pyenv` subdirectory of the project.  It is also possible that the tests must be run from the top level of the project.
+
+`VSCode` offers many [conveniences](https://code.visualstudio.com/docs/python/testing) for running some or all tests, inspecting the results, and debugging problems.  See the flask icon on the activity bar, usually on the left.
+
+### `pytest`
+
+This subsection has some notes on `pytest`, a `Python` testing framework, for those writing new tests.
+
+To access `pytest` **features** put an argument of the same name in the definition of the test function.  You can use as many as you want: `def test_shared_prefix(pytestconfig, monkeypatch, request):`.  You can then pull information out of the arguments, or directly use the arguments.
+
+There are potentially a lot of directories involved in running a test:
+
+  * The directory from which `pytest` was launched
+  * The root directory of `mccli`
+  * The test directory `mccli/py_tests`
+  * The directory with data for the test
+  * The directory for the `Python` virtual environment
+  * The directory in which the `Python` executable resides
+  * A temporary directory in which to run the test
+
+**Getting the directories reliably**, with a minimum set of assumptions, is challenging.  That is one reason for the advice to always run `pytest` from the `mccli` root.
+
+`request.path` gives a `pathlib.Path` object that is the full path of the file running the test, e.g., `C:\Users\rdboylan\Documents\KBD\mccli-justice\py_tests\test_sum_results.py` for tests run from that file.  I believe that will be more stable than just using `__file__`, which won't be right if the test uses other modules for getting directories.
+
+From that location one can navigate to any other part of the tree.
+
+There are some other constructs that are not reliable. `request.config.rootpath` or the equivalent (I think) `pytestconfig.rootpath` use an algorithm that will not reliably find the root, even if run within the `mccli` directory tree, much less if the working directory is outside of that tree.  The algorithm looks for files that are not present, because the `mccli` neither is nor contains a regular `Python` package.
+
+Locating the `Python` **virtual environment** is challenging for several reasons:
+
+  1. There may be no virtual environment.
+  2. The virtual environment may not be in the expected location `mccli/pyenv`; it may not be under the `mccli` at all.
+  3. Even given the top of the virtual environment, the complete path to its `Python` is variable.  Under `MS-Windows` one should look under `Scripts`; most other systems use `bin`.  Further, the exact name of the executable varies: it has an `.exe` extension on `MS-Windows` but not elsewhere, and it may go by `python` or `python3`.
+
+The safest way to activate the virtual environment if the test runs a program in a subshell is to use `sys.executable`, which gets the complete path, including the file name and extension,  for the `Python` that is executing the test.  This *only works if `pyenv` was launched using the desired virtual environment*.  The virtual environment is set up so that if you invoke its version of `Python` you will get the whole environment.
+
+In `VSCode`, `Path.cwd()` always returned the root `mccli` directory when run by a test function, even though those functions are in files further down the directory tree.  As noted, that doesn't seem like something to rely on in general.
+
+`sys.executable` gives the full path of the running `Python`,  even if there is no active virtual environment.  Use `sys.prefix != sys.base_prefix` to tell if a virtual environment is active or not.
+
+The best way to **change the working directory** temporarily is with `monkeypath.chdir("somewhere")`.  This will revert back to the original directory at the end of the test function, without any need to program that explicitly.  Or, if using `subprocess.run()` one can use the `cwd=` argument to set the working directory for the spawned subprocess.
+
+One can create **new fixtures** with
+```python
+import pytest
+
+@pytest.fixture
+def my_new_fixture():
+  # stuff
+  # return the value of the fixture
+```
+
+The function definition may have fixtures as arguments.
 
 ## Graphics and `Qt`
 This package currently uses the `Qt` toolkit to create a graphics application.  The only such application is `frmtReport.py`, a somewhat specialized application for post-processing the results of a simulation.  The `Python` package `pySide2` provides the interfaces (to `Qt5`, despite the name). As the [README](../../README.md) indicates, this is a problem because it is a relatively large package, because it depends on parts (namely the `Qt` libraries) that may not be virtual environment respecting, and most of all because it is obsolete.  The last binary package for `pySide2` on `MS-Windows` is for `Python 3.10`.  That version is officially supported until [2026-10](https://devguide.python.org/versions/)--sort of: "After two years (18 months for versions before 3.13), only security fixes are accepted and no more binaries are released." I don't see how a source-only release of a security fix is at all helpful to users who need binariess.  So using an older `Python` carries security risks, at least on `MS-Windows`.
@@ -311,7 +373,7 @@ Sometimes data look like this, for `shrtwgt`:
 and so on.  Each group (sex) has 20 variables; the first 10 are displayed in the first block, and the second 10 in the second block.  So this gets `"blocksPerGroup": 2`.  Here's what the correlations look like:
 ![correlation by block: 2 blocks per group](../../pre-build/corr-block2.svg)
 
-Although the blocks are shown in 2 columns (men and women), the actual file would have them consecutively: first the 2 blocks for men, and then the 2 blocks for women. Also, some of the colors are very similar, either across blocks (e.g., V3 for age group 2 in the first block and V12 for age group 1 in the second block) or within (e.g., in the seconod block age 2 V13 and age 3 V12).  They actually are subtly different. The point is that variables match across groups for a given age; all else is uncorrelated.
+Although the blocks are shown in 2 columns (men and women), the actual file would have them consecutively: first the 2 blocks for men, and then the 2 blocks for women. Also, some of the colors are very similar, either across blocks (e.g., V3 for age group 2 in the first block and V12 for age group 1 in the second block) or within (e.g., in the second block age 2 V13 and age 3 V12).  They actually are subtly different. The point is that variables match across groups for a given age; all else is uncorrelated.
 
 The result induces a correlation between values for, e.g., variable 1 in both groups, but not between variable 1 and variable 11 in the first group, even though both are in the first column.
 
@@ -533,13 +595,15 @@ To Do
       - [ ] check if fresh installs have problem
       - [ ] Make the necessary instructions more prominent, either in Developer Notes or the overall ReadMe.
       - [ ] If it is a problem, consider an alternate approach that doesn't run into it, e.g., deleting the individual files and leaving the directory.
-    - [ ] Add comments `test_sum_results.py` and review the ones there
-    - [ ] Consider adding additional tests, e.g., for inp.txt or for the contents of the output files
+    - [x] Add comments `test_sum_results.py` and review the ones there. Moved some of the material to `Notes.md`.
+    - [ ] Consider adding additional tests, e.g., for `inp.txt` or for the contents of the output files
     - [ ] rerun previous analysis with new code.  At a minimum need to trim `inp.txt` and delete the files in `summary`.
-    - [ ] Maybe discuss testing in the Developer notes on tooling
+    - [x] Discuss testing in the Developer notes
     - [ ] Rationalize layout of tests and test data?
   - [ ] Move all test input files into project source tree under `py_tests`.
   - [ ] Is it OK to publish the test data?
+  - [ ] The generated `pdf`'s are treating `$` literally rather than using it to go into math mode.
+  - [ ] links in the `pdf`'s don't work, at least on `MS-Windows` with the Foxit reader.
   - [ ] Parallel Runs w/maestro.py
     - [ ] TerminalTimerLog
       - [x] errors when all NA
@@ -647,3 +711,4 @@ To Do
   - [ ] Incorporate my fuller understanding of correlations in `.inp` files into user documentation.  Currently quite a bit is in this file and in comments in `montecarlo.py` (low)
   - [ ] Incorporate relevant material from https://github.com/ecfairle/CHDMOD into this project (may already be in our `README.md`) and eliminate reference to it in documentation and code (e.g., `montecarlo.py` has a comment referring to it.) (low)
   - [ ] Allow resuming after interrupted run from, e.g., system shutdown.  See issues #5, #2.
+  - [x] Update the Intel Fortran libraries

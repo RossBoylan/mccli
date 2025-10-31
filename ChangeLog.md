@@ -1,4 +1,11 @@
 Change Log for `mccli`
+
+* 3.6.2-alpha2
+  * Fix problem getting summary when name of one `.inp` scenario is a prefix of another scenario, Issue #24.
+  * Document the testing procedure.
+  * Create a separate, streamlined `Installation.md`.
+  * Support `VSCode` attaching debugger to a launched `montecarlo.py`
+
 * 3.6.2-alpha1 2025-10-08 ross.boylan@ucsf.edu
   * Fix problems simulating beta distribution for `.dat` files.  Issue #22.
   * Fix a second problem with beta when all sds are 0. Issue #23.

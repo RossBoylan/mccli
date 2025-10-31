@@ -61,24 +61,24 @@ class InpFile(object):
 			means = self.means(label)
 			sds = self.sds(label)
 
-			try: 
+			try:
 				with open('MC/results/summary/ageranges_{}.csv'.format(label), 'a', newline='') as fp:
-				    a = csv.writer(fp, delimiter=',')
-				    a.writerow(['File', 'Simulation Number'] + self.sim_files[0].headers)
-				    a.writerow([self.fname, 'Mean'] + means.tolist())
-				    a.writerow([self.fname, 'Standard Deviation'] + sds.tolist())
-				    for file_name, data in zip(self.files[label],self.data[label]):
-				    	prefix,sim_number = file_name.split('_')
-				    	a.writerow([self.fname, sim_number] + data.tolist())
+					a = csv.writer(fp, delimiter=',')
+					a.writerow(['File', 'Simulation Number'] + self.sim_files[0].headers)
+					a.writerow([self.fname, 'Mean'] + means.tolist())
+					a.writerow([self.fname, 'Standard Deviation'] + sds.tolist())
+					for file_name, data in zip(self.files[label], self.data[label]):
+						prefix, sim_number = file_name.split('_')
+						a.writerow([self.fname, sim_number] + data.tolist())
 			except:
 				with open('MC/results/summary/ageranges_{}.csv'.format(label), 'ab') as fp:
-				    a = csv.writer(fp, delimiter=',')
-				    a.writerow(['File', 'Simulation Number'] + self.sim_files[0].headers)
-				    a.writerow([self.fname, 'Mean'] + means.tolist())
-				    a.writerow([self.fname, 'Standard Deviation'] + sds.tolist())
-				    for file_name, data in zip(self.files[label],self.data[label]):
-				    	prefix,sim_number = file_name.split('_')
-				    	a.writerow([self.fname, sim_number] + data.tolist())
+					a = csv.writer(fp, delimiter=',')
+					a.writerow(['File', 'Simulation Number'] + self.sim_files[0].headers)
+					a.writerow([self.fname, 'Mean'] + means.tolist())
+					a.writerow([self.fname, 'Standard Deviation'] + sds.tolist())
+					for file_name, data in zip(self.files[label], self.data[label]):
+						prefix, sim_number = file_name.split('_')
+						a.writerow([self.fname, sim_number] + data.tolist())
 
 	def plot(self,col,label):
 		plt.hist(np.array(self.data[label])[:,0])

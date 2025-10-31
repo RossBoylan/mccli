@@ -64,83 +64,11 @@ The purpose here is to produce summaries for variables that the basic monte-carl
 ### TESTING!
 This code is under development, may not work properly, and might seize your firstborn.
 
-### Get Source
+### Initial Setup of the `mccli` System
 
-This code is the `justice` branch of RossBoylan/mccli on github.com.  Despite that, it is still identified as "@ecfairle/mccli",
-and because of that the conventional installation with `npm install` may not work, especially if you have already installed the earlier version.
-
-I recommend putting a copy of this package on your local hard drive, e.g., `Documents\mccli`.  You can clone it from github and switch to the `justice` branch,
-or get it from an archive file.
+Is described in [Install](Install.md). Do *not* try to wing it!
 
 The [ChangeLog](ChangeLog.md) provides the history and features of this code
-
-### Node Setup
-
-If you have not done so, install [Node](https://nodejs.org/); we recommend the LTS version.  If you have already installed it, check that it is up to date; `Node` notoriously suffers security bugs.  `node --version` gives the version installed.
-
-To ensure setup, you should change to the top directory for `mccli`, e.g. `Documents\mccli\`, if you are not already there, and use a terminal (e.g., type command prompt in MS Windows) to execute
-
-   `npm install colors fs fs-extra inquirer path progress shelljs single-line-log yargs` 
-
-*Danger!* Simply using `npm install` will also install the packages. But it also updates the system, including the shortcuts `mc` to invoke the program, and possibly some libraries:
-   * If you have the old version installed running `npm install` with the new version will likely trash the old installation.
-   * The shorcuts established by the installation are almost certainly ignorant of the python virtual environment which we recommend creating below.
-
-*Do not use the `-g` option to npm,* since the package, as part of the general behavior of `Node`, does not load packages from the global environment (!).
-
-### Python Setup
-If you don't already have Python3 on your system, install [python](https://www.python.org/downloads/).  If you install it system-wide, which requires administrative rights, and add python to your PATH, life will be easier later.
-
-**WARNING** Which version of `Python` to install depends on a decision you will make later about whether to use the `pySide2` module.  We mention it here because the last version of `Python` on `MS-Windows` with available binaries for `pySide2` is 3.10.  So download that if you intend to use `pySide2`.  The default `requirements.txt` does *not* include `pySide2`, and we recommend leaving it that way and getting the latest stable `Python`.  See the comments in the `requirements.txt` file for more details.  If you do plan to use `pySide2` you probably should install `Python 3.10`.
-
-Although using a [Python virtual environment](https://docs.python.org/3/library/venv.html) takes a little more setup, it separates this project more cleanly from others.  In particular, it reduces the chances you will break unrelated programs.  So that's what we describe here; you can skip the virtual environment steps if you're feeling lucky.  So there's one question you've got to ask yourself: "Do I feel lucky?" Well, do ya, punk?
-
-The careful reader will have noticed the word *reduces* in "reduces the chances you will break unrelated programs".  It did not say it *eliminates* the risk.  If you install a python module, like `pySide2`, that depends on non-python libraries like `Qt`, they may still end up being installed system-wide and cause trouble.
-
-Virtual environments also allow you to pick which `Python` version to use so that you can, for example, have a virtual environment running `Python 3.10` and using the `pySide2` module while your main system, and other projects, use the current release of `Python`.
-
-From the `mccli` root (you should already be there) create a virtual environment with
-```shell
-py -m venv pyenv   # Windows
-python3 -m venv pyenv  # most others
-python -m venv pyenv   # some others--do python --version first to check it is python3
-```
-Note that the environment does not need to be called `pyenv` and it can be anywhere you like.  `pyenv` is already in `.gitignore`.
-
-Once you create the environment you must activate it.  When the environment is active the prompt will change, with the environment name appearing first, e.g., `(pyenv)`, and you will get the version of python specific to that environment when you type `python` (using `py` on Windows is not as reliable a way to detect the virtual environment).  When you install packages, as we are about to do, they go in the environment and are only visible from there.
-
-The exact command to activate the environment varies with the operating system and choice of shell (a table toward the end of the [Creating virtual environments](https://docs.python.org/3/library/venv.html#creating-virtual-environments) section has them all).  Assuming you are in the `mccli` root directory, the 3 most common choices
-```shell
-pyenv\Scripts\activate.bat   # Windows command prompt
-pyenv\Scripts\Activate.ps1   # Windows powershell
-# remember the source command below
-source pyenv/bin/activate    # *nix bash/zsh
-```
-
-You are more likely to be in a directory holding your analysis later, in which case you will need a more elaborate path to refer to `pyenv`.
-
-Each time you login, in fact each time you start a new terminal, you will need to activate the environment.  No matter how you started, `deactivate` will disable the environment.
-
-Now install the `Python` packages that mccli requires.  These are documented in `requirements.txt` in the root folder of `mccli`.   You may want to skip some of the packages listed in `requirements.txt`, in particular the heavy graphics of `pySide2` are only needed for some post-analysis.  You can review the comments in `requirements.txt` and comment out or delete any packages you don't want. Save the file.  Then 
-```shell
-python -m pip install -r requirements.txt  # or
-python -m pip install -r requirements.txt  --user   # if you are not in a virtual environment
-```
-should install all necessary packages.
-
-If now or later, specifically when running `frmtReport.py`, you get errors related to the graphics system, one possible cause is that you need to install the `Qt` libraries (written in C++, not Python).  You can get them through the green [Download the Qt Online Installer](https://www.qt.io/download-open-source) button at the bottom of the page.
-
-Later on you can keep your packages up to date with
-```shell
-python -m pip list --outdated  # shows which packages are old
-python -m pip install --upgrade -r requirements.txt # actually upgrades the packages
-python -m pip install --upgrade randomgen numpy   # like this to upgrade specific packages
-```
-
-
-### Node Virtual Environment
-
-`Node` has something very like the Python virtual environments.  Just as the `pyenv` directory created above holds a bunch of Python packages and related materials that are specific to this particular project, the `node_modules` directory holds the complete set of node modules used for this project.  Both directories are in the project's `.gitignore`, so you don't get overwhelmed by huge lists of files when you are working with `git` (version control system).
 
 ### First run
 
@@ -162,7 +90,9 @@ If you're curious, the reason for using `node <path to main file>` instead of ju
 shortcut by `npm install`, which these instructions deliberately avoid using.  To be sure of getting the right version we invoke `node` directly and give it the location of the file
 to execute.
 
-### Later Runs
+## Later Runs
+
+Each time you login, in fact each time you start a new terminal, you will need to activate the `Python` virtual environment (`pyenv\Scripts\activate.bat` for regular `MS-Windows` or `Activate.ps1` from `PowerShell`).  No matter how you started, `deactivate` will disable the environment.
 
 If you want to execute a variation of the original simulation, rename the `MC` folder to something indicating what it contains and rerun `mc init`. If you are varying the risk factor intervention input you will then need to create  `MC\inputs\inp_distribution.txt`, described below.
 
@@ -170,15 +100,37 @@ If your first run is part of the total run, e.g., repetitions 0-499, and you wan
 
 On Windows things might work ok without the `--python` argument; if it is not specified the default `py` is used to invoke python. `py` will probably be able to launch python, but the one it launches may not be using the virtual environment.  The simpler form `--python python` has a better chance of picking up the virtual environment.  For `*nix` systems the default `py` to invoke python will not work; again using python or python3 without a path might work, and explicitly specifying it, as shown above, is safest of all.
 
-### A Shortcut
+## A Shortcut
 Because it is often convenient to define some shortcuts to refer to the possibly cumbersome paths to the `mc` program, the `python` embedded in the proper virtual environment, and other programs like `maestro` that you may want to run, it can be convenient to write a script that takes care of all these steps, as well as activating the `python` virtual environment.
 
 [my](my.ps1) is a script I use for `Powershell`.  As noted in its comments, it should be run from the program (`mccli`) directory, not the project directory, and it must be invoked with a dot: `. my.ps1`.  Users of other environments, such as the regular `MS-Windows command prompt`, will need to roll their own. Scripts on `Unix` should also be invoked with `. `; otherwise some of the definitions will not last after the script finishes.
 
-The regular instructions appear below here.
 
+## Maintenance
+
+Check for updates to all components, especially `Node.js`, regularly.  Most such updates fix security problems.  The system is not a web server and so should be safe from most attacks.  However, the software does come from the internet, and so the isolation is imperfect.
+
+If now or later, specifically when running `frmtReport.py`, you get errors related to the graphics system, one possible cause is that you need to install the `Qt` libraries (written in C++, not Python).  You can get them through the green [Download the Qt Online Installer](https://www.qt.io/download-open-source) button at the bottom of the page.  But usually they can be obtained as a side-effect of installing the `Python` package `pySide2`.
+
+Later on you can keep your `Python` packages up to date with
+```shell
+# assumes you have activated the appropriate virtual environment
+python -m pip list --outdated  # shows which packages are old
+python -m pip install --upgrade -r requirements.txt # actually upgrades the packages
+python -m pip install --upgrade randomgen numpy   # like this to upgrade specific packages
+```
+Be aware that upgrading can break things, especially the upgrade is a major version number (the leading number in an `x.y.z` version).
+
+## Older Instructions: Setting up the Simulation
+
+What follows is based on older instructions.  They are here primarily to provide details about how to prepare a project directory for simulation.
+
+Portions may be dated, though I have attempted to modify them to reflect current practices.  On the other hand, the discussion of `.inp` files includes a lot of information that was missing from the original, and it does reflect the current code.
 
 ### Installation
+
+This subsection is of historical interest only; consult [Installation](Installation.md) instead.
+
 1. If it is not installed, download and install [Node.js](https://nodejs.org/) (known to  work with v6.5, but try the latest stable release)
 2. If it is not installed, download and install [Python](https://www.python.org/downloads/) (known to work with v3.5.2, but try the the latest stable version)
 3. ~~In the command line, install the montecarlo CLI by running `npm install -g @ecfairle/mccli` (this same command can be used to update to the latest version)~~
@@ -186,7 +138,7 @@ The regular instructions appear below here.
    Currently they involve installing Qt5, which in turn has some requirements.  The clang components it needs are available for download from the Qt5 site and do not seem to be
    easily available from elsewhere.
 
-Portions of the system currently rely on invoking python with the py command, which is Windows-specific.
+Portions of the system currently rely on invoking python with the `py` command, which is `MS-Windows`-specific.
 
 ### Initialization
 
@@ -283,7 +235,7 @@ For normal distributions the `mean` parameter can be the literal **'MEAN'**, ind
  ```
 
 
-## Running Simulations
+### Running Simulations
 
 Execute `mc run` to run the default number of simulations or `mc run n` to run n simulations. This creates a folder structure as follows:
 ```

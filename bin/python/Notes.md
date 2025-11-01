@@ -5,7 +5,7 @@ numbersections: true
 
 Notes for Programmers and Advanced Users
 
-These notes initially recorded the results of an analysis of what files `montecarlo.py` uses (that [section](#notes-on-internal-use-of-files) is still here, with the addition of files used by `runSims.js` and the `Fortran` model).  But it has expanded beyond that, as seen in the table of contents just below.  And since it's not just about `Python`, it probably belongs in a different directory (the `HF` branch has already moved it under `doc`).  But for  now, it remains in `bin/python`.
+These notes cover many topics, as seen in the table of contents just below.  Since they are no longer exclusively about `Python`, this file rightly belongs in a different directory  (the `HF` branch has already moved it under `doc`).  But for  now, it remains in `bin/python`.
 
 This is not intended to be read end-to-end.  As you discover new things, you may want to add them to this document.
 
@@ -13,6 +13,13 @@ This is not intended to be read end-to-end.  As you discover new things, you may
   - [Debugging](#debugging)
   - [Testing](#testing)
     - [`pytest`](#pytest)
+      - [Weird Permission Failures](#weird-permission-failures)
+      - [Fixtures](#fixtures)
+      - [Directories](#directories)
+      - [Getting the Directories Reliably](#getting-the-directories-reliably)
+      - [Virtual Environments](#virtual-environments)
+      - [Changing the Working Directory](#changing-the-working-directory)
+      - [Making New Fixtures](#making-new-fixtures)
   - [Graphics and `Qt`](#graphics-and-qt)
   - [Code Layout](#code-layout)
 - [Notes on Internal Use of Files](#notes-on-internal-use-of-files)
@@ -89,7 +96,22 @@ If you are using `Python` virtual environments, as recommended, you should run t
 
 This subsection has some notes on `pytest`, a `Python` testing framework, for those writing new tests.
 
-To access `pytest` **features** put an argument of the same name in the definition of the test function.  You can use as many as you want: `def test_shared_prefix(pytestconfig, monkeypatch, request):`.  You can then pull information out of the arguments, or directly use the arguments.
+#### Weird Permission Failures
+
+I have had intermittent failures running tests because they report a permission error when attempting to create a directory, e.g., in `test_shared_prefix()` of `test_sum_results.py` with the function `Path.mkdir()`.  The error says I don't have permission to write to the directory, despite the fact I have admin rights and just deleted the exact same directory without trouble, and have created it programmatically and with `MS-Windows Explorer`.  
+
+Possible Solution: I went to the parent directory, `C:\Users\rdboylan\Documents\KBD\mccli-justice\py_tests\Iss24\MC\results` in `Windows Explorer` to review permissions; it said I can do anything.  But the directory is marked read-only (hover said that only applied to the files in the directory) because, at least on this system, that bit is being used for something else.  Note this is old-style read-only, not NT ACL's.  I uncheck read-only and asked for that to be recursive.  After, things worked.
+
+This was on a local drive.
+
+However, when I checked out a new copy of the code from github and ran the same tests, there were no problems, even though I hadn't manually reset the permissions. So it's unclear what is driving the problem.
+
+Alternate Solution: Change the test code so that it deletes the files under the directory, leaving the directory in place.
+
+#### Fixtures
+To access `pytest` "fixtures" put an argument of the same name in the definition of the test function.  You can use as many as you want: `def test_shared_prefix(pytestconfig, monkeypatch, request):`.  You can then pull information out of the arguments, or directly use the arguments.
+
+#### Directories
 
 There are potentially a lot of directories involved in running a test:
 
@@ -101,29 +123,37 @@ There are potentially a lot of directories involved in running a test:
   * The directory in which the `Python` executable resides
   * A temporary directory in which to run the test
 
-**Getting the directories reliably**, with a minimum set of assumptions, is challenging.  That is one reason for the advice to always run `pytest` from the `mccli` root.
+#### Getting the Directories Reliably
+with a minimum set of assumptions, is challenging.  That is one reason for the advice to always run `pytest` from the `mccli` root.
 
-`request.path` gives a `pathlib.Path` object that is the full path of the file running the test, e.g., `C:\Users\rdboylan\Documents\KBD\mccli-justice\py_tests\test_sum_results.py` for tests run from that file.  I believe that will be more stable than just using `__file__`, which won't be right if the test uses other modules for getting directories.
+`request.path` gives a `pathlib.Path` object that is the full path of the file running the test, e.g., `C:\Users\rdboylan\Documents\KBD\mccli-justice\py_tests\test_sum_results.py` for tests run from that file.  From that location one can navigate to any other part of the tree except the virtual environment.
 
-From that location one can navigate to any other part of the tree.
+This is similar to using `__file__`, which doesn't require a fixture.  The problem with it is that if I define a fixture function to get key directories and put it in a separate file, `__file__` will no longer refer to the file with the test.  Of course, it should still no how to navigate the tree, so perhaps that doesn't matter.
 
 There are some other constructs that are not reliable. `request.config.rootpath` or the equivalent (I think) `pytestconfig.rootpath` use an algorithm that will not reliably find the root, even if run within the `mccli` directory tree, much less if the working directory is outside of that tree.  The algorithm looks for files that are not present, because the `mccli` neither is nor contains a regular `Python` package.
 
-Locating the `Python` **virtual environment** is challenging for several reasons:
+In `VSCode`, `Path.cwd()` always returned the root `mccli` directory when run by a test function, even though those functions are in files further down the directory tree.  As noted, that doesn't seem like something to rely on in general.
+
+#### Virtual Environments
+
+Locating the `Python` virtual environment is challenging for several reasons:
 
   1. There may be no virtual environment.
   2. The virtual environment may not be in the expected location `mccli/pyenv`; it may not be under the `mccli` at all.
   3. Even given the top of the virtual environment, the complete path to its `Python` is variable.  Under `MS-Windows` one should look under `Scripts`; most other systems use `bin`.  Further, the exact name of the executable varies: it has an `.exe` extension on `MS-Windows` but not elsewhere, and it may go by `python` or `python3`.
 
-The safest way to activate the virtual environment if the test runs a program in a subshell is to use `sys.executable`, which gets the complete path, including the file name and extension,  for the `Python` that is executing the test.  This *only works if `pyenv` was launched using the desired virtual environment*.  The virtual environment is set up so that if you invoke its version of `Python` you will get the whole environment.
-
-In `VSCode`, `Path.cwd()` always returned the root `mccli` directory when run by a test function, even though those functions are in files further down the directory tree.  As noted, that doesn't seem like something to rely on in general.
+The safest way to activate the virtual environment if the test runs a program in a subshell is to use `sys.executable` as the `Python` to run. `sys.executable` is the complete path, including the file name and extension,  for the `Python` that is executing the test.  This *only works if `pyenv` was launched using the desired virtual environment*.  The virtual environment is set up so that if you invoke its version of `Python` you will get the whole environment.
 
 `sys.executable` gives the full path of the running `Python`,  even if there is no active virtual environment.  Use `sys.prefix != sys.base_prefix` to tell if a virtual environment is active or not.
 
-The best way to **change the working directory** temporarily is with `monkeypath.chdir("somewhere")`.  This will revert back to the original directory at the end of the test function, without any need to program that explicitly.  Or, if using `subprocess.run()` one can use the `cwd=` argument to set the working directory for the spawned subprocess.
+#### Changing the Working Directory
 
-One can create **new fixtures** with
+Code that uses `subprocess.run()` can use the `cwd=` argument to set the working directory for the spawned subprocess.
+
+Otherwise, the best way to change the working directory temporarily is with `monkeypatch.chdir("somewhere")`.  `monkeypatch` is a fixture.  This will revert back to the original directory at the end of the test function, without any need to program that explicitly.  
+
+#### Making New Fixtures
+
 ```python
 import pytest
 
@@ -592,12 +622,12 @@ To Do
     - [ ] Problem with lack of permission to make the `summary` directory
       - currently fixed for `KBD\mccli-justice` only
       - and slightly documented in `Iss24\ReadMe.md`
-      - [ ] check if fresh installs have problem
-      - [ ] Make the necessary instructions more prominent, either in Developer Notes or the overall ReadMe.
+      - [x] check if fresh installs have problem.  Oddly, they don't.
+      - [x] Make the necessary instructions more prominent, either in Developer Notes or the overall ReadMe.
       - [ ] If it is a problem, consider an alternate approach that doesn't run into it, e.g., deleting the individual files and leaving the directory.
     - [x] Add comments `test_sum_results.py` and review the ones there. Moved some of the material to `Notes.md`.
     - [ ] Consider adding additional tests, e.g., for `inp.txt` or for the contents of the output files
-    - [ ] rerun previous analysis with new code.  At a minimum need to trim `inp.txt` and delete the files in `summary`.
+    - [x] rerun previous analysis with new code.  At a minimum need to trim `inp.txt` and delete the files in `summary`.
     - [x] Discuss testing in the Developer notes
     - [ ] Rationalize layout of tests and test data?
   - [ ] Move all test input files into project source tree under `py_tests`.

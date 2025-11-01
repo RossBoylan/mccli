@@ -1,12 +1,12 @@
 # How to Setup `mccli`
 
-This describes the recommended steps for getting `mccli` working on a new computer.  As the `Fortran` model file it uses is only available for `MS-Windows`, the instructions are geared to that, though they do use `/` rather than `\` as a directory separator.
+The first part of this document describes the recommended steps for getting `mccli` working on a new computer.  As the `Fortran` model file it uses is only available for `MS-Windows`, the instructions are geared to `Windows`, though they do use `/` rather than `\` as a directory separator.
+
+The second more-than-half is non-essential [commentary](#commentary).  It discusses why the instructions say to do some things, alternatives that may be appropriate for some, and things that might go wrong and what to do about them.
 
 There are many choices one could make along the way.  If you already have something installed that meets the need, you can skip the relevant step or customize it as you prefer.
 
-This emphasizes what to do, not what alternatives exist or why you should do it a particular way.  That said, the first step does involve alternatives!
-
-The first half of this document gives the actual installation steps; the second half is non-essential [commentary](#commentary).
+Although I said the basic instructions would avoid choices, there are a couple that you need to make at the start.  We begin with those.
 
 ## What Do You Want to Do?
 If you want to [collect custom statistics](bin/python/frmtReport.py) after doing the simulation you should install `Python` 3.10 or earlier, and uncomment `PySide2` in `requirements.txt`.
